@@ -328,6 +328,23 @@ function getOfflineQueue(): OfflineQueueItem[] {
     return [];
   }
 }
+function mergeTransferPairs(
+    transactions: Transaction[],
+    transfers: { id: string; fromTransactionId: string | null; toTransactionId: string | null }[],
+): Transaction[] {
+  const toIds = new Set(transfers.map((t) => t.toTransactionId).filter(Boolean));
+  const byFromId = new Map(transfers.filter((t) => t.fromTransactionId).map((t) => [String(t.fromTransactionId), t]));
+  const byId = new Map(transactions.map((t) => [String(t.id), t]));
+  return transactions
+      .filter((t) => !toIds.has(String(t.id)))
+      .map((t) => {
+        if (t.kind !== "transfer" && t.kind !== "exchange") return t;
+        const transfer = byFromId.get(String(t.id));
+        if (!transfer) return t;
+        const toLeg = transfer.toTransactionId ? byId.get(String(transfer.toTransactionId)) : undefined;
+        return { ...t, title: `Переказ: ${t.account || "Рахунок"} → ${toLeg?.account || "Рахунок"}` };
+      });
+}
 function saveOfflineQueue(queue: OfflineQueueItem[]) {
   localStorage.setItem("rivna-offline-queue", JSON.stringify(queue));
 }
@@ -432,6 +449,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   >([]);
   const [syncing, setSyncing] = useState(initialLoggedIn);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(!initialLoggedIn);
+  const [goals, setGoals] = useState<GoalItem[]>(initialLoggedIn ? [] : seedGoals);
   useEffect(() => {
     goals.forEach((goal) => {
       const percent = Math.min(100, Math.round((goal.current / Math.max(1, goal.target)) * 100));
@@ -450,7 +468,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       }
     });
   }, [goals]);
-  const [goals, setGoals] = useState<GoalItem[]>(initialLoggedIn ? [] : seedGoals);
   const [debts, setDebts] = useState<DebtItem[]>([]);
   const [recurring, setRecurring] = useState<RecurringItem[]>([]);
   const [transfers, setTransfers] = useState<
@@ -642,27 +659,16 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           (data.transactions || [])
               .map((item: Record<string, unknown>) => {
                 const id = String(item.id);
-                const isTransferLeg = item.type === "transfer" || item.type === "exchange";
+                const isTransferLeg = item.type === "transfer" || item.type === "exchange" || transferDirection[id] !== undefined;
                 const direction = transferDirection[id];
                 const isIncomeLike = item.type === "income" || (isTransferLeg && direction === "in");
                 return {
-                  id,
-                  title: String(
-                      item.note ||
-                      (isTransferLeg
-                          ? direction === "in"
-                              ? "Поповнення переказом"
-                              : "Переказ"
-                          : item.type === "income"
-                              ? "Дохід"
-                              : "Витрата"),
-                  ),
-                  category: String(
-                      (item.categories as { name?: string } | null)?.name || "Без категорії",
-                  ),
-                  categoryIcon: String(
-                      (item.categories as { icon?: string } | null)?.icon || "CircleDollarSign",
-                  ),
+                  id, title: String(item.note || (isTransferLeg ? (direction==="in"?"Поповнення переказом":"Переказ") : (item.type === "income" ? "Дохід" : "Витрата"))),
+                  category: isTransferLeg
+                      ? "Переказ"
+                      : String(
+                          (item.categories as { name?: string } | null)?.name || "Без категорії",
+                      ),
                   date: new Intl.DateTimeFormat("uk-UA", {
                     dateStyle: "medium",
                     timeStyle: "short",
@@ -1890,6 +1896,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         type: "income" | "expense";
       }[]
   >([]);
+  const [monoResyncDays, setMonoResyncDays] = useState(31);
   const [monoToken, setMonoToken] = useState("");
   const [monoAccounts, setMonoAccounts] = useState<
       {
@@ -2001,13 +2008,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     await refreshFinance();
   }
   const [monoResyncing, setMonoResyncing] = useState(false);
-  async function resyncMonobank(force?: boolean) {
+  async function resyncMonobank(force?: boolean, days?: number) {
     setMonoResyncing(true);
     try {
       const response = await fetch("/api/monobank/resync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: Boolean(force) }),
+        body: JSON.stringify({ force: Boolean(force), days: days || 31 }),
       });
       let result: {
         error?: string;
@@ -2316,6 +2323,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   onEdit={setEditingTransaction}
                   scanReceipt={scanReceipt}
                   scanning={scanning}
+                  transfers={transfers}
               />
           )}{" "}
           {page === "Бюджет" &&
@@ -3393,6 +3401,13 @@ function Dashboard({
                             {r.currency} {formatMoney(r.amount)}
                           </b>
                           <em>{r.auto ? "Автоматично" : "Нагадування"}</em>
+                          <button
+                              className="icon-button danger"
+                              onClick={() => financeAction({ action: "deleteRecurring", id: r.id }, "Регулярний платіж видалено")}
+                              aria-label="Видалити"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                     ))
             ) : (
@@ -3416,6 +3431,7 @@ function TransactionsView({
                             onEdit,
                             scanReceipt,
                             scanning,
+                            transfers,
                           }: {
   transactions: Transaction[];
   search: string;
@@ -3428,6 +3444,7 @@ function TransactionsView({
   onEdit: (t: Transaction) => void;
   scanReceipt: (file: File) => void;
   scanning: boolean;
+  transfers: { id: string; fromTransactionId: string | null; toTransactionId: string | null }[];
 }) {
   const [account,setAccount]=useState("");const [category,setCategory]=useState("");const [owner,setOwner]=useState("");const [tag,setTag]=useState("");const [from,setFrom]=useState("");const [to,setTo]=useState("");
   const [minAmount,setMinAmount]=useState("");const [maxAmount,setMaxAmount]=useState("");
@@ -3483,7 +3500,8 @@ function TransactionsView({
   }, [initialAccount]);
   const unique = (values: (string | undefined)[]) =>
       Array.from(new Set(values.filter(Boolean) as string[])).sort();
-  const filtered=transactions.filter(t=>(!account||t.account===account)&&(!category||t.category===category)&&(!owner||t.owner===owner)&&(!tag||t.tags?.includes(tag))&&(!from||!t.bookedAt||t.bookedAt>=`${from}T00:00:00`)&&(!to||!t.bookedAt||t.bookedAt<=`${to}T23:59:59`)&&(!minAmount||Math.abs(t.amount)>=Number(minAmount))&&(!maxAmount||Math.abs(t.amount)<=Number(maxAmount)));
+  const merged=mergeTransferPairs(transactions, transfers);
+  const filtered=merged.filter(t=>(!account||t.account===account)&&(!category||t.category===category)&&(!owner||t.owner===owner)&&(!tag||t.tags?.includes(tag))&&(!from||!t.bookedAt||t.bookedAt>=`${from}T00:00:00`)&&(!to||!t.bookedAt||t.bookedAt<=`${to}T23:59:59`)&&(!minAmount||Math.abs(t.amount)>=Number(minAmount))&&(!maxAmount||Math.abs(t.amount)<=Number(maxAmount)));
   const shown = sortField
       ? [...filtered].sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
@@ -4324,9 +4342,26 @@ function AccountsView({
             </div>
             <div className="title-actions">
               {monoAccounts.length > 0 && (
-                  <button className="secondary" onClick={() => resyncMonobank(true)} disabled={monoResyncing}>
-                    {monoResyncing ? "Оновлюю…" : "Оновити за 31 день"}
-                  </button>
+                  <>
+                    <select
+                        value={monoResyncDays}
+                        onChange={(e) => setMonoResyncDays(Number(e.target.value))}
+                        disabled={monoResyncing}
+                    >
+                      <option value={31}>За 31 день</option>
+                      <option value={62}>За 2 місяці</option>
+                      <option value={93}>За 3 місяці</option>
+                      <option value={186}>За 6 місяців</option>
+                      <option value={365}>За рік</option>
+                    </select>
+                    <button
+                        className="secondary"
+                        onClick={() => resyncMonobank(true, monoResyncDays)}
+                        disabled={monoResyncing}
+                    >
+                      {monoResyncing ? "Оновлюю…" : "Оновити"}
+                    </button>
+                  </>
               )}
               <button onClick={() => setMonoOpen((v) => !v)}>
                 {monoOpen ? "Згорнути" : "Підключити"}

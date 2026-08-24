@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/monosense-tracker" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/monosense-tracker/monosense-tracker" vcs="Git" />
   </component>
 </project>

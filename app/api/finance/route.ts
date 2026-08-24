@@ -236,7 +236,8 @@ export async function POST(request: Request) {
            const { data: debtRow } = await supabase.from("debts").select("amount,currency,person,is_installment,installment_months").eq("id",body.id).eq("household_id",householdId).single();
            if(!debtRow){result={error:{message:"Борг не знайдено"}};break;}
            const payAmount=Number(body.amount);
-           const rpcResult = await supabase.rpc("create_finance_transaction",{p_account_id:String(body.accountId),p_category_id:null,p_type:"expense",p_amount:payAmount,p_currency:debtRow.currency,p_note:`Погашення розстрочки: ${debtRow.person}`,p_booked_at:new Date().toISOString(),p_is_impulsive:false});
+         const { data: debtCategory } = await supabase.from("categories").select("id").eq("household_id",householdId).eq("name","Борги").eq("kind","expense").maybeSingle();
+         const rpcResult = await supabase.rpc("create_finance_transaction",{p_account_id:String(body.accountId),p_category_id:debtCategory?.id||null,p_type:"expense",p_amount:payAmount,p_currency:debtRow.currency,p_note:`Погашення розстрочки: ${debtRow.person}`,p_booked_at:new Date().toISOString(),p_is_impulsive:false});
            if(rpcResult.error){result={error:rpcResult.error};break;}
            await supabase.from("transactions").update({debt_id:body.id}).eq("id",rpcResult.data.id).eq("household_id",householdId);
            const remaining=Math.max(0,Number(debtRow.amount)-payAmount);
@@ -281,9 +282,9 @@ export async function POST(request: Request) {
         quote_currency:String(body.quoteCurrency||"USD").toUpperCase().slice(0,3),official_rate:Number(body.rate),custom_rate:Number(body.rate),source:"CUSTOM",
       },{onConflict:"rate_date,quote_currency,household_id"}).select().single();
       break;
-    case "deleteCategory": {
+      case "deleteCategory": {
           const { data: catRow } = await supabase.from("categories").select("name,is_default").eq("id",body.id).eq("household_id",householdId).single();
-          if(catRow?.name==="Відсотки / Комісія"){result={error:{message:"Цю системну категорію не можна видалити"}};break;}
+          if(catRow?.name==="Відсотки / Комісія"||catRow?.name==="Борги"){result={error:{message:"Цю системну категорію не можна видалити"}};break;}
           result = await supabase.from("categories").delete().eq("id",body.id).eq("household_id",householdId);
           break;
         }
@@ -295,6 +296,9 @@ export async function POST(request: Request) {
           break;
         case "deleteRule":
           result = await supabase.from("transaction_rules").delete().eq("id",body.id).eq("household_id",householdId);
+          break;
+      case "deleteRecurring":
+          result = await supabase.from("recurring_rules").delete().eq("id",body.id).eq("household_id",householdId);
           break;
     case "deleteBudget":
       result = await supabase.from("budgets").delete().eq("id",body.id).eq("household_id",householdId);
