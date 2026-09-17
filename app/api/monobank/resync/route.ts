@@ -151,16 +151,46 @@ export async function POST(request: Request) {
             const expectedBalance = monoBalance - Number(account.credit_limit);
             const balanceDiff = Math.round((expectedBalance -
 
-        for (const item of items) {
-            const { data: alreadySynced } = await admin
-                .from("monobank_synced_items")
-                .select("statement_item_id")
-                .eq("statement_item_id", item.id)
-                .maybeSingle();
-            if (alreadySynced && !force) continue;
+            for (const item of items) {
+                const { data: alreadySynced } = await admin
+                    .from("monobank_synced_items")
+                    .select("statement_item_id")
+                    .eq("statement_item_id", item.id)
+                    .maybeSingle();
+                if (alreadySynced && !force) continue;
 
-            flatItems.push({ monoAccountId: link.mono_account_id, appAccountId: link.app_account_id, currency: account.currency, item });
-        }
+                const itemDate = new Date(item.time * 1000);
+                const dayStart = new Date(itemDate);
+                dayStart.setUTCHours(0, 0, 0, 0);
+                const dayEnd = new Date(itemDate);
+                dayEnd.setUTCHours(23, 59, 59, 999);
+
+                const { data: matchingAutoDebit } = await admin
+                    .from("transactions")
+                    .select("id")
+                    .eq("account_id", link.app_account_id)
+                    .eq("amount", Math.abs(item.amount) / 100)
+                    .eq("type", item.amount < 0 ? "expense" : "income")
+                    .not("id", "in", `(select transaction_id from monobank_synced_items)`)
+                    .gte("booked_at", dayStart.toISOString())
+                    .lte("booked_at", dayEnd.toISOString())
+                    .ilike("note", "%розстрочк%")
+                    .maybeSingle();
+
+                if (matchingAutoDebit) {
+                    await admin.from("monobank_synced_items").insert({
+                        statement_item_id: item.id,
+                        transaction_id: matchingAutoDebit.id,
+                    });
+                    debug.push({
+                        monoAccountId: link.mono_account_id,
+                        error: `Пропущено дублікат: вже списано автоматично за розстрочкою (транзакція ${matchingAutoDebit.id})`,
+                    });
+                    continue;
+                }
+
+                flatItems.push({ monoAccountId: link.mono_account_id, appAccountId: link.app_account_id, currency: account.currency, item });
+            }
     }
 
     const used = new Set<string>();

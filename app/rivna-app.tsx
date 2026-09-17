@@ -3449,6 +3449,7 @@ function TransactionsView({
   const [account,setAccount]=useState("");const [category,setCategory]=useState("");const [owner,setOwner]=useState("");const [tag,setTag]=useState("");const [from,setFrom]=useState("");const [to,setTo]=useState("");
   const [minAmount,setMinAmount]=useState("");const [maxAmount,setMaxAmount]=useState("");
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("rivna-tx-order") || "[]");
