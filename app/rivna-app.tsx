@@ -2308,6 +2308,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   recurring={recurring}
                   addRecurring={() => setModal("recurring")}
                   reorderAccounts={reorderAccounts}
+                  removeRecurring={(id) => financeAction({ action: "deleteRecurring", id }, "Регулярний платіж видалено")}
               />
           )}
           {page === "Операції" && (
@@ -3053,6 +3054,7 @@ function Dashboard({
                      recurring,
                      addRecurring,
                      reorderAccounts,
+                     removeRecurring,
                    }: {
   balance: number;
   baseCurrency: string;
@@ -3068,6 +3070,7 @@ function Dashboard({
   recurring: RecurringItem[];
   addRecurring: () => void;
   reorderAccounts: (draggedId: string, targetId: string) => void;
+  removeRecurring: (id: string) => void;
 }) {
   const [renderedAt] = useState(() => Date.now()),
       now = new Date(renderedAt),
@@ -3403,7 +3406,7 @@ function Dashboard({
                           <em>{r.auto ? "Автоматично" : "Нагадування"}</em>
                           <button
                               className="icon-button danger"
-                              onClick={() => financeAction({ action: "deleteRecurring", id: r.id }, "Регулярний платіж видалено")}
+                              onClick={() => removeRecurring(r.id)}
                               aria-label="Видалити"
                           >
                             <Trash2 size={14} />
@@ -7955,6 +7958,10 @@ function EditTransactionModal({
       transaction.amount > 0 && transaction.kind !== "transfer" && transaction.kind !== "exchange";
   const [type, setType] = useState<"expense" | "income">(isIncome ? "income" : "expense");
   const currentAccountId = accounts.find((a) => a.name === transaction.account)?.id;
+  const [accountId, setAccountId] = useState(String(currentAccountId || accounts[0]?.id || ""));
+  const [isTransfer, setIsTransfer] = useState(false);
+  const [transferToAccountId, setTransferToAccountId] = useState("");
+  const [reduceCreditLimit, setReduceCreditLimit] = useState(false);
   return (
       <div className="modal-backdrop" onMouseDown={close}>
         <form
