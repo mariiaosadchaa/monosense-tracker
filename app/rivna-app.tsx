@@ -64,6 +64,17 @@ import {
   Train,
   Stethoscope,
   Cat,
+  Scissors,
+  Wrench,
+  Phone,
+  Laptop,
+  Film,
+  Pizza,
+  Hotel,
+  Umbrella,
+  PartyPopper,
+  Cake,
+  Percent,
   Banknote,
   CreditCard as CreditCardIcon,
   ArrowLeftRight,
@@ -71,12 +82,7 @@ import {
   Zap,
   Droplets,
   Tv,
-  PartyPopper,
-  Pizza,
   Beer,
-  Flower2,
-  Scissors,
-  Wrench,
   ShieldCheck,
   Globe,
   Camera,
@@ -158,9 +164,15 @@ const BUDGET_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
   // Здоров'я та краса
   HeartPulse,
   Stethoscope,
+  Phone,
+  Laptop,
+  Film,
+  Hotel,
+  Umbrella,
+  Cake,
+  Percent,
   Syringe,
   Flower2,
-  Scissors,
   // Розваги та хобі
   Gamepad2,
   Music,
@@ -197,8 +209,6 @@ const BUDGET_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
   // Банк / розстрочка
   Landmark,
   // Ремонт / майстерня
-  Wrench,
-  Scissors,
   // Здоровʼя / страхування
   ShieldCheck,
   // Переказ / повторювані
@@ -282,6 +292,33 @@ function guessIconFromTitle(title: string): string {
   // Благодійність
   if (/благодій|донат|charity|волонтер/.test(t)) return "HeartHandshake";
   return "CircleDollarSign";
+}
+const MERCHANT_LOGO_DOMAINS: [string, string][] = [
+  ["фора", "fora.ua"],
+  ["нова пошта", "novaposhta.ua"],
+  ["сільпо", "silpo.ua"],
+  ["ашан", "auchan.ua"],
+  ["metro", "metro.ua"],
+  ["атб", "atbmarket.com"],
+  ["varus", "varus.ua"],
+  ["rozetka", "rozetka.com.ua"],
+  ["monomarket", "mono.market"],
+  ["zara", "zara.com"],
+  ["mcdonald", "mcdonalds.com"],
+  ["kfc", "kfc.com"],
+  ["glovo", "glovoapp.com"],
+  ["bolt", "bolt.eu"],
+  ["uklon", "uklon.com.ua"],
+  ["uber", "uber.com"],
+  ["netflix", "netflix.com"],
+  ["spotify", "spotify.com"],
+  ["apple", "apple.com"],
+  ["google", "google.com"],
+];
+function findMerchantLogo(title: string): string | null {
+  const lower = title.toLowerCase();
+  const found = MERCHANT_LOGO_DOMAINS.find(([key]) => lower.includes(key));
+  return found ? `https://unavatar.io/${found[1]}` : null;
 }
 
 function BudgetIcon({ name, size }: { name?: string; size?: number }) {
@@ -4143,11 +4180,25 @@ function TransactionsView({
                     if (editMode && canEdit) onEdit(t);
                   }}
               >
-                <span
-                    className="tx-category-icon"
-                    style={{ background: `${catColor}22`, color: catColor }}
-                >
-                  <BudgetIcon name={iconName} size={20} />
+                                             <span
+                                                 className="tx-category-icon"
+                                                 style={{ background: `${catColor}22`, color: catColor }}
+                                             >
+                  {(() => {
+                    const logoUrl = findMerchantLogo(t.title);
+                    if (!logoUrl) return <BudgetIcon name={iconName} size={20} />;
+                    return (
+                        <img
+                            src={logoUrl}
+                            alt=""
+                            style={{ width: "100%", height: "100%", borderRadius: "inherit", objectFit: "cover" }}
+                            onError={(e) => {
+                              const wrap = e.currentTarget.parentElement;
+                              if (wrap) wrap.innerHTML = "";
+                            }}
+                        />
+                    );
+                  })()}
                 </span>
                 <strong>
                   {t.title}
@@ -7237,12 +7288,23 @@ function bankStyle(bank: string, index = 2) {
 function TransactionList({ transactions }: { transactions: Transaction[] }) {
   return (
       <div className="tx-list">
-        {transactions.map((t) => (
-            <div className="tx" key={t.id}>
+        {transactions.map((t) => {
+          const logoUrl = findMerchantLogo(t.title);
+          return (
+              <div className="tx" key={t.id}>
           <span
               className={`tx-icon ${t.kind === "credit_limit_change" ? "limit" : t.amount > 0 ? "income" : "shop"}`}
           >
-            {t.kind === "credit_limit_change" ? (
+            {logoUrl ? (
+                <img
+                    src={logoUrl}
+                    alt=""
+                    style={{ width: 20, height: 20, borderRadius: 4, objectFit: "contain" }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                />
+            ) : t.kind === "credit_limit_change" ? (
                 <CreditCard />
             ) : t.amount > 0 ? (
                 <ArrowDownLeft />
@@ -7259,11 +7321,12 @@ function TransactionList({ transactions }: { transactions: Transaction[] }) {
                   {t.category} · {t.date}
                 </small>
               </div>
-              <strong className={t.amount > 0 ? "income-amount" : ""}>
-                {t.amount > 0 ? "+" : "−"} {currencySymbol(t.currency || "UAH")} {formatMoney(t.amount)}
-              </strong>
-            </div>
-        ))}
+                <strong className={t.amount > 0 ? "income-amount" : ""}>
+                  {t.amount > 0 ? "+" : "−"} {currencySymbol(t.currency || "UAH")} {formatMoney(t.amount)}
+                </strong>
+              </div>
+          );
+        })}
       </div>
   );
 }
