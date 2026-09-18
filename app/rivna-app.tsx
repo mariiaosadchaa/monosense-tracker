@@ -104,6 +104,7 @@ import {
   Wine,
   Syringe,
   HeartHandshake,
+  Flower2,
   Dice5,
   Volleyball,
   Brush,
@@ -172,7 +173,6 @@ const BUDGET_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
   Cake,
   Percent,
   Syringe,
-  Flower2,
   // Розваги та хобі
   Gamepad2,
   Music,
