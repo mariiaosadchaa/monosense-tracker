@@ -40,6 +40,13 @@ export async function POST(request: Request) {
         .eq("household_id", context.householdId);
     const debtCategoryId = (categories || []).find((c) => c.name === "Борги" && c.kind === "expense")?.id || null;
 
+    const { data: learnedRules } = await admin
+        .from("transaction_rules")
+        .select("condition_value,action_category_id")
+        .eq("household_id", context.householdId)
+        .eq("condition_type", "note_contains")
+        .eq("active", true);
+
     const { data: installmentRulesRaw } = await admin
         .from("recurring_rules")
         .select("id,account_id,amount,debt_id,active,created_at,debts(person)")
@@ -57,6 +64,11 @@ export async function POST(request: Request) {
         .select("id,currency,credit_limit,balance")
         .in("id", links.map((l) => l.app_account_id));
     const accountById = new Map((accountRows || []).map((a) => [a.id, a]));
+
+    const { data: allHouseholdAccounts } = await admin
+        .from("accounts")
+        .select("id,name,currency")
+        .eq("household_id", context.householdId);
 
     const debug: { monoAccountId: string; status?: number; error?: string; itemsFound?: number }[] = [];
     const to = Math.floor(Date.now() / 1000);
@@ -147,9 +159,6 @@ export async function POST(request: Request) {
                     }
                 }
             }
-
-            const expectedBalance = monoBalance - Number(account.credit_limit);
-            const balanceDiff = Math.round((expectedBalance -
 
             for (const item of items) {
                 const { data: alreadySynced } = await admin
@@ -350,8 +359,74 @@ export async function POST(request: Request) {
         imported += 2;
     }
 
-    // 2. Решта — звичайні операції з підбором категорії
-    const remaining = flatItems.filter((f) => !used.has(f.item.id));
+    // 1c. Зовнішні перекази (назва рахунку в описі — наприклад "Платіж Payoneer")
+    for (const incoming of flatItems) {
+        if (used.has(incoming.item.id)) continue;
+        if (incoming.item.amount <= 0) continue;
+
+        const desc = (incoming.item.description || "").toLowerCase();
+        const matchAccount = (allHouseholdAccounts || []).find(
+            (a) =>
+                a.id !== incoming.appAccountId &&
+                a.name &&
+                a.name.trim().length >= 4 &&
+                desc.includes(a.name.trim().toLowerCase())
+        );
+        if (!matchAccount) continue;
+
+        used.add(incoming.item.id);
+
+        const amount = incoming.item.amount / 100;
+        const bookedAt = new Date(incoming.item.time * 1000).toISOString();
+
+        const { data: fromTx, error: fromErr } = await admin.rpc("create_finance_transaction_admin", {
+            p_user_id: connection.connected_by,
+            p_account_id: matchAccount.id,
+            p_category_id: null,
+            p_type: "expense",
+            p_amount: amount,
+            p_currency: matchAccount.currency || incoming.currency,
+            p_note: incoming.item.description || "Переказ",
+            p_booked_at: bookedAt,
+            p_is_impulsive: false,
+            p_split_total: null,
+            p_personal_share: null,
+        });
+        if (fromErr || !fromTx) continue;
+
+        const { data: toTx, error: toErr } = await admin.rpc("create_finance_transaction_admin", {
+            p_user_id: connection.connected_by,
+            p_account_id: incoming.appAccountId,
+            p_category_id: null,
+            p_type: "income",
+            p_amount: amount,
+            p_currency: incoming.currency,
+            p_note: incoming.item.description || "Переказ",
+            p_booked_at: bookedAt,
+            p_is_impulsive: false,
+            p_split_total: null,
+            p_personal_share: null,
+        });
+        if (toErr || !toTx) continue;
+
+        await admin.from("transactions").update({ type: "transfer" }).eq("id", fromTx.id);
+        await admin.from("transactions").update({ type: "transfer" }).eq("id", toTx.id);
+        await admin.from("transfers").insert({
+            household_id: context.householdId,
+            from_transaction_id: fromTx.id,
+            to_transaction_id: toTx.id,
+            fee_amount: 0,
+            fee_currency: null,
+            booked_at: bookedAt,
+        });
+        await admin.from("monobank_synced_items").insert({
+            statement_item_id: incoming.item.id,
+            transaction_id: toTx.id,
+        });
+
+        imported += 2;
+    }
+
     // 2. Решта — звичайні операції з підбором категорії
     const remaining = flatItems.filter((f) => !used.has(f.item.id));
     const byAccount = new Map<string, FlatItem[]>();
@@ -362,8 +437,23 @@ export async function POST(request: Request) {
 
     for (const [appAccountId, items] of byAccount) {
         const account = accountById.get(appAccountId)!;
+
+        const learnedItems: Record<string, string> = {};
+        const needsGemini: typeof items = [];
+        for (const f of items) {
+            const desc = (f.item.description || "").toLowerCase();
+            const rule = (learnedRules || []).find(
+                (r) => desc.includes(String(r.condition_value || "").toLowerCase())
+            );
+            if (rule?.action_category_id) {
+                learnedItems[f.item.id] = rule.action_category_id;
+            } else {
+                needsGemini.push(f);
+            }
+        }
+
         const categoryNameByItemId = await categorizeMonobankItems(
-            items.map((f) => ({
+            needsGemini.map((f) => ({
                 id: f.item.id,
                 description: f.item.description || "",
                 type: f.item.amount < 0 ? "expense" : "income",
@@ -421,6 +511,24 @@ export async function POST(request: Request) {
                 }
             }
 
+            const learnedCategoryId = learnedItems[f.item.id] || null;
+            const description = f.item.description || "";
+            let refundCategoryId: string | null = null;
+            const cancellationMatch = description.match(/^Скасування\.\s*(.+)$/i);
+            if (cancellationMatch) {
+                const originalName = cancellationMatch[1].trim();
+                const { data: originalTx } = await admin
+                    .from("transactions")
+                    .select("category_id")
+                    .eq("account_id", account.id)
+                    .eq("type", "expense")
+                    .ilike("note", `%${originalName}%`)
+                    .order("booked_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                refundCategoryId = originalTx?.category_id || null;
+            }
+
             const categoryName = categoryNameByItemId[f.item.id];
             const category = (categories || []).find(
                 (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
@@ -429,7 +537,7 @@ export async function POST(request: Request) {
             const { data: transaction, error: txError } = await admin.rpc("create_finance_transaction_admin", {
                 p_user_id: connection.connected_by,
                 p_account_id: account.id,
-                p_category_id: category?.id || null,
+                p_category_id: refundCategoryId || category?.id || null,
                 p_type: type,
                 p_amount: Math.abs(amount),
                 p_currency: account.currency,

@@ -64,44 +64,226 @@ import {
   Train,
   Stethoscope,
   Cat,
+  Banknote,
+  CreditCard as CreditCardIcon,
+  ArrowLeftRight,
+  Repeat,
+  Zap,
+  Droplets,
+  Tv,
+  PartyPopper,
+  Pizza,
+  Beer,
+  Flower2,
+  Scissors,
+  Wrench,
+  ShieldCheck,
+  Globe,
+  Camera,
+  TrendingUp,
+  Coins,
+  Leaf,
+  Star,
+  Flame,
+  Package,
+  Map as LucideMap,
+  Mountain,
+  Glasses,
+  Dog,
+  Trophy,
+  Amphora,
+  Sofa,
+  Sandwich,
+  IceCream2,
+  Wine,
+  Syringe,
+  HeartHandshake,
+  Dice5,
+  Volleyball,
+  Brush,
+  Lamp,
+  Bed,
+  ShowerHead,
+  Ham,
+  Candy,
+  Apple,
+  Fish,
 } from "lucide-react";
 import { PasskeyButton } from "./components/passkey-button";
+// Explicit alias for the built-in Map to avoid Turbopack shadowing it with the Lucide "Map" icon
+const NativeMap = globalThis.Map;
 const APP_VERSION = "2026.08.06-2";
 
 // Фиксированный набор иконок для лимитов — вынесен в конфиг, чтобы можно было
 // расширять без правки логики компонентов.
 const BUDGET_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
+  // Гроші та фінанси
   CircleDollarSign,
+  Banknote,
+  Wallet,
+  CreditCard: CreditCardIcon,
+  TrendingUp,
+  Coins,
+  // Покупки та їжа
   ShoppingCart,
   ShoppingBag,
-  Coffee,
-  Bus,
-  Car,
-  Fuel,
-  House,
-  HeartPulse,
-  Gamepad2,
-  Shirt,
-  Plane,
-  Dumbbell,
-  Wifi,
-  GraduationCap,
-  Gift,
-  PawPrint,
-  Smartphone,
-  Wallet,
   Utensils,
-  Sparkles,
-  Music,
-  BookOpen,
-  Baby,
-  Palette,
+  Coffee,
+  Pizza,
+  Beer,
+  Sandwich,
+  IceCream2,
+  Wine,
+  Ham,
+  Candy,
+  Apple,
+  Fish,
+  // Транспорт
+  Car,
+  Bus,
   Bike,
   Train,
+  Plane,
+  Fuel,
+  // Дім та побут
+  House,
+  Sofa,
+  Lamp,
+  Bed,
+  ShowerHead,
+  Wrench,
+  Zap,
+  Droplets,
+  Tv,
+  // Здоров'я та краса
+  HeartPulse,
   Stethoscope,
+  Syringe,
+  Flower2,
+  Scissors,
+  // Розваги та хобі
+  Gamepad2,
+  Music,
+  Camera,
+  Dice5,
+  Volleyball,
+  Trophy,
+  Mountain,
+  Map: LucideMap,
+  Amphora,
+  // Одяг та стиль
+  Shirt,
+  Glasses,
+  // Навчання та розвиток
+  GraduationCap,
+  BookOpen,
+  // Тварини
+  PawPrint,
   Cat,
+  Dog,
+  // Подарунки та свята
+  Gift,
+  PartyPopper,
+  Star,
+  // Технології
+  Smartphone,
+  Wifi,
+  Globe,
+  // Дитячі
+  Baby,
+  // Творчість
+  Palette,
+  Brush,
+  // Банк / розстрочка
+  Landmark,
+  // Ремонт / майстерня
+  Wrench,
+  Scissors,
+  // Здоровʼя / страхування
+  ShieldCheck,
+  // Переказ / повторювані
+  ArrowLeftRight,
+  Repeat,
+  // Посилки / доставка
+  Package,
+  // Благодійність / взаємодопомога
+  HeartHandshake,
+  // Природа / еко
+  Leaf,
+  Flame,
+  // Спарклз / бʼюті
+  Sparkles,
 };
 const BUDGET_ICON_NAMES = Object.keys(BUDGET_ICONS);
+
+// Автоматично підбирає іконку по ключових словах в назві транзакції або категорії
+function guessIconFromTitle(title: string): string {
+  const t = title.toLowerCase();
+  // Їжа та напої
+  if (/атб|сільпо|новус|варус|ашан|metro|продукт|billa|пятірочка|fozzy|супермаркет|grocery/.test(t)) return "ShoppingCart";
+  if (/кафе|ресторан|cafe|restaurant|mcdonald|kfc|burger|піца|pizza|суші|sushi|їжа|food|фастфуд/.test(t)) return "Utensils";
+  if (/кава|кофе|coffee|starbucks|сoffee|латте|капучіно/.test(t)) return "Coffee";
+  if (/бар|паб|пиво|beer|алкоголь|вино|wine/.test(t)) return "Beer";
+  if (/морозив|ice.?cream/.test(t)) return "IceCream2";
+  // Транспорт
+  if (/uber|bolt|uklon|таксі|taxi/.test(t)) return "Car";
+  if (/метро|автобус|тролей|маршрутка|укрзалізниц|поїзд|train|bus/.test(t)) return "Bus";
+  if (/аеропорт|авіа|ryanair|wizz|mau|kiyavia|flight|airline/.test(t)) return "Plane";
+  if (/пальне|wog|okko|upg|соcar|автозаправ|fuel|gas.?station/.test(t)) return "Fuel";
+  if (/велосипед|bike/.test(t)) return "Bike";
+  // Зв'язок і техно
+  if (/київстар|vodafone|lifecell|мобільн|поповнення|поповн|phone|mobile/.test(t)) return "Smartphone";
+  if (/інтернет|wi-?fi|провайдер|broadband|internet/.test(t)) return "Wifi";
+  if (/netflix|spotify|youtube|apple.*sub|google.*pay|підписк|subscription/.test(t)) return "Repeat";
+  if (/apple|iphone|samsung|xiaomi|техніка|електрон/.test(t)) return "Smartphone";
+  // Комунальні
+  if (/комунальн|квартплат|газ|водопостач|водовідвед/.test(t)) return "Droplets";
+  if (/електр|enerh|light/.test(t)) return "Zap";
+  if (/телебач|tv|кабельн/.test(t)) return "Tv";
+  // Здоров'я
+  if (/аптек|pharmacy|ліки|лікар|клінік|лікуван|hospital|medical|стоматол|dentist/.test(t)) return "Stethoscope";
+  if (/вакцин|укол|syringe/.test(t)) return "Syringe";
+  if (/спортзал|gym|фітнес|fitness|тренажер/.test(t)) return "Dumbbell";
+  // Краса та догляд
+  if (/салон|перукарн|beauty|манікюр|педикюр|косметик|barbershop/.test(t)) return "Scissors";
+  if (/квіт|flower/.test(t)) return "Flower2";
+  // Одяг
+  if (/zara|h&m|lcwaikiki|одяг|взуття|fashion|cloth|shoes/.test(t)) return "Shirt";
+  // Дім
+  if (/ikea|епіцентр|leroy|нова лін|меблі|ремонт|буд\.матер/.test(t)) return "House";
+  if (/comfy|eldorado|rozetka|побутов/.test(t)) return "Sofa";
+  // Освіта
+  if (/курс|школа|університет|навчан|освіта|udemy|coursera|study/.test(t)) return "GraduationCap";
+  if (/книг|book/.test(t)) return "BookOpen";
+  // Розваги та дозвілля
+  if (/кіно|cinema|театр|concert|концерт|event|квиток|ticket/.test(t)) return "PartyPopper";
+  if (/steam|playstation|xbox|game|ігор/.test(t)) return "Gamepad2";
+  if (/музик|spotify|music/.test(t)) return "Music";
+  if (/фото|camera|photo/.test(t)) return "Camera";
+  if (/sport|спорт/.test(t)) return "Volleyball";
+  // Подорожі
+  if (/готел|hotel|airbnb|booking|hostel/.test(t)) return "Bed";
+  if (/тур|travel|подорож/.test(t)) return "Map";
+  // Фінанси
+  if (/зарплат|salary|аванс/.test(t)) return "Banknote";
+  if (/кешбек|cashback/.test(t)) return "Coins";
+  if (/розстрочк|installment|частин/.test(t)) return "Landmark";
+  if (/кредит|позик|loan/.test(t)) return "CreditCard";
+  if (/страхув|insurance/.test(t)) return "ShieldCheck";
+  if (/інвест|invest|акці|фонд/.test(t)) return "TrendingUp";
+  // Переказ
+  if (/переказ|transfer/.test(t)) return "ArrowLeftRight";
+  // Доставка
+  if (/нова пошта|nova poshta|meest|delivery|доставк|посилк/.test(t)) return "Package";
+  // Тварини
+  if (/вет|ветерин|зоомаг|pet|кіт|cat|собак|dog/.test(t)) return "PawPrint";
+  // Дитячі
+  if (/дит|baby|іграшк|toy/.test(t)) return "Baby";
+  // Благодійність
+  if (/благодій|донат|charity|волонтер/.test(t)) return "HeartHandshake";
+  return "CircleDollarSign";
+}
+
 function BudgetIcon({ name, size }: { name?: string; size?: number }) {
   const Icon = (name && BUDGET_ICONS[name]) || CircleDollarSign;
   return <Icon size={size} />;
@@ -146,6 +328,8 @@ type Transaction = {
   baseAmount?: number;
   impulse?: boolean;
   kind?: string;
+  categoryId?: string;
+  transferToAccount?: string;
 };
 type Account = {
   id: number | string;
@@ -342,7 +526,7 @@ function mergeTransferPairs(
         const transfer = byFromId.get(String(t.id));
         if (!transfer) return t;
         const toLeg = transfer.toTransactionId ? byId.get(String(transfer.toTransactionId)) : undefined;
-        return { ...t, title: `Переказ: ${t.account || "Рахунок"} → ${toLeg?.account || "Рахунок"}` };
+        return { ...t, title: `${t.account || "Рахунок"} → ${toLeg?.account || "Рахунок"}` };
       });
 }
 function saveOfflineQueue(queue: OfflineQueueItem[]) {
@@ -450,6 +634,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [syncing, setSyncing] = useState(initialLoggedIn);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(!initialLoggedIn);
   const [goals, setGoals] = useState<GoalItem[]>(initialLoggedIn ? [] : seedGoals);
+
   useEffect(() => {
     goals.forEach((goal) => {
       const percent = Math.min(100, Math.round((goal.current / Math.max(1, goal.target)) * 100));
@@ -468,6 +653,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       }
     });
   }, [goals]);
+
   const [debts, setDebts] = useState<DebtItem[]>([]);
   const [recurring, setRecurring] = useState<RecurringItem[]>([]);
   const [transfers, setTransfers] = useState<
@@ -475,6 +661,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         id: string;
         fromTransactionId: string | null;
         toTransactionId: string | null;
+        fromAccountId: string | null;
+        toAccountId: string | null;
         feeAmount: number;
         feeCurrency: string;
         bookedAt: string;
@@ -512,6 +700,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   } | null>(null);
   const [transferPresetTo, setTransferPresetTo] = useState<string | undefined>(undefined);
   const [topProfile, setTopProfile] = useState<{ name: string; email: string } | null>(null);
+
   useEffect(() => {
     if (!initialLoggedIn) return;
     fetch("/api/settings", { cache: "no-store" })
@@ -580,10 +769,12 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       window.removeEventListener("offline", goOffline);
     };
   }, []);
+
   function notify(message: string) {
     setToast(message);
     window.setTimeout(() => setToast(""), 2200);
   }
+
   async function syncOfflineQueue() {
     const queue = getOfflineQueue();
     if (!queue.length) return;
@@ -607,6 +798,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       await refreshFinance();
     }
   }
+
   async function refreshFinance(light = false) {
     if (!initialLoggedIn) return;
     setSyncing(true);
@@ -645,7 +837,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           category: "Кредитний ліміт",
           date: new Intl.DateTimeFormat("uk-UA", {
             dateStyle: "medium",
-            timeStyle: "short",
           }).format(new Date(String(item.changed_at))),
           bookedAt: String(item.changed_at),
           account: String((item.accounts as { name?: string } | null)?.name || ""),
@@ -669,9 +860,11 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                       : String(
                           (item.categories as { name?: string } | null)?.name || "Без категорії",
                       ),
+                  categoryId: isTransferLeg
+                      ? ""
+                      : String((item.categories as { id?: string } | null)?.id || item.category_id || ""),
                   date: new Intl.DateTimeFormat("uk-UA", {
                     dateStyle: "medium",
-                    timeStyle: "short",
                   }).format(new Date(String(item.booked_at))),
                   bookedAt: String(item.booked_at),
                   account: String((item.accounts as { name?: string } | null)?.name || ""),
@@ -735,6 +928,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             id: String(item.id),
             fromTransactionId: item.from_transaction_id ? String(item.from_transaction_id) : null,
             toTransactionId: item.to_transaction_id ? String(item.to_transaction_id) : null,
+            fromAccountId: item.from_account_id ? String(item.from_account_id) : null,
+            toAccountId: item.to_account_id ? String(item.to_account_id) : null,
             feeAmount: Number(item.fee_amount) || 0,
             feeCurrency: String(item.fee_currency || ""),
             bookedAt: String(item.booked_at || ""),
@@ -742,11 +937,11 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       );
       if (data.categories)
         setCategories(
-            (data.categories || []).map((item: Record<string, unknown>) => ({
+            (data.categories || []).map((item: Record<string, unknown>, idx: number) => ({
               id: String(item.id),
               name: String(item.name),
               kind: String(item.kind),
-              color: String(item.color || "#6558E8"),
+              color: String(item.color && item.color !== "#6558E8" ? item.color : BUDGET_COLORS[idx % BUDGET_COLORS.length]),
               icon: String(item.icon || "CircleDollarSign"),
               isDefault: Boolean(item.is_default),
               budgetGroup: (item.budget_group as "needs" | "wants" | "savings" | null) || null,
@@ -777,14 +972,14 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       if (data.baseCurrency) setBaseCurrency(String(data.baseCurrency));
       if (data.audit)
         setAudit(
-          (data.audit || []).map((item: Record<string, unknown>) => ({
-            id: String(item.id),
-            entity: String(item.entity_type),
-            action: String(item.action),
-            created: String(item.created_at),
-            actor: item.actor_id ? String(item.actor_id) : undefined,
-          })),
-      );
+            (data.audit || []).map((item: Record<string, unknown>) => ({
+              id: String(item.id),
+              entity: String(item.entity_type),
+              action: String(item.action),
+              created: String(item.created_at),
+              actor: item.actor_id ? String(item.actor_id) : undefined,
+            })),
+        );
       setRules(
           (data.rules || []).map((item: Record<string, unknown>) => ({
             id: String(item.id),
@@ -800,11 +995,11 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       if (data.exchangeRates)
         setCustomRates(
             (data.exchangeRates || []).map((item: Record<string, unknown>) => ({
-            currency: String(item.quote_currency),
-            rate: Number(item.custom_rate || item.official_rate),
-            date: String(item.rate_date),
-          })),
-      );
+              currency: String(item.quote_currency),
+              rate: Number(item.custom_rate || item.official_rate),
+              date: String(item.rate_date),
+            })),
+        );
     } catch (error) {
       notify(error instanceof Error ? error.message : "Помилка синхронізації");
     } finally {
@@ -812,28 +1007,29 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       setHasLoadedOnce(true);
     }
   }
-  // Refresh once when the authenticated application is mounted.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refreshFinance(), 0);
     return () => window.clearTimeout(timer);
   }, [initialLoggedIn]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     localStorage.setItem("rivna-theme", dark ? "dark" : "light");
   }, [dark]);
+
   useEffect(() => {
     if (skin === "default") delete document.documentElement.dataset.skin;
     else document.documentElement.dataset.skin = skin;
     localStorage.setItem("rivna-skin", skin);
   }, [skin]);
+
   useEffect(() => {
     if (cardStyle === "default") delete document.documentElement.dataset.cardstyle;
     else document.documentElement.dataset.cardstyle = cardStyle;
     localStorage.setItem("rivna-cardstyle", cardStyle);
   }, [cardStyle]);
-  useEffect(() => {
-  }, [budgetRollover]);
+
   useEffect(() => {
     fetch("/api/exchange-rates")
         .then((r) => (r.ok ? r.json() : null))
@@ -842,13 +1038,15 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         })
         .catch(() => {});
   }, []);
+
   const orderedAccounts = useMemo(() => {
     if (!accountOrder.length) return accounts;
-    const byId = new Map(accounts.map((a) => [String(a.id), a]));
+    const byId = new NativeMap(accounts.map((a) => [String(a.id), a]));
     const ordered = accountOrder.map((id) => byId.get(id)).filter(Boolean) as Account[];
     const rest = accounts.filter((a) => !accountOrder.includes(String(a.id)));
     return [...ordered, ...rest];
   }, [accounts, accountOrder]);
+
   function reorderAccounts(draggedId: string, targetId: string) {
     const ids = orderedAccounts.map((a) => String(a.id));
     const from = ids.indexOf(draggedId),
@@ -860,6 +1058,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     setAccountOrder(next);
     localStorage.setItem("rivna-account-order", JSON.stringify(next));
   }
+
   const balance = useMemo(
       () =>
           accounts.reduce(
@@ -872,6 +1071,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           ),
       [accounts, rates, customRates, baseCurrency],
   );
+
   const monthlyFees = useMemo(() => {
     const now = new Date();
     return transfers
@@ -889,6 +1089,23 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             0,
         );
   }, [transfers, rates, customRates, baseCurrency]);
+
+  const filteredTransactions = useMemo(() => {
+    // Always return raw (both transfer legs present).
+    // TransactionsView handles merging when no account filter is active.
+    let list = transactions;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+          (t) =>
+              t.title.toLowerCase().includes(q) ||
+              t.category.toLowerCase().includes(q) ||
+              (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(q))),
+      );
+    }
+    return list;
+  }, [transactions, search]);
+
   const plannedMonthlyIncome = useMemo(
       () =>
           recurring
@@ -919,9 +1136,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 conversionRate(baseCurrency, rates, customRates),
           })),
       [transactions, rates, customRates, baseCurrency],
-  );
-  const filteredTransactions = transactions.filter((t) =>
-      `${t.title} ${t.category}`.toLowerCase().includes(search.toLowerCase()),
   );
   const [seenAlerts, setSeenAlerts] = useState<string[]>(() =>
       typeof window !== "undefined"
@@ -1181,280 +1395,320 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       setBusy(false);
     }
   }
-  async function removeAccount(id: number | string) {
-    if (initialLoggedIn) {
-      if (!window.confirm("Ви впевнені, що хочете видалити рахунок?")) return;
-      setBusy(true);
-      try {
-        const response = await fetch("/api/finance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "deleteAccount", id }),
-        });
-        const result = await response.json();
-        if (!response.ok) return notify(result.error || "Помилка видалення");
-        await refreshFinance();
-      } finally {
-        setBusy(false);
-      }
-    } else setAccounts(accounts.filter((a) => a.id !== id));
-    notify("Рахунок видалено");
-  }
-  async function removeTransaction(id: number | string) {
-    if (initialLoggedIn) {
-      setBusy(true);
-      try {
-        const response = await fetch("/api/finance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "deleteTransaction", id }),
-        });
-        const result = await response.json();
-        if (!response.ok) return notify(result.error || "Помилка видалення");
-        await refreshFinance();
-        notify("Операцію видалено");
-        return;
-      } finally {
-        setBusy(false);
-      }
-    }
-    async function updateTransaction(payload: Record<string, unknown>) {
-      if (await financeAction({ action: "updateTransaction", ...payload }, "Операцію оновлено"))
-        setEditingTransaction(null);
-    }
-    setTransactions(transactions.filter((t) => t.id !== id));
-    notify("Операцію видалено");
-  }
-  async function updateTransaction(payload: Record<string, unknown>) {
-    const contributeGoalId = payload.contributeGoalId as string | null;
-    const goalAmount = Number(payload.amount) || 0;
-    const cleanPayload = { ...payload };
-    delete cleanPayload.contributeGoalId;
-    const ok = await financeAction({ action: "updateTransaction", ...cleanPayload }, "Операцію оновлено");
-    if (ok) {
-      setEditingTransaction(null);
-      if (contributeGoalId && goalAmount > 0) {
-        await financeAction({ action: "contributeGoal", id: contributeGoalId, amount: goalAmount }, "Банку поповнено");
-      }
-    }
-  }
-  async function financeAction(payload: Record<string, unknown>, success: string) {
+async function removeAccount(id: number | string) {
+  if (initialLoggedIn) {
+    if (!window.confirm("Ви впевнені, що хочете видалити рахунок?")) return;
     setBusy(true);
     try {
-      if (!initialLoggedIn) {
-        const action = String(payload.action || ""),
-            id = String(payload.id || "");
-        if (action === "createGoal")
-          setGoals((items) => [
-            ...items,
-            {
-              id: `goal-${Date.now()}`,
-              name: String(payload.name || "Нова ціль"),
-              target: Number(payload.targetAmount),
-              current: Number(payload.currentAmount) || 0,
-              currency: String(payload.currency || "UAH"),
-              date: payload.targetDate ? String(payload.targetDate) : undefined,
-              color: "#6558E8",
-            },
-          ]);
-        else if (action === "updateGoal")
-          setGoals((items) =>
-              items.map((item) =>
-                  item.id === id
-                      ? {
-                        ...item,
-                        name: String(payload.name || item.name),
-                        target: Number(payload.targetAmount) || item.target,
-                        date: payload.targetDate ? String(payload.targetDate) : item.date,
-                      }
-                      : item,
-              ),
-          );
-        else if (action === "withdrawGoal")
-          setGoals((items) =>
-              items.map((item) =>
-                  item.id === id
-                      ? { ...item, current: Math.max(0, item.current - Number(payload.amount || 0)) }
-                      : item,
-              ),
-          );
-        else if (action === "breakGoal")
-          setGoals((items) => items.filter((item) => item.id !== id));
-        else if (action === "contributeGoal")
-          setGoals((items) =>
-              items.map((item) =>
-                  item.id === id
-                      ? {
-                        ...item,
-                        current: Math.min(item.target, item.current + Number(payload.amount || 0)),
-                      }
-                      : item,
-              ),
-          );
-        else if (action === "createDebt")
-          setDebts((items) => [
-            ...items,
-            {
-              id: `debt-${Date.now()}`,
-              person: String(payload.person || "Контакт"),
-              direction: payload.direction === "i_owe" ? "i_owe" : "owed_to_me",
-              amount: Number(payload.amount),
-              currency: String(payload.currency || "UAH"),
-              due: payload.dueDate ? String(payload.dueDate) : undefined,
-              note: String(payload.note || ""),
-            },
-          ]);
-        else if (action === "settleDebt")
-          setDebts((items) => items.filter((item) => item.id !== id));
-        else if (action === "createRecurring")
-          setRecurring((items) => [
-            ...items,
-            {
-              id: `rec-${Date.now()}`,
-              name: String(payload.name || "Платіж"),
-              amount: Number(payload.amount),
-              currency: String(payload.currency || "UAH"),
-              frequency: String(payload.frequency || "monthly"),
-              next: String(payload.nextRunAt),
-              auto: Boolean(payload.autoCreate),
-              kind: payload.kind === "income" ? "income" : "expense",
-            },
-          ]);
-        else if (action === "createBudget") {
-          const category = categories.find((item) => item.id === String(payload.categoryId));
-          if (!category) return false;
-          const next: BudgetItem = {
-            id: `budget-${Date.now()}`,
-            categoryId: category.id,
-            name: category.name,
-            icon: String(payload.icon || "CircleDollarSign"),
-            limit: Number(payload.limitAmount),
-            currency: String(payload.currency || "UAH"),
-            month: String(payload.month),
-            period: payload.periodType === "week" ? "week" : "month",
-            color: String(payload.color || "#6558e8"),
-          };
-          setSavedBudgets((items) => [
-            ...items.filter(
-                (item) =>
-                    !(
-                        item.categoryId === next.categoryId &&
-                        item.month === next.month &&
-                        item.period === next.period
-                    ),
-            ),
-            next,
-          ]);
-        } else if (action === "createCategory")
-          setCategories((items) => [
-            ...items,
-            {
-              id: `cat-${Date.now()}`,
-              name: String(payload.name || "Категорія"),
-              kind: String(payload.kind || "expense"),
-              color: String(payload.color || "#6558E8"),
-              icon: String(payload.icon || "CircleDollarSign"),
-              budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
-            },
-          ]);
-        else if (action === "updateCategory")
-          setCategories((items) =>
-              items.map((item) =>
-                  item.id === id
-                      ? {
-                        ...item,
-                        name: String(payload.name || item.name),
-                        color: String(payload.color || item.color),
-                        icon: String(payload.icon || item.icon),
-                        budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
-                      }
-                      : item,
-              ),
-          );
-        else if (action === "deleteCategory")
-          setCategories((items) => items.filter((item) => item.id !== id));
-        else if (action === "deleteBudget")
-          setSavedBudgets((items) => items.filter((item) => item.id !== id));
-        else if (action === "createCustomRate")
-          setCustomRates((items) => [
-            {
-              currency: String(payload.quoteCurrency || "USD"),
-              rate: Number(payload.rate),
-              date: String(payload.date || new Date().toISOString().slice(0, 10)),
-            },
-            ...items.filter((item) => item.currency !== String(payload.quoteCurrency)),
-          ]);
-        else if (action === "createTransfer") {
-          const from = String(payload.fromAccountId),
-              to = String(payload.toAccountId),
-              sent = Number(payload.sentAmount),
-              received = Number(payload.receivedAmount),
-              fee = Number(payload.feeAmount) || 0;
-          if (from === to) {
-            notify("Оберіть різні рахунки");
-            return false;
-          }
-          setAccounts((items) =>
-              items.map((item) =>
-                  String(item.id) === from
-                      ? {
-                        ...item,
-                        balance:
-                            item.balance -
-                            sent -
-                            (String(payload.feeCurrency) === item.currency ? fee : 0),
-                      }
-                      : String(item.id) === to
-                          ? {
-                            ...item,
-                            balance:
-                                item.balance +
-                                received -
-                                (String(payload.feeCurrency) === item.currency ? fee : 0),
-                          }
-                          : item,
-              ),
-          );
-        } else if (action === "updateAccount")
-          setAccounts((items) =>
-              items.map((item) =>
-                  String(item.id) === id
-                      ? {
-                        ...item,
-                        name: String(payload.name || item.name),
-                        bank: String(payload.bank || item.bank),
-                        owner: String(payload.owner || item.owner),
-                        currency: String(payload.currency || item.currency),
-                        balance: Number(payload.balance) || 0,
-                        creditLimit: Number(payload.creditLimit) || 0,
-                        graceEnd: payload.graceEnd ? String(payload.graceEnd) : undefined,
-                        graceBalance: payload.graceBalance ? Number(payload.graceBalance) : undefined,
-                        color: payload.cardColor ? String(payload.cardColor) : item.color,
-                      }
-                      : item,
-              ),
-          );
-        else return false;
-        notify(success);
-        return true;
-      }
       const response = await fetch("/api/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ action: "deleteAccount", id }),
       });
       const result = await response.json();
-      if (!response.ok) {
-        notify(result.error || "Помилка збереження");
-        return false;
-      }
-      notify(success);
+      if (!response.ok) return notify(result.error || "Помилка видалення");
       await refreshFinance();
-      return true;
+      notify("Рахунок видалено");
+    } finally {
+      setBusy(false);
+    }
+  } else {
+    setAccounts((accounts) => accounts.filter((a) => a.id !== id));
+    notify("Рахунок видалено");
+  }
+}
+
+async function removeTransaction(id: number | string) {
+  if (initialLoggedIn) {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/finance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "deleteTransaction", id }),
+      });
+      const result = await response.json();
+      if (!response.ok) return notify(result.error || "Помилка видалення");
+      await refreshFinance();
+      notify("Операцію видалено");
+      return;
     } finally {
       setBusy(false);
     }
   }
+
+  setTransactions((transactions) => transactions.filter((t) => t.id !== id));
+  notify("Операцію видалено");
+}
+
+async function updateTransaction(payload: Record<string, unknown>) {
+  const contributeGoalId = payload.contributeGoalId as string | null;
+  const goalAmount = Number(payload.amount) || 0;
+  const editedTx = transactions.find((t) => String(t.id) === String(payload.id));
+
+  // Конвертація витрати → переказ: видалити витрату та створити новий переказ
+  if (payload.isTransfer && payload.transferToAccountId && editedTx?.kind !== "transfer" && editedTx?.kind !== "exchange") {
+    const deleted = await financeAction({ action: "deleteTransaction", id: payload.id }, "");
+    if (!deleted) return;
+    const fromAccount = accounts.find((a) => String(a.id) === String(payload.accountId));
+    const sent = Math.abs(Number(payload.amount));
+    const ok = await financeAction({
+      action: "createTransfer",
+      fromAccountId: payload.accountId,
+      toAccountId: payload.transferToAccountId,
+      sentAmount: sent,
+      receivedAmount: sent,
+      exchangeRate: 1,
+      feeAmount: 0,
+      feeCurrency: fromAccount?.currency || "UAH",
+      note: String(payload.note || ""),
+      bookedAt: payload.bookedAt,
+      creditLimitDelta: payload.reduceCreditLimit ? sent : 0,
+    }, "Операцію перетворено на переказ");
+    if (ok) setEditingTransaction(null);
+    return;
+  }
+
+  const cleanPayload = { ...payload };
+  delete cleanPayload.contributeGoalId;
+
+  const ok = await financeAction({ action: "updateTransaction", ...cleanPayload }, "Операцію оновлено");
+  if (ok) {
+    setEditingTransaction(null);
+    if (contributeGoalId && goalAmount > 0) {
+      await financeAction(
+          { action: "contributeGoal", id: contributeGoalId, amount: goalAmount },
+          "Банку поповнено"
+      );
+    }
+  }
+}
+
+async function financeAction(
+    payload: Record<string, unknown>,
+    success: string
+) {
+  setBusy(true);
+  try {
+    if (!initialLoggedIn) {
+      const action = String(payload.action || ""),
+          id = String(payload.id || "");
+
+      if (action === "createGoal")
+        setGoals((items) => [
+          ...items,
+          {
+            id: `goal-${Date.now()}`,
+            name: String(payload.name || "Нова ціль"),
+            target: Number(payload.targetAmount),
+            current: Number(payload.currentAmount) || 0,
+            currency: String(payload.currency || "UAH"),
+            date: payload.targetDate ? String(payload.targetDate) : undefined,
+            color: "#6558E8",
+          },
+        ]);
+      else if (action === "updateGoal")
+        setGoals((items) =>
+            items.map((item) =>
+                item.id === id
+                    ? {
+                      ...item,
+                      name: String(payload.name || item.name),
+                      target: Number(payload.targetAmount) || item.target,
+                      date: payload.targetDate ? String(payload.targetDate) : item.date,
+                    }
+                    : item,
+            ),
+        );
+      else if (action === "withdrawGoal")
+        setGoals((items) =>
+            items.map((item) =>
+                item.id === id
+                    ? { ...item, current: Math.max(0, item.current - Number(payload.amount || 0)) }
+                    : item,
+            ),
+        );
+      else if (action === "breakGoal")
+        setGoals((items) => items.filter((item) => item.id !== id));
+      else if (action === "contributeGoal")
+        setGoals((items) =>
+            items.map((item) =>
+                item.id === id
+                    ? {
+                      ...item,
+                      current: Math.min(item.target, item.current + Number(payload.amount || 0)),
+                    }
+                    : item,
+            ),
+        );
+      else if (action === "createDebt")
+        setDebts((items) => [
+          ...items,
+          {
+            id: `debt-${Date.now()}`,
+            person: String(payload.person || "Контакт"),
+            direction: payload.direction === "i_owe" ? "i_owe" : "owed_to_me",
+            amount: Number(payload.amount),
+            currency: String(payload.currency || "UAH"),
+            due: payload.dueDate ? String(payload.dueDate) : undefined,
+            note: String(payload.note || ""),
+          },
+        ]);
+      else if (action === "settleDebt")
+        setDebts((items) => items.filter((item) => item.id !== id));
+      else if (action === "createRecurring")
+        setRecurring((items) => [
+          ...items,
+          {
+            id: `rec-${Date.now()}`,
+            name: String(payload.name || "Платіж"),
+            amount: Number(payload.amount),
+            currency: String(payload.currency || "UAH"),
+            frequency: String(payload.frequency || "monthly"),
+            next: String(payload.nextRunAt),
+            auto: Boolean(payload.autoCreate),
+            kind: payload.kind === "income" ? "income" : "expense",
+          },
+        ]);
+      else if (action === "deleteRecurring")
+        setRecurring((items) => items.filter((item) => item.id !== id));
+      else if (action === "createBudget") {
+        const category = categories.find((item) => item.id === String(payload.categoryId));
+        if (!category) return false;
+        const next: BudgetItem = {
+          id: `budget-${Date.now()}`,
+          categoryId: category.id,
+          name: category.name,
+          icon: String(payload.icon || "CircleDollarSign"),
+          limit: Number(payload.limitAmount),
+          currency: String(payload.currency || "UAH"),
+          month: String(payload.month),
+          period: payload.periodType === "week" ? "week" : "month",
+          color: String(payload.color || "#6558e8"),
+        };
+        setSavedBudgets((items) => [
+          ...items.filter(
+              (item) =>
+                  !(
+                      item.categoryId === next.categoryId &&
+                      item.month === next.month &&
+                      item.period === next.period
+                  ),
+          ),
+          next,
+        ]);
+      } else if (action === "createCategory")
+        setCategories((items) => [
+          ...items,
+          {
+            id: `cat-${Date.now()}`,
+            name: String(payload.name || "Категорія"),
+            kind: String(payload.kind || "expense"),
+            color: String(payload.color || "#6558E8"),
+            icon: String(payload.icon || "CircleDollarSign"),
+            budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
+          },
+        ]);
+      else if (action === "updateCategory")
+        setCategories((items) =>
+            items.map((item) =>
+                item.id === id
+                    ? {
+                      ...item,
+                      name: String(payload.name || item.name),
+                      color: String(payload.color || item.color),
+                      icon: String(payload.icon || item.icon),
+                      budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
+                    }
+                    : item,
+            ),
+        );
+      else if (action === "deleteCategory")
+        setCategories((items) => items.filter((item) => item.id !== id));
+      else if (action === "deleteBudget")
+        setSavedBudgets((items) => items.filter((item) => item.id !== id));
+      else if (action === "createCustomRate")
+        setCustomRates((items) => [
+          {
+            currency: String(payload.quoteCurrency || "USD"),
+            rate: Number(payload.rate),
+            date: String(payload.date || new Date().toISOString().slice(0, 10)),
+          },
+          ...items.filter((item) => item.currency !== String(payload.quoteCurrency)),
+        ]);
+      else if (action === "createTransfer") {
+        const from = String(payload.fromAccountId),
+            to = String(payload.toAccountId),
+            sent = Number(payload.sentAmount),
+            received = Number(payload.receivedAmount),
+            fee = Number(payload.feeAmount) || 0;
+        if (from === to) {
+          notify("Оберіть різні рахунки");
+          return false;
+        }
+        setAccounts((items) =>
+            items.map((item) =>
+                String(item.id) === from
+                    ? {
+                      ...item,
+                      balance:
+                          item.balance -
+                          sent -
+                          (String(payload.feeCurrency) === item.currency ? fee : 0),
+                    }
+                    : String(item.id) === to
+                        ? {
+                          ...item,
+                          balance:
+                              item.balance +
+                              received -
+                              (String(payload.feeCurrency) === item.currency ? fee : 0),
+                        }
+                        : item,
+            ),
+        );
+      } else if (action === "updateAccount")
+        setAccounts((items) =>
+            items.map((item) =>
+                String(item.id) === id
+                    ? {
+                      ...item,
+                      name: String(payload.name || item.name),
+                      bank: String(payload.bank || item.bank),
+                      owner: String(payload.owner || item.owner),
+                      currency: String(payload.currency || item.currency),
+                      balance: Number(payload.balance) || 0,
+                      creditLimit: Number(payload.creditLimit) || 0,
+                      graceEnd: payload.graceEnd ? String(payload.graceEnd) : undefined,
+                      graceBalance: payload.graceBalance ? Number(payload.graceBalance) : undefined,
+                      color: payload.cardColor ? String(payload.cardColor) : item.color,
+                    }
+                    : item,
+            ),
+        );
+      else return false;
+
+      notify(success);
+      return true;
+    }
+
+    const response = await fetch("/api/finance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      notify(result.error || "Помилка збереження");
+      return false;
+    }
+    notify(success);
+    await refreshFinance();
+    return true;
+  } finally {
+    setBusy(false);
+  }
+}
   async function addGoal(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -1828,63 +2082,245 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     await (installPrompt as Event & { prompt: () => Promise<void> }).prompt();
     setInstallPrompt(null);
   }
+  function parseCsvLine(line: string): string[] {
+    const result: string[] = [];
+    let current = "", quoted = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { quoted = !quoted; }
+      else if ((ch === "," || ch === ";") && !quoted) { result.push(current.trim()); current = ""; }
+      else { current += ch; }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  function parsePayoneerDate(raw: string): string {
+    const s = raw.replace(/['"]/g, "").trim();
+    // Handle European thousands separator: "1.030.000.000" or plain number
+    // Strip all non-numeric except last decimal marker
+    const cleaned = s.replace(/\s/g, "");
+    // Try as Unix timestamp — Payoneer uses seconds since epoch
+    const num = Number(cleaned.replace(/,(?=\d{3})/g, "").replace(",", "."));
+    if (!isNaN(num) && num > 1_000_000_000 && num < 10_000_000_000) {
+      return new Date(num * 1000).toISOString();
+    }
+    // Try standard date string formats
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString();
+    return new Date().toISOString();
+  }
+
+  function guessPayoneerCategory(description: string, target: string): string {
+    const t = (target + " " + description).toLowerCase();
+    // Per project rules: Nova Poshta → Особисті
+    if (/nova.*poshta|novapay|нова пошта|meest|пошта/.test(t)) return "Особисті";
+    if (/silpo|сільпо|fora|форa|atb|атб|novus|варус|metro|auchan|avrora|авро|supermarket|продукт|grocery/.test(t)) return "Їжа";
+    if (/lifecell|life:\)|kyivstar|vodafone|мтс|easypay.*life|prtmn.*life|телеком/.test(t)) return "Зв'язок";
+    if (/anthropic|openai|claude|chatgpt|netflix|spotify|apple.*sub|google.*sub|digitalocean|paddle|github/.test(t)) return "Підписки";
+    if (/liqpay|portmone|easypay/.test(t)) return "Послуги";
+    if (/magazyn|maudau|маудау|multimarket|rozetka|розетка|market/.test(t)) return "Покупки";
+    if (/mi market|xiaomi|apple store|samsung|electronics/.test(t)) return "Електроніка";
+    // Per project rules: Payoneer/Wise/SWIFT → Переказ
+    if (/transfer.*bank|bank.*transfer|withdraw|payroll|payment.*service|marketplace|payout/.test(t)) return "Переказ";
+    if (/fee|commission|комісі/.test(t)) return "Комісія";
+    return "Інше";
+  }
+
   async function importCsv(file: File) {
     const excel = /\.xlsx?$/i.test(file.name);
-
-    if (initialLoggedIn) {
-      const response = await fetch(excel ? "/api/import/xlsx" : "/api/import/csv", {
-        method: "POST",
-        headers: {
-          "Content-Type": excel
-              ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              : "text/csv",
-        },
-        body: excel ? await file.arrayBuffer() : await file.text(),
-      });
-      const result = await response.json();
-      notify(
-          response.ok
-              ? `Імпортовано операцій: ${result.imported}`
-              : result.error || "Помилка імпорту",
-      );
-      if (response.ok) await refreshFinance();
-      return;
-    }
-    if (excel) return notify("Excel-імпорт доступний після входу");
-    const text = await file.text();
+    const defaultAccountId = String(accounts[0]?.id || "");
+    type RawRow = { title: string; amount: number; date: string; categoryName: string; currency?: string; isPayoneerTransfer?: boolean };
+    let rawRows: RawRow[] = [];
+    try {
+      if (excel) {
+        const XLSX = await import("xlsx");
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array", cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const allRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+        const header = (allRows[0] as string[]).map((h) => String(h).toLowerCase());
+        const isMonoXlsx = header.some((h) => h.includes("mcc") || h.includes("валюта") || h.includes("виписка"));
+        rawRows = (allRows.slice(1) as unknown[][]).map((row) => {
+          if (isMonoXlsx) {
+            const rawDate = row[0] instanceof Date ? row[0] : new Date(String(row[0]));
+            const amt = Number(String(row[3] ?? row[4] ?? "0").replace(/\s/g, "").replace(",", "."));
+            return { title: String(row[2] || row[1] || "Monobank"), amount: amt, date: rawDate.toISOString(), categoryName: String(row[1] || "") };
+          }
+          const amt = Number(String(row[3] ?? "0").replace(/\s/g, "").replace(",", "."));
+          const rawDate = row[2] instanceof Date ? row[2] : new Date(String(row[2]));
+          return { title: String(row[0] || "Імпорт"), amount: amt, date: Number.isNaN(rawDate.getTime()) ? new Date().toISOString() : rawDate.toISOString(), categoryName: String(row[1] || "") };
+        }).filter((r) => Number.isFinite(r.amount) && r.amount !== 0);
+      } else {
+        const text = await file.text();
     const lines = text
         .replace(/^\uFEFF/, "")
         .split(/\r?\n/)
         .filter(Boolean);
-    const header = lines[0]?.toLowerCase() || "";
-    const isMonobank = header.includes("mcc") || header.includes("сума в валюті картки");
-    const rows = lines.slice(1);
-    const imported = rows
-        .map((line, index) => {
-          const cells = line.split(",").map((v) => v.replace(/^"|"$/g, ""));
-          if (isMonobank) {
-            const value = Number((cells[4] || cells[3] || "0").replace(",", "."));
-            return {
-              id: Date.now() + index,
-              title: cells[2] || cells[1] || "Monobank",
-              category: "Без категорії",
-              date: cells[0] || "Імпортовано",
-              amount: value,
-            };
+        const lines3 = lines;
+        const hdr = lines3[0]?.toLowerCase() || "";
+        const isMonoCsv = hdr.includes("mcc") || hdr.includes("сума в валюті картки") || hdr.includes("опис операції");
+        const isPayoneerCsv = hdr.startsWith("time zone") || (hdr.includes("time zone") && hdr.includes("transaction date"));
+        if (isPayoneerCsv) {
+          // Payoneer Activity Report CSV
+          // Columns: 0=Time Zone, 1=Transaction Date (Unix ts), 2=Description, 3=Credit Amount,
+          //          4=Debit Amount, 5=Currency, 6-7=Transfer Amounts, 8=Status,
+          //          9=Additional, 10=Store Name, 11=Source, 12=Target, 13=Reference ID
+          rawRows = lines3.slice(1).flatMap((csvLine) => {
+            const cells = parseCsvLine(csvLine).map((v) => v.replace(/^"+|"+$/g, "").trim());
+            const status = (cells[8] || "").toLowerCase();
+            if (!status.includes("complet")) return []; // skip pending/failed
+            const creditAmt = Number((cells[3] || "0").replace(/\s/g, "").replace(",", "."));
+            const debitAmt  = Number((cells[4] || "0").replace(/\s/g, "").replace(",", "."));
+            const amount = creditAmt > 0 ? creditAmt : -Math.abs(debitAmt);
+            if (!Number.isFinite(amount) || amount === 0) return [];
+            const currency = (cells[5] || "USD").trim().toUpperCase();
+            const date = parsePayoneerDate(cells[1] || "");
+            const description = cells[2] || "";
+            // Extract merchant from "Card charge (MERCHANT NAME)" format
+            const merchantMatch = description.match(/\(([^)]+)\)/);
+            const target = cells[12] || cells[10] || "";
+            const merchantName = merchantMatch ? merchantMatch[1].trim() : target || description;
+            const categoryName = guessPayoneerCategory(description, merchantName);
+            const isPayoneerTransfer = /transfer.*bank|bank.*transfer|withdraw|to debit card/i.test(description);
+            return [{ title: merchantName, amount, date, categoryName, currency, isPayoneerTransfer }];
+          });
+        } else {
+          rawRows = lines3.slice(1).map((csvLine) => {
+            const cells = parseCsvLine(csvLine).map((v) => v.replace(/^"+|"+$/g, "").trim());
+            if (isMonoCsv) {
+              const amt = Number((cells[3] || cells[4] || "0").replace(/\s/g, "").replace(",", "."));
+              const d = new Date(cells[0] || "");
+              return { title: cells[1] || cells[2] || "Monobank", amount: amt, date: Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(), categoryName: "" };
+            }
+            const amt = Number((cells[3] || "0").replace(/\s/g, "").replace(",", "."));
+            const d = new Date(cells[2] || "");
+            return { title: cells[0] || "Імпорт", amount: amt, date: Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(), categoryName: cells[1] || "" };
+          }).filter((r) => Number.isFinite(r.amount) && r.amount !== 0);
+        }
+      }
+    } catch (err) {
+      return notify("Не вдалося прочитати файл: " + String(err));
+    }
+    if (!rawRows.length) return notify("Файл не містить операцій");
+
+    const existingKeys = new Set(
+      transactions.filter((t) => t.bookedAt).map((t) =>
+        `${t.bookedAt!.slice(0, 10)}|${Math.abs(t.amount).toFixed(2)}|${(t.currency || "UAH").toUpperCase()}`
+      )
+    );
+    const now = Date.now();
+    let previewRows: ImportPreviewRow[] = rawRows.map((r, i) => {
+      const cur = (r.currency || "UAH").toUpperCase();
+      const key = `${r.date.slice(0, 10)}|${Math.abs(r.amount).toFixed(2)}|${cur}`;
+      const isDuplicate = existingKeys.has(key);
+      return {
+        id: `import-${now}-${i}`,
+        title: r.title, amount: r.amount, date: r.date, categoryName: r.categoryName,
+        isDuplicate, selected: !isDuplicate,
+        currency: r.currency,
+        isPayoneerTransfer: r.isPayoneerTransfer,
+      };
+    });
+    // For Payoneer withdrawal rows: try to match a deposit on a USD account to compute fee
+    // Then insert a separate fee preview row right after each matched withdrawal
+    const withFees: ImportPreviewRow[] = [];
+    for (const row of previewRows) {
+      if (row.isPayoneerTransfer && row.amount < 0) {
+        const withdrawalAmt = Math.abs(row.amount);
+        const withdrawalTime = new Date(row.date).getTime();
+        const matched = transactions.find((t) => {
+          if (!t.bookedAt || t.amount <= 0) return false;
+          const isUsd = t.currency === "USD" ||
+            t.account?.toLowerCase().includes("usd") ||
+            t.account?.toLowerCase().includes("долар");
+          if (!isUsd) return false;
+          const timeDiff = Math.abs(new Date(t.bookedAt).getTime() - withdrawalTime);
+          if (timeDiff > 7 * 24 * 3600 * 1000) return false; // within 7 days
+          const amtRatio = Math.abs(t.amount - withdrawalAmt) / withdrawalAmt;
+          return amtRatio < 0.15; // within 15% (Payoneer fee ~1–3%)
+        });
+        if (matched) {
+          const fee = parseFloat((withdrawalAmt - matched.amount).toFixed(2));
+          if (fee > 0) {
+            const updatedRow: ImportPreviewRow = { ...row, matchedTxId: matched.id, matchedTxAmount: matched.amount, matchedTxAccount: matched.account, fee };
+            withFees.push(updatedRow);
+            // Fee row — separate preview entry so dedup works on re-import
+            const feeKey = `${row.date.slice(0, 10)}|${fee.toFixed(2)}|USD`;
+            const feeIsDup = existingKeys.has(feeKey);
+            withFees.push({
+              id: `${row.id}-fee`,
+              title: `Комісія Payoneer (${row.title})`,
+              amount: -fee,
+              date: row.date,
+              categoryName: "Комісія",
+              isDuplicate: feeIsDup,
+              selected: !feeIsDup,
+              currency: "USD",
+            });
+            continue;
           }
-          const value = Number((cells[3] || "0").replace(",", "."));
-          return {
-            id: Date.now() + index,
-            title: cells[0] || "Імпорт",
-            category: cells[1] || "Інше",
-            date: cells[2] || "Імпортовано",
-            amount: value,
-          };
-        })
-        .filter((item) => Number.isFinite(item.amount) && item.amount !== 0);
-    setTransactions([...imported, ...transactions]);
-    notify(`Імпортовано операцій: ${imported.length}`);
+        }
+      }
+      withFees.push(row);
+    }
+    setImportPreview({ rows: withFees, accountId: defaultAccountId });
   }
+
+  async function confirmImport(rows: ImportPreviewRow[], accountId: string) {
+    if (!initialLoggedIn) {
+      const imported = rows.map((r, i) => ({
+        id: Date.now() + i, title: r.title, category: r.categoryName || "Без категорії",
+        date: new Intl.DateTimeFormat("uk-UA", { dateStyle: "medium" }).format(new Date(r.date)),
+        bookedAt: r.date, amount: r.amount, kind: r.amount >= 0 ? "income" : "expense",
+      }));
+      setTransactions((prev) => [...(imported as unknown as Transaction[]), ...prev]);
+      notify(`Додано операцій: ${imported.length}`);
+      setImportPreview(null);
+      return;
+    }
+    const catMap = new NativeMap(categories.map((c) => [c.name.toLowerCase(), c.id]));
+    // Fee rows are already included as regular rows in the preview (with categoryName="Комісія")
+    const apiRows = rows.map((r) => ({
+      note: r.title, amount: Math.abs(r.amount),
+      type: r.amount >= 0 ? "income" : "expense",
+      booked_at: r.date,
+      category_id: catMap.get(r.categoryName.toLowerCase()) || null,
+    }));
+    setBusy(true);
+    try {
+      const res = await fetch("/api/import/rows", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId, rows: apiRows }),
+      });
+      const result = await res.json();
+      if (!res.ok) { notify(result.error || "Помилка імпорту"); return; }
+      notify(`Додано операцій: ${result.imported}`);
+      setImportPreview(null);
+      await refreshFinance();
+    } finally { setBusy(false); }
+  }
+  // --- Import preview ---
+  type ImportPreviewRow = {
+    id: string;
+    title: string;
+    amount: number; // signed: negative = expense
+    date: string;   // ISO
+    categoryName: string;
+    isDuplicate: boolean;
+    selected: boolean;
+    currency?: string;              // e.g. "USD" for Payoneer
+    isPayoneerTransfer?: boolean;   // withdrawal to bank card
+    matchedTxId?: string | number;  // matched deposit transaction ID
+    matchedTxAmount?: number;       // matched deposit amount
+    matchedTxAccount?: string;      // matched deposit account name
+    fee?: number;                   // calculated fee (withdrawal - received)
+  };
+  const [importPreview, setImportPreview] = useState<{
+    rows: ImportPreviewRow[];
+    accountId: string;
+  } | null>(null);
+
   const [scanning, setScanning] = useState(false);
   const [scanItems, setScanItems] = useState<
       {
@@ -1896,7 +2332,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         type: "income" | "expense";
       }[]
   >([]);
-  const [monoResyncDays, setMonoResyncDays] = useState(31);
   const [monoToken, setMonoToken] = useState("");
   const [monoAccounts, setMonoAccounts] = useState<
       {
@@ -2325,6 +2760,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   scanReceipt={scanReceipt}
                   scanning={scanning}
                   transfers={transfers}
+                  categories={categories}
               />
           )}{" "}
           {page === "Бюджет" &&
@@ -2537,6 +2973,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 </label>
               </section>
           )}
+          {page === "Налаштування" && initialLoggedIn && (
+              <RecategorizePanel notify={notify} />
+          )}
           {page === "Налаштування" && (
               <GuideFeedback notify={notify} authenticated={initialLoggedIn} />
           )}
@@ -2593,6 +3032,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 budgets={savedBudgets}
                 transactions={transactions}
                 submit={addExpense}
+                submitTransfer={addTransfer}
                 close={() => setModal(null)}
             />
         )}
@@ -2651,26 +3091,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             />
         )}
         {modal === "split" && <SplitBillModal submit={splitBill} close={() => setModal(null)} />}
-        {modal === "purchase-sim" && (
-            <BigPurchaseSimulator
-                balance={balance}
-                recurring={recurring}
-                rates={rates}
-                customRates={customRates}
-                baseCurrency={baseCurrency}
-                close={() => setModal(null)}
-            />
-        )}
-        {modal === "purchase-sim" && (
-            <BigPurchaseSimulator
-                balance={balance}
-                recurring={recurring}
-                rates={rates}
-                customRates={customRates}
-                baseCurrency={baseCurrency}
-                close={() => setModal(null)}
-            />
-        )}
         {modal === "purchase-sim" && (
             <BigPurchaseSimulator
                 balance={balance}
@@ -2787,6 +3207,14 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         )}
         {modal === "invite" && <InviteModal submit={createInvite} close={() => setModal(null)} />}
         {modal === "rate" && <CustomRateModal submit={addCustomRate} close={() => setModal(null)} />}
+        {importPreview && (
+          <ImportPreviewModal
+            preview={importPreview}
+            accounts={accounts}
+            onConfirm={confirmImport}
+            onClose={() => setImportPreview(null)}
+          />
+        )}
         {toast && <div className="toast">{toast}</div>}
         {busy && (
             <div className="busy-overlay">
@@ -3435,6 +3863,7 @@ function TransactionsView({
                             scanReceipt,
                             scanning,
                             transfers,
+                            categories,
                           }: {
   transactions: Transaction[];
   search: string;
@@ -3448,18 +3877,13 @@ function TransactionsView({
   scanReceipt: (file: File) => void;
   scanning: boolean;
   transfers: { id: string; fromTransactionId: string | null; toTransactionId: string | null }[];
+  categories: CategoryItem[];
 }) {
   const [account,setAccount]=useState("");const [category,setCategory]=useState("");const [owner,setOwner]=useState("");const [tag,setTag]=useState("");const [from,setFrom]=useState("");const [to,setTo]=useState("");
   const [minAmount,setMinAmount]=useState("");const [maxAmount,setMaxAmount]=useState("");
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("rivna-tx-order") || "[]");
-    } catch {
-      return [];
-    }
-  });
+  const [manualOrder, setManualOrder] = useState<(string | number)[]>([]);
   function toISO(d:Date){return d.toISOString().slice(0,10)}
   function applyPreset(preset:string){
     const now=new Date();
@@ -3488,7 +3912,7 @@ function TransactionsView({
     ids.splice(from, 1);
     ids.splice(to, 0, draggedId);
     setManualOrder(ids);
-    localStorage.setItem("rivna-tx-order", JSON.stringify(ids));
+    localStorage.removeItem("rivna-tx-order");
   }
   const [sortField, setSortField] = useState<"date" | "amount" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -3504,24 +3928,50 @@ function TransactionsView({
   }, [initialAccount]);
   const unique = (values: (string | undefined)[]) =>
       Array.from(new Set(values.filter(Boolean) as string[])).sort();
-  const merged=mergeTransferPairs(transactions, transfers);
-  const filtered=merged.filter(t=>(!account||t.account===account)&&(!category||t.category===category)&&(!owner||t.owner===owner)&&(!tag||t.tags?.includes(tag))&&(!from||!t.bookedAt||t.bookedAt>=`${from}T00:00:00`)&&(!to||!t.bookedAt||t.bookedAt<=`${to}T23:59:59`)&&(!minAmount||Math.abs(t.amount)>=Number(minAmount))&&(!maxAmount||Math.abs(t.amount)<=Number(maxAmount)));
+  // When account filter is active: show both transfer legs filtered by account.
+  // When no account filter: merge transfer pairs into one row.
+  const base: Transaction[] = account
+    ? (() => {
+        const txById = new NativeMap(transactions.map((t) => [String(t.id), t]));
+        const fromIdToTr = new NativeMap(transfers.filter((tr) => tr.fromTransactionId).map((tr) => [String(tr.fromTransactionId), tr]));
+        const toIdToTr = new NativeMap(transfers.filter((tr) => tr.toTransactionId).map((tr) => [String(tr.toTransactionId), tr]));
+        return transactions
+          .filter((t) => t.account === account)
+          .map((t) => {
+            // Check by transfer table membership, not just kind
+            const fromTr = fromIdToTr.get(String(t.id));
+            if (fromTr) {
+              const toLeg = fromTr.toTransactionId ? txById.get(String(fromTr.toTransactionId)) : undefined;
+              const dest = toLeg?.account || "Рахунок";
+              return { ...t, title: `${t.account} → ${dest}`, transferToAccount: dest };
+            }
+            const toTr = toIdToTr.get(String(t.id));
+            if (toTr) {
+              const fromLeg = toTr.fromTransactionId ? txById.get(String(toTr.fromTransactionId)) : undefined;
+              const src = fromLeg?.account || "Рахунок";
+              return { ...t, title: `${src} → ${t.account}`, transferToAccount: src };
+            }
+            return t;
+          });
+      })()
+    : mergeTransferPairs(transactions, transfers);
+  const filtered=base.filter(t=>(!category||t.category===category)&&(!owner||t.owner===owner)&&(!tag||t.tags?.includes(tag))&&(!from||!t.bookedAt||t.bookedAt>=`${from}T00:00:00`)&&(!to||!t.bookedAt||t.bookedAt<=`${to}T23:59:59`)&&(!minAmount||Math.abs(t.amount)>=Number(minAmount))&&(!maxAmount||Math.abs(t.amount)<=Number(maxAmount)));
   const shown = sortField
       ? [...filtered].sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
         if (sortField === "amount") return (Math.abs(a.amount) - Math.abs(b.amount)) * dir;
         return (a.bookedAt || "").localeCompare(b.bookedAt || "") * dir;
       })
-      : manualOrder.length
+      : editMode && manualOrder.length
           ? [...filtered].sort((a, b) => {
             const ia = manualOrder.indexOf(a.id),
                 ib = manualOrder.indexOf(b.id);
-            if (ia === -1 && ib === -1) return 0;
+            if (ia === -1 && ib === -1) return (b.bookedAt || "").localeCompare(a.bookedAt || "");
             if (ia === -1) return 1;
             if (ib === -1) return -1;
             return ia - ib;
           })
-          : filtered;
+          : [...filtered].sort((a, b) => (b.bookedAt || "").localeCompare(a.bookedAt || ""));
   const clear=()=>{setAccount("");setCategory("");setOwner("");setTag("");setFrom("");setTo("");setMinAmount("");setMaxAmount("")};
   return (
       <section className="panel full-view">
@@ -3608,13 +4058,13 @@ function TransactionsView({
               ))}
             </select>
           </label>
-          <label>
+          <label style={{ position: "relative" }}>
             Від
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <CalendarPickerInput value={from} onChange={setFrom} placeholder="Будь-яка" />
           </label>
-          <label>
+          <label style={{ position: "relative" }}>
             До
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <CalendarPickerInput value={to} onChange={setTo} placeholder="Будь-яка" />
           </label>
           <label>
             Сума від
@@ -3648,6 +4098,7 @@ function TransactionsView({
           </button>
         </div>
         <div className="data-head">
+          <span />
           <span>Операція</span>
           <span>Категорія</span>
           <span className="sortable" onClick={() => toggleSort("date")}>
@@ -3659,8 +4110,11 @@ function TransactionsView({
           <span />
         </div>
         {shown.map((t) => {
-          const canEdit =
-              t.kind !== "transfer" && t.kind !== "exchange" && t.kind !== "credit_limit_change";
+          const canEdit = t.kind !== "credit_limit_change";
+          const cat = categories.find((c) => c.name === t.category);
+          const rawIcon = t.categoryIcon || cat?.icon;
+          const iconName = (rawIcon && rawIcon !== "CircleDollarSign") ? rawIcon : guessIconFromTitle(t.title);
+          const catColor = cat?.color || "#6558e8";
           return (
               <div
                   className={editMode && canEdit ? "data-row editable" : "data-row"}
@@ -3689,6 +4143,12 @@ function TransactionsView({
                     if (editMode && canEdit) onEdit(t);
                   }}
               >
+                <span
+                    className="tx-category-icon"
+                    style={{ background: `${catColor}22`, color: catColor }}
+                >
+                  <BudgetIcon name={iconName} size={20} />
+                </span>
                 <strong>
                   {t.title}
                   {t.impulse && <em>Імпульсивна</em>}
@@ -4258,13 +4718,14 @@ function AccountsView({
     creditLimit: number;
     maskedPan: string;
   }) => void;
-  resyncMonobank: (force?: boolean) => void;
+  resyncMonobank: (force?: boolean, days?: number) => void;
   monoLinks: Record<string, string>;
   monoResyncing: boolean;
   unlinkMonobankAccount: (monoAccountId: string) => void;
 }) {
   const visible = rates.filter((r) => ["USD", "EUR"].includes(r.currency));
   const [monoOpen, setMonoOpen] = useState(monoAccounts.length > 0);
+  const [monoResyncDays, setMonoResyncDays] = useState(31);
   return (
       <section className="panel full-view">
         <GracePeriodAlert accounts={accounts} />
@@ -4742,7 +5203,7 @@ function AnalyticsView({
               (sum, transaction) => sum + Math.abs(transaction.baseAmount ?? transaction.amount),
               0,
           );
-  const groupByCategoryName = new Map(categories.map((c) => [c.name, c.budgetGroup]));
+  const groupByCategoryName = new NativeMap(categories.map((c) => [c.name, c.budgetGroup]));
   const groupTotals = { needs: 0, wants: 0, savings: 0, unassigned: 0 };
   expenses.forEach((t) => {
     const group = groupByCategoryName.get(t.category);
@@ -5649,6 +6110,7 @@ function RulesPanel({
     amount_lt: "Сума менше",
     no_category: "Без категорії",
     currency_is: "Валюта дорівнює",
+    note_contains: "Назва містить",
   };
   const actionLabels: Record<string, string> = {
     set_category: "Встановити категорію",
@@ -6532,6 +6994,32 @@ function translateRole(role: string) {
                   ? "Учасник"
                   : "—";
 }
+function RecategorizePanel({ notify }: { notify: (msg: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/finance/recategorize", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) return notify(data.error || "Помилка");
+      notify(`Оновлено: ${data.updated} категорій, конвертовано: ${data.converted} переказів`);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+      <section className="panel passkey-panel">
+        <div>
+          <strong>Виправити категорії</strong>
+          <small>Перекатегоризувати існуючі операції за збереженими правилами</small>
+        </div>
+        <button className="small-primary" onClick={run} disabled={busy}>
+          {busy ? "Обробляю…" : "Запустити"}
+        </button>
+      </section>
+  );
+}
+
 function GuideFeedback({
                          notify,
                          authenticated,
@@ -6825,6 +7313,7 @@ function ExpenseModal({
                         budgets,
                         transactions,
                         submit,
+                        submitTransfer,
                         close,
                       }: {
   amount: string;
@@ -6838,52 +7327,68 @@ function ExpenseModal({
   budgets: BudgetItem[];
   transactions: Transaction[];
   submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
+  submitTransfer?: (e: React.SyntheticEvent<HTMLFormElement>) => void;
   close: () => void;
 }) {
   const [debtId, setDebtId] = useState("");
-  const [isTransfer, setIsTransfer] = useState(false);
-  const [transferToAccountId, setTransferToAccountId] = useState("");
+  const [customDebtName, setCustomDebtName] = useState("");
+  const [tab, setTab] = useState<"expense" | "income" | "transfer">("expense");
+  const [transferToAccountId, setTransferToAccountId] = useState(String(accounts[1]?.id || accounts[0]?.id || ""));
   const [reduceCreditLimit, setReduceCreditLimit] = useState(false);
-  const [type, setType] = useState<"expense" | "income">("expense"),
-      [accountId, setAccountId] = useState(String(accounts[0]?.id || "")),
-      [categoryId, setCategoryId] = useState("");
+  const [accountId, setAccountId] = useState(String(accounts[0]?.id || ""));
+  const [categoryId, setCategoryId] = useState("");
   const [repeat, setRepeat] = useState(false);
+  const type = tab === "transfer" ? "expense" : tab;
   const account = accounts.find((item) => String(item.id) === accountId) || accounts[0];
+  const transferToAccount = accounts.find((a) => String(a.id) === transferToAccountId);
   const accountOptions = accounts.map((item) => ({
     value: String(item.id),
     label: `${item.name} · ${item.currency}`,
   }));
+  const sameCurrency = !account || !transferToAccount || account.currency === transferToAccount.currency;
+  const showCreditToggle = tab === "transfer" && (transferToAccount?.creditLimit || 0) > 0;
   function changeType(next: "expense" | "income") {
-    setType(next);
-    setCategoryId("");
+    setTab(next);
+    // Залишаємо категорію якщо вона підходить для нового типу
+    const currentCat = categories.find((c) => c.id === categoryId);
+    if (currentCat && currentCat.kind !== next) setCategoryId("");
   }
   return (
       <div className="modal-backdrop" onMouseDown={close}>
         <form
             className="expense-modal tall-modal"
-            onSubmit={submit}
+            onSubmit={(e) => tab === "transfer" && submitTransfer ? submitTransfer(e) : submit(e)}
             onMouseDown={(event) => event.stopPropagation()}
         >
           <ModalHead
               label="Деталізація операції"
-              title={type === "income" ? "Новий дохід" : "Нова витрата"}
+              title={tab === "transfer" ? "Переказ між рахунками" : tab === "income" ? "Новий дохід" : "Нова витрата"}
               close={close}
           />
           <div className="operation-type">
             <button
                 type="button"
-                className={type === "expense" ? "active" : ""}
+                className={tab === "expense" ? "active" : ""}
                 onClick={() => changeType("expense")}
             >
               <ArrowUpRight /> Витрата
             </button>
             <button
                 type="button"
-                className={type === "income" ? "active" : ""}
+                className={tab === "income" ? "active" : ""}
                 onClick={() => changeType("income")}
             >
               <ArrowDownLeft /> Дохід
             </button>
+            {submitTransfer && (
+              <button
+                type="button"
+                className={tab === "transfer" ? "active" : ""}
+                onClick={() => setTab("transfer")}
+              >
+                <ArrowLeftRight size={15} /> Переказ
+              </button>
+            )}
           </div>
           <input type="hidden" name="type" value={type} />
           <label className="amount-field">
@@ -6894,27 +7399,81 @@ function ExpenseModal({
                 inputMode="decimal"
                 placeholder="0"
                 value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                onBlur={() => {
-                  const evaluated = evaluateExpression(amount);
-                  if (evaluated !== null) setAmount(String(evaluated));
+                onChange={(event) => {
+                  const v = event.target.value.replace(/[^0-9.,]/g, "").replace(/,/g, ".");
+                  setAmount(v);
                 }}
             />
           </label>
           <WheelField
-              name="account"
-              label="Рахунок"
+              name={tab === "transfer" ? "from" : "account"}
+              label={tab === "transfer" ? "З рахунку" : "Рахунок"}
               options={accountOptions}
               value={accountId}
               onChange={setAccountId}
           />
-          <CategoryGridField
+          {tab === "transfer" && (
+            <div style={{ position: "relative" }}>
+              <WheelField
+                name="to"
+                label="На рахунок"
+                options={accountOptions}
+                value={transferToAccountId}
+                onChange={setTransferToAccountId}
+              />
+              <button
+                type="button"
+                onClick={() => { const tmp = accountId; setAccountId(transferToAccountId); setTransferToAccountId(tmp); }}
+                style={{
+                  position: "absolute", top: -18, right: 0,
+                  background: "none", border: "none",
+                  color: "var(--purple)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 4,
+                  fontSize: 12, fontWeight: 600, padding: "2px 4px",
+                }}
+                title="Поміняти місцями"
+              >
+                <ArrowLeftRight size={12} /> Змінити
+              </button>
+            </div>
+          )}
+          {tab === "transfer" && (
+            <>
+              <input type="hidden" name="sent" value={amount} />
+              <input type="hidden" name="received" value={amount} />
+              <input type="hidden" name="rate" value="1" />
+              <input type="hidden" name="fee" value="0" />
+              <input type="hidden" name="feeCurrency" value={account?.currency || "UAH"} />
+              <DateWheelField name="bookedAt" />
+              {!sameCurrency && (
+                <div className="form-message" style={{ background: "var(--orange, #f4b740)22", color: "var(--orange, #b87a00)", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+                  Для переказу між різними валютами скористайся окремою формою переказу
+                </div>
+              )}
+              {sameCurrency && Number(amount) > 0 && (
+                <div className="form-message success">
+                  Надійде: {account?.currency || "UAH"} {formatMoney(Number(amount))}
+                </div>
+              )}
+              {showCreditToggle && (
+                <label className="check impulse">
+                  <input
+                    name="reduceCreditLimit"
+                    type="checkbox"
+                    checked={reduceCreditLimit}
+                    onChange={(e) => setReduceCreditLimit(e.target.checked)}
+                  /> Врахувати як погашення кредитного ліміту
+                </label>
+              )}
+            </>
+          )}
+          {tab !== "transfer" && <CategoryGridField
               categories={categories}
               type={type}
               value={categoryId}
               onChange={setCategoryId}
-          />
-          {type === "expense" && categoryId && (() => {
+          />}
+          {tab !== "transfer" && type === "expense" && categoryId && (() => {
             const now = new Date();
             const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
             const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -6952,12 +7511,12 @@ function ExpenseModal({
                 </div>
             );
           })()}
-          <label>
+          {tab !== "transfer" && <label>
             Валюта
             <input name="currency" value={account?.currency || "UAH"} readOnly />
-          </label>
-          <DateWheelField name="date" />
-          <details className="split-details" open={repeat}>
+          </label>}
+          {tab !== "transfer" && <DateWheelField name="date" />}
+          {tab !== "transfer" && <details className="split-details" open={repeat}>
             <summary>{type === "income" ? "Плановий дохід" : "Повторювати витрату"}</summary>
             <label className="check impulse">
               <input
@@ -6982,20 +7541,20 @@ function ExpenseModal({
                 <input name="repeatDay" type="number" min="1" max="28" placeholder="Наприклад, 5" />
               </label>
             </div>
-          </details>
+          </details>}
           <label>
             Нотатка
             <input
-                placeholder={type === "income" ? "Наприклад, зарплата" : "Наприклад, кава"}
+                placeholder={tab === "transfer" ? "Наприклад, поповнення з основної" : type === "income" ? "Наприклад, зарплата" : "Наприклад, кава"}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
             />
           </label>
-          <label>
+          {tab !== "transfer" && <label>
             Теги
             <input name="tags" placeholder="#відпустка #робота" />
-          </label>
-          {type === "expense" && goals.length > 0 && (
+          </label>}
+          {tab !== "transfer" && type === "expense" && goals.length > 0 && (
               <label>
                 Покласти в банку (необов'язково)
                 <select name="contributeGoalId" defaultValue="">
@@ -7008,29 +7567,45 @@ function ExpenseModal({
                 </select>
               </label>
           )}
-          {type === "expense" && (
+          {tab !== "transfer" && type === "expense" && (
               <>
-                {debts.length > 0 && (
-                    <details className="split-details">
-                      <summary>Погашення боргу</summary>
-                      <label>
-                        Борг
-                        <select value={debtId} onChange={(e) => setDebtId(e.target.value)}>
-                          <option value="">Не пов'язано з боргом</option>
-                          {debts.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.person} · {d.currency} {formatMoney(d.amount)}
-                              </option>
-                          ))}
-                        </select>
-                      </label>
-                      <input type="hidden" name="debtId" value={debtId} />
-                      <small className="field-help">
-                        Сума цієї витрати спишеться з залишку обраного боргу — підходить і для планового,
-                        і для дострокового погашення.
-                      </small>
-                    </details>
-                )}
+                <details className="split-details">
+                  <summary>Погашення боргу</summary>
+                  <WheelField
+                    name="_debtIdPicker"
+                    label="Борг"
+                    options={[
+                      { value: "", label: "Не пов'язано з боргом" },
+                      ...debts.map((d) => ({
+                        value: d.id,
+                        label: `${d.person} · ${d.currency} ${formatMoney(d.amount)}`,
+                      })),
+                      { value: "__other__", label: "Інший борг (не в списку)" },
+                    ]}
+                    value={debtId}
+                    onChange={(v) => { setDebtId(v); if (v !== "__other__") setCustomDebtName(""); }}
+                  />
+                  {debtId === "__other__" && (
+                    <label style={{ marginTop: 8 }}>
+                      Кому повертаєте
+                      <input
+                        name="customDebtName"
+                        placeholder="Ім'я або назва боргу"
+                        value={customDebtName}
+                        onChange={(e) => setCustomDebtName(e.target.value)}
+                        style={{ marginTop: 6 }}
+                      />
+                    </label>
+                  )}
+                  <input type="hidden" name="debtId" value={debtId === "__other__" ? "" : debtId} />
+                  <small className="field-help">
+                    {debtId && debtId !== "__other__"
+                      ? "Сума цієї витрати спишеться з залишку обраного боргу."
+                      : debtId === "__other__"
+                      ? "Буде збережено як повернення боргу без прив'язки до списку боргів."
+                      : "Оберіть борг, якщо ця витрата є поверненням."}
+                  </small>
+                </details>
                 <details className="split-details">
                   <summary>Розділити чек</summary>
                   <div className="form-two">
@@ -7057,10 +7632,9 @@ function ExpenseModal({
                 </label>
               </>
           )}
-          <input type="hidden" name="isTransfer" value={isTransfer ? "on" : ""} />
-          <input type="hidden" name="transferToAccountId" value={transferToAccountId} />
-          <input type="hidden" name="reduceCreditLimit" value={reduceCreditLimit ? "on" : ""} />
-          <button className="primary">{type === "income" ? "Додати дохід" : "Додати витрату"}</button>
+          <button className="primary">
+            {tab === "transfer" ? "Виконати переказ" : tab === "income" ? "Додати дохід" : "Додати витрату"}
+          </button>
         </form>
       </div>
   );
@@ -7177,21 +7751,320 @@ function CategoryGridField({
   );
 }
 function DateWheelField({ name }: { name: string }) {
-  const [renderedAt] = useState(() => Date.now()),
-      options = Array.from({ length: 38 }, (_, index) => {
-        const date = new Date(renderedAt);
-        date.setDate(date.getDate() + index - 7);
-        const value = toDateKey(date);
-        return {
-          value,
-          label: new Intl.DateTimeFormat("uk-UA", {
-            weekday: "short",
-            day: "numeric",
-            month: "long",
-          }).format(date),
-        };
-      });
-  return <WheelField name={name} label="Дата" options={options} defaultValue={options[7]?.value} />;
+  const today = new Date();
+  const todayKey = toDateKey(today);
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  const selectedLabel = new Intl.DateTimeFormat("uk-UA", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(selectedDate + "T12:00:00"));
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
+    else setViewMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
+    else setViewMonth((m) => m + 1);
+  }
+
+  const startDow = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (string | null)[] = [
+    ...Array(startDow).fill(null) as null[],
+    ...Array.from({ length: daysInMonth }, (_, i) => toDateKey(new Date(viewYear, viewMonth, i + 1))),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthLabel = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric" }).format(
+    new Date(viewYear, viewMonth, 1),
+  );
+  const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+
+  return (
+    <label className="picker-label">
+      Дата
+      <details className="compact-picker">
+        <summary>{selectedLabel}</summary>
+        <div style={{
+          position: "absolute", zIndex: 40, left: 0, right: 0, top: "calc(100% + 5px)",
+          background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
+          padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <button type="button" onClick={prevMonth} style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+            }}>‹</button>
+            <span style={{ fontSize: 12, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
+            <button type="button" onClick={nextMonth} style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+            }}>›</button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+            {dayNames.map((d) => (
+              <span key={d} style={{ textAlign: "center", fontSize: 10, color: "var(--muted)", fontWeight: 600, padding: "4px 0" }}>{d}</span>
+            ))}
+            {cells.map((dateKey, idx) =>
+              dateKey === null ? (
+                <span key={`empty-${idx}`} />
+              ) : (
+                <button
+                  key={dateKey}
+                  type="button"
+                  style={{
+                    aspectRatio: "1", border: "none", borderRadius: 8, fontSize: 11, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                    background: dateKey === selectedDate ? "var(--purple)" : "transparent",
+                    color: dateKey === selectedDate ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
+                    fontWeight: dateKey === selectedDate || dateKey === todayKey ? 700 : 400,
+                  }}
+                  onClick={(e) => {
+                    setSelectedDate(dateKey);
+                    (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                  }}
+                >
+                  {new Date(dateKey + "T12:00:00").getDate()}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      </details>
+      <input type="hidden" name={name} value={selectedDate} />
+    </label>
+  );
+}
+function DateTimeField({
+  label,
+  name,
+  date,
+  time,
+  onDateChange,
+  onTimeChange,
+}: {
+  label: string;
+  name: string;
+  date: string;
+  time: string;
+  onDateChange: (d: string) => void;
+  onTimeChange: (t: string) => void;
+}) {
+  const todayKey = toDateKey(new Date());
+  const [viewYear, setViewYear] = useState(() => Number(date.split("-")[0]));
+  const [viewMonth, setViewMonth] = useState(() => Number(date.split("-")[1]) - 1);
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
+    else setViewMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
+    else setViewMonth((m) => m + 1);
+  }
+
+  const startDow = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (string | null)[] = [
+    ...Array(startDow).fill(null) as null[],
+    ...Array.from({ length: daysInMonth }, (_, i) => toDateKey(new Date(viewYear, viewMonth, i + 1))),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthLabel = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric" }).format(
+    new Date(viewYear, viewMonth, 1),
+  );
+  const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+  const summaryLabel = date
+    ? new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(date + "T12:00:00"),
+      ) + (time ? ` ${time}` : "")
+    : "Оберіть дату";
+
+  return (
+    <div>
+      <div className="picker-label">
+        {label}
+        <details className="compact-picker">
+          <summary>
+            {date
+              ? new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", year: "numeric" }).format(
+                  new Date(date + "T12:00:00"),
+                )
+              : "Оберіть дату"}
+          </summary>
+          <div style={{
+            position: "absolute", zIndex: 40, left: 0, right: 0, top: "calc(100% + 5px)",
+            background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
+            padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <button type="button" onClick={prevMonth} style={{
+                background: "transparent", border: "none", cursor: "pointer",
+                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+              }}>‹</button>
+              <span style={{ fontSize: 12, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
+              <button type="button" onClick={nextMonth} style={{
+                background: "transparent", border: "none", cursor: "pointer",
+                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+              }}>›</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+              {dayNames.map((d) => (
+                <span key={d} style={{ textAlign: "center", fontSize: 10, color: "var(--muted)", fontWeight: 600, padding: "4px 0" }}>{d}</span>
+              ))}
+              {cells.map((dateKey, idx) =>
+                dateKey === null ? (
+                  <span key={`empty-${idx}`} />
+                ) : (
+                  <button
+                    key={dateKey}
+                    type="button"
+                    style={{
+                      aspectRatio: "1", border: "none", borderRadius: 8, fontSize: 11, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                      background: dateKey === date ? "var(--purple)" : "transparent",
+                      color: dateKey === date ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
+                      fontWeight: dateKey === date || dateKey === todayKey ? 700 : 400,
+                    }}
+                    onClick={(e) => {
+                      onDateChange(dateKey);
+                      (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                    }}
+                  >
+                    {new Date(dateKey + "T12:00:00").getDate()}
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
+        </details>
+      </div>
+      <label className="picker-label" style={{ marginTop: 8 }}>
+        Час
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => onTimeChange(e.target.value)}
+          style={{
+            marginTop: 6, width: "100%", border: "1px solid var(--line)", borderRadius: 12,
+            padding: "12px", fontSize: 13, background: "var(--panel)", color: "var(--text)",
+            boxSizing: "border-box",
+          }}
+        />
+      </label>
+      <input type="hidden" name={name} value={`${date}T${time}`} />
+    </div>
+  );
+}
+function CalendarPickerInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const todayKey = toDateKey(new Date());
+  const [viewYear, setViewYear] = useState(() =>
+    value ? Number(value.split("-")[0]) : new Date().getFullYear(),
+  );
+  const [viewMonth, setViewMonth] = useState(() =>
+    value ? Number(value.split("-")[1]) - 1 : new Date().getMonth(),
+  );
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
+    else setViewMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
+    else setViewMonth((m) => m + 1);
+  }
+  const startDow = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (string | null)[] = [
+    ...Array(startDow).fill(null) as null[],
+    ...Array.from({ length: daysInMonth }, (_, i) => toDateKey(new Date(viewYear, viewMonth, i + 1))),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const monthLabel = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric" }).format(
+    new Date(viewYear, viewMonth, 1),
+  );
+  const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+  const summaryLabel = value
+    ? new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "short", year: "numeric" }).format(
+        new Date(value + "T12:00:00"),
+      )
+    : (placeholder || "Будь-яка");
+  return (
+    <details className="compact-picker">
+      <summary>{summaryLabel}</summary>
+      <div style={{
+        position: "absolute", zIndex: 50, left: 0, top: "calc(100% + 5px)", width: 260,
+        background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
+        padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <button type="button" onClick={prevMonth} style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+          }}>‹</button>
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
+          <button type="button" onClick={nextMonth} style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+          }}>›</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1 }}>
+          {dayNames.map((d) => (
+            <span key={d} style={{ textAlign: "center", fontSize: 9, color: "var(--muted)", fontWeight: 600, padding: "3px 0" }}>{d}</span>
+          ))}
+          {cells.map((dateKey, idx) =>
+            dateKey === null ? <span key={`e-${idx}`} /> : (
+              <button
+                key={dateKey}
+                type="button"
+                style={{
+                  aspectRatio: "1", border: "none", borderRadius: 6, fontSize: 10, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                  background: dateKey === value ? "var(--purple)" : "transparent",
+                  color: dateKey === value ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
+                  fontWeight: dateKey === value || dateKey === todayKey ? 700 : 400,
+                }}
+                onClick={(e) => {
+                  onChange(dateKey);
+                  (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                }}
+              >
+                {new Date(dateKey + "T12:00:00").getDate()}
+              </button>
+            ),
+          )}
+        </div>
+        {value && (
+          <button
+            type="button"
+            onClick={(e) => {
+              onChange("");
+              (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+            }}
+            style={{
+              marginTop: 8, width: "100%", border: "none", background: "transparent",
+              color: "var(--muted)", fontSize: 10, cursor: "pointer", padding: "4px 0",
+            }}
+          >
+            Очистити
+          </button>
+        )}
+      </div>
+    </details>
+  );
 }
 function AccountModal({
                         account,
@@ -7959,9 +8832,27 @@ function EditTransactionModal({
   const [type, setType] = useState<"expense" | "income">(isIncome ? "income" : "expense");
   const currentAccountId = accounts.find((a) => a.name === transaction.account)?.id;
   const [accountId, setAccountId] = useState(String(currentAccountId || accounts[0]?.id || ""));
-  const [isTransfer, setIsTransfer] = useState(false);
-  const [transferToAccountId, setTransferToAccountId] = useState("");
+  const [isTransfer, setIsTransfer] = useState(transaction.kind === "transfer");
+  const [transferToAccountId, setTransferToAccountId] = useState(() => {
+    if (transaction.transferToAccount) {
+      return String(accounts.find((a) => a.name === transaction.transferToAccount)?.id || "");
+    }
+    return "";
+  });
   const [reduceCreditLimit, setReduceCreditLimit] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState(transaction.categoryId || "");
+  const [editDate, setEditDate] = useState(() => {
+    if (transaction.bookedAt) return toDateKey(new Date(transaction.bookedAt));
+    return toDateKey(new Date());
+  });
+  const [editTime, setEditTime] = useState(() => {
+    if (transaction.bookedAt) {
+      const d = new Date(transaction.bookedAt);
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+    return "00:00";
+  });
+
   return (
       <div className="modal-backdrop" onMouseDown={close}>
         <form
@@ -7971,16 +8862,19 @@ function EditTransactionModal({
               const f = new FormData(e.currentTarget);
               submit({
                 id: transaction.id,
-                accountId: f.get("account"),
+                accountId,
                 amount: Number(f.get("amount")),
                 type,
-                categoryId: f.get("category") || null,
+                categoryId: isTransfer ? null : (f.get("category") || null),
                 note: f.get("note"),
                 bookedAt: f.get("date") ? new Date(String(f.get("date"))).toISOString() : undefined,
                 tags: String(f.get("tags") || "")
                     .split(/\s+/)
                     .filter(Boolean),
-                contributeGoalId: type === "expense" ? f.get("contributeGoalId") || null : null,
+                contributeGoalId: type === "expense" && !isTransfer ? f.get("contributeGoalId") || null : null,
+                isTransfer: type === "expense" && isTransfer,
+                transferToAccountId: type === "expense" && isTransfer ? transferToAccountId : null,
+                reduceCreditLimit: type === "expense" && isTransfer ? reduceCreditLimit : false,
               });
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -8004,7 +8898,7 @@ function EditTransactionModal({
           </div>
           <label>
             Рахунок
-            <select name="account" defaultValue={currentAccountId}>
+            <select name="account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
               {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name} · {a.currency}
@@ -8023,18 +8917,25 @@ function EditTransactionModal({
                 defaultValue={Math.abs(transaction.amount)}
             />
           </label>
-          <label>
-            Категорія
-            <select name="category" defaultValue="">
-              {categories
-                  .filter((c) => c.kind === type)
-                  .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                  ))}
-            </select>
-          </label>
+          {!isTransfer && (
+              <label>
+                Категорія
+                <select
+                    name="category"
+                    value={editCategoryId}
+                    onChange={(e) => setEditCategoryId(e.target.value)}
+                >
+                  <option value="">Без категорії</option>
+                  {categories
+                      .filter((c) => c.kind === type)
+                      .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                      ))}
+                </select>
+              </label>
+          )}
           {type === "expense" && (
               <label className="check impulse">
                 <input
@@ -8080,7 +8981,7 @@ function EditTransactionModal({
                 })()}
               </>
           )}
-          {type === "expense" && goals.length > 0 && (
+          {type === "expense" && !isTransfer && goals.length > 0 && (
               <label>
                 Покласти в банку (необов'язково)
                 <select name="contributeGoalId" defaultValue="">
@@ -8093,18 +8994,14 @@ function EditTransactionModal({
                 </select>
               </label>
           )}
-          <label>
-            Дата
-            <input
-                name="date"
-                type="datetime-local"
-                defaultValue={
-                  transaction.bookedAt
-                      ? new Date(transaction.bookedAt).toISOString().slice(0, 16)
-                      : undefined
-                }
-            />
-          </label>
+          <DateTimeField
+            label="Дата"
+            name="date"
+            date={editDate}
+            time={editTime}
+            onDateChange={setEditDate}
+            onTimeChange={setEditTime}
+          />
           <label>
             Нотатка
             <input name="note" defaultValue={transaction.title} />
@@ -8323,6 +9220,136 @@ function RecurringModal({
       </div>
   );
 }
+type ImportPreviewRowExternal = {
+  id: string; title: string; amount: number; date: string; categoryName: string;
+  isDuplicate: boolean; selected: boolean;
+  currency?: string; isPayoneerTransfer?: boolean;
+  matchedTxId?: string | number; matchedTxAmount?: number; matchedTxAccount?: string; fee?: number;
+};
+
+function ImportPreviewModal({
+  preview,
+  accounts,
+  onConfirm,
+  onClose,
+}: {
+  preview: { rows: ImportPreviewRowExternal[]; accountId: string };
+  accounts: Account[];
+  onConfirm: (rows: ImportPreviewRowExternal[], accountId: string) => void;
+  onClose: () => void;
+}) {
+  const [rows, setRows] = useState(preview.rows);
+  const [accountId, setAccountId] = useState(preview.accountId);
+  const toggle = (id: string) => setRows((prev) => prev.map((r) => r.id === id ? { ...r, selected: !r.selected } : r));
+  const toggleAll = () => {
+    const allSelected = rows.filter((r) => !r.isDuplicate).every((r) => r.selected);
+    setRows((prev) => prev.map((r) => r.isDuplicate ? r : { ...r, selected: !allSelected }));
+  };
+  const selectedCount = rows.filter((r) => r.selected).length;
+  const dupCount = rows.filter((r) => r.isDuplicate).length;
+  const newCount = rows.filter((r) => !r.isDuplicate).length;
+  const fmt = new Intl.DateTimeFormat("uk-UA", { dateStyle: "short" });
+  const isPayoneer = rows.some((r) => r.currency === "USD" || r.isPayoneerTransfer);
+  // Fee rows are separate rows with id ending in "-fee"; find them via matchedTxId on the parent transfer row
+  const transfersWithFee = rows.filter((r) => r.isPayoneerTransfer && r.fee != null && r.fee > 0);
+  const fmtAmt = (n: number, currency?: string) =>
+    (n >= 0 ? "+" : "") + n.toFixed(2) + (currency ? " " + currency : "");
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal import-preview-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 660, width: "95vw" }}>
+        <button className="modal-close" onClick={onClose}>×</button>
+        <h2 style={{ marginBottom: 8 }}>
+          {isPayoneer ? "Payoneer — перевірка виписки" : "Перевірка виписки"}
+        </h2>
+        <p style={{ color: "var(--text-secondary)", marginBottom: 12, fontSize: 14 }}>
+          Знайдено <b>{rows.length}</b> операцій: <span style={{ color: "var(--green)" }}>{newCount} нових</span>
+          {dupCount > 0 && <span style={{ color: "var(--text-secondary)" }}>, {dupCount} вже є (знято позначку)</span>}.
+        </p>
+        {transfersWithFee.length > 0 && (
+          <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+            <b>💡 Виявлено виведення коштів:</b>
+            {transfersWithFee.map((r) => (
+              <div key={r.id} style={{ marginTop: 4, color: "var(--text-secondary)" }}>
+                {fmt.format(new Date(r.date))}: вивід {Math.abs(r.amount).toFixed(2)} USD →
+                отримано <span style={{ color: "var(--green)" }}>{r.matchedTxAmount?.toFixed(2)} USD</span>
+                {r.matchedTxAccount ? ` на ${r.matchedTxAccount}` : ""}.{" "}
+                <span style={{ color: "var(--red)" }}>Комісія: {r.fee?.toFixed(2)} USD</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-secondary)" }}>
+              Комісія буде автоматично додана як окрема витрата.
+            </div>
+          </div>
+        )}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 13, color: "var(--text-secondary)" }}>Рахунок для імпорту</label>
+          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}
+            style={{ display: "block", marginTop: 4, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", width: "100%" }}>
+            {accounts.map((a) => <option key={String(a.id)} value={String(a.id)}>{a.name} ({a.currency})</option>)}
+          </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <button type="button" onClick={toggleAll}
+            style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-secondary)", cursor: "pointer", color: "var(--text)" }}>
+            {rows.filter((r) => !r.isDuplicate).every((r) => r.selected) ? "Зняти всі нові" : "Позначити всі нові"}
+          </button>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Обрано: {selectedCount}</span>
+        </div>
+        <div style={{ maxHeight: "50vh", overflowY: "auto", border: "1px solid var(--border)", borderRadius: 10 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead style={{ position: "sticky", top: 0, background: "var(--bg-secondary)" }}>
+              <tr>
+                <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>✓</th>
+                <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>Дата</th>
+                <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>Опис</th>
+                <th style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>Сума</th>
+                <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} onClick={() => toggle(r.id)}
+                  style={{ cursor: "pointer", background: r.isDuplicate ? "var(--bg-secondary)" : r.isPayoneerTransfer ? "color-mix(in srgb, var(--purple) 6%, transparent)" : "transparent", opacity: r.isDuplicate ? 0.55 : 1 }}>
+                  <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--border)" }}>
+                    <input type="checkbox" checked={r.selected} readOnly style={{ pointerEvents: "none", accentColor: "var(--purple)" }} />
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap", color: "var(--text-secondary)" }}>
+                    {fmt.format(new Date(r.date))}
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--border)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.isPayoneerTransfer ? "🏦 " : ""}{r.title}
+                    {r.fee != null && r.fee > 0 && (
+                      <span style={{ marginLeft: 6, fontSize: 11, color: "var(--red)" }}>комісія {r.fee.toFixed(2)}</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--border)", textAlign: "right", fontWeight: 600, color: r.amount >= 0 ? "var(--green)" : "var(--red)" }}>
+                    {fmtAmt(r.amount, r.currency)}
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--border)", fontSize: 11, color: r.isDuplicate ? "var(--text-secondary)" : r.isPayoneerTransfer ? "var(--purple)" : "var(--green)" }}>
+                    {r.isDuplicate ? "вже є" : r.isPayoneerTransfer ? "вивід" : "нова"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
+          <button type="button" onClick={onClose}
+            style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-secondary)", cursor: "pointer", color: "var(--text)" }}>
+            Скасувати
+          </button>
+          <button type="button" disabled={selectedCount === 0}
+            onClick={() => onConfirm(rows.filter((r) => r.selected), accountId)}
+            style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: selectedCount === 0 ? "var(--border)" : "var(--purple)", color: "#fff", cursor: selectedCount === 0 ? "default" : "pointer", fontWeight: 600 }}>
+            Імпортувати обрані ({selectedCount})
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TransferModal({
                          accounts,
                          rates,
@@ -8346,6 +9373,11 @@ function TransferModal({
   );
   const [sent, setSent] = useState("");
   const [fee, setFee] = useState("0");
+  const [bookedAtDate, setBookedAtDate] = useState(() => toDateKey(new Date()));
+  const [bookedAtTime, setBookedAtTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  });
   const from = accounts.find((a) => String(a.id) === fromId),
       to = accounts.find((a) => String(a.id) === toId);
   const showCreditToggle = (to?.creditLimit || 0) > 0;
@@ -8364,33 +9396,40 @@ function TransferModal({
               title={presetToAccountId ? "Погашення кредиту" : "Переказ або обмін"}
               close={close}
           />
-          <div className="form-two">
-            <label>
-              З рахунку
-              <select name="from" value={fromId} onChange={(e) => setFromId(e.target.value)} required>
-                {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} · {a.currency}
-                    </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              На рахунок
-              <select
-                  value={toId}
-                  onChange={(e) => setToId(e.target.value)}
-                  disabled={Boolean(presetToAccountId)}
-                  required
+          <div style={{ position: "relative" }}>
+            <div className="form-two">
+              <WheelField
+                name="from"
+                label="З рахунку"
+                options={accounts.map((a) => ({ value: String(a.id), label: `${a.name} · ${a.currency}` }))}
+                value={fromId}
+                onChange={setFromId}
+              />
+              <WheelField
+                name="to"
+                label="На рахунок"
+                options={accounts.map((a) => ({ value: String(a.id), label: `${a.name} · ${a.currency}` }))}
+                value={toId}
+                onChange={presetToAccountId ? undefined : setToId}
+              />
+            </div>
+            {!presetToAccountId && (
+              <button
+                type="button"
+                onClick={() => { const tmp = fromId; setFromId(toId); setToId(tmp); }}
+                style={{
+                  position: "absolute", top: "50%", left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: 30, height: 30, borderRadius: "50%",
+                  background: "var(--bg)", border: "2px solid var(--purple)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", zIndex: 2, color: "var(--purple)", padding: 0,
+                }}
+                title="Поміняти місцями"
               >
-                {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} · {a.currency}
-                    </option>
-                ))}
-              </select>
-            </label>
-            <input type="hidden" name="to" value={toId} />
+                <ArrowLeftRight size={13} />
+              </button>
+            )}
           </div>
           <label className="amount-field">
             <span>{currencySymbol(from?.currency || "UAH")}</span>
@@ -8452,16 +9491,14 @@ function TransferModal({
                 placeholder={presetToAccountId ? "Погашення кредитного ліміту" : "Обмін на відпустку"}
             />
           </label>
-          <label>
-            Дата операції
-            <input
-                name="bookedAt"
-                type="datetime-local"
-                defaultValue={new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-                    .toISOString()
-                    .slice(0, 16)}
-            />
-          </label>
+          <DateTimeField
+            label="Дата операції"
+            name="bookedAt"
+            date={bookedAtDate}
+            time={bookedAtTime}
+            onDateChange={setBookedAtDate}
+            onTimeChange={setBookedAtTime}
+          />
           {showCreditToggle && (
               <label className="check impulse">
                 <input name="reduceCreditLimit" type="checkbox" defaultChecked /> Врахувати як погашення
@@ -8733,6 +9770,7 @@ function RuleModal({
               <option value="amount_lt">Сума менше</option>
               <option value="no_category">Без категорії</option>
               <option value="currency_is">Валюта дорівнює</option>
+              <option value="note_contains">Назва містить</option>
             </select>
           </label>
           {(conditionType === "amount_gt" || conditionType === "amount_lt") && (
@@ -8749,6 +9787,12 @@ function RuleModal({
                   <option>USD</option>
                   <option>EUR</option>
                 </select>
+              </label>
+          )}
+          {conditionType === "note_contains" && (
+              <label>
+                Текст назви
+                <input name="conditionValue" type="text" required placeholder="Vodafone" />
               </label>
           )}
           <label>

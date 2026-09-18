@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const { supabase, householdId } = context;
     const emptyQuery = Promise.resolve({ data: null, error: null });
     const [accounts, transactions, categories, budgets, goals, debts, recurring, transfers, audit,exchangeRates,profile,household,creditLimitChanges] = await Promise.all([    supabase.from("accounts").select("*").eq("household_id", householdId).eq("archived", false).order("created_at"),
-    supabase.from("transactions").select("*,categories(name,icon),accounts(name,owner_label),transaction_tags(tags(name))").eq("household_id", householdId).order("booked_at", { ascending: false }).limit(200),
+    supabase.from("transactions").select("*,categories(name,icon),accounts(name,owner_label),transaction_tags(tags(name))").eq("household_id", householdId).order("booked_at", { ascending: false }).limit(50000),
         light ? emptyQuery : supabase.from("categories").select("*").eq("household_id", householdId).order("name"),
     supabase.from("budgets").select("*,categories(name,color,icon)").eq("household_id", householdId),
     supabase.from("goals").select("*").eq("household_id", householdId).order("created_at"),
@@ -82,6 +82,7 @@ export async function POST(request: Request) {
           else if(rule.condition_type==="amount_lt")matches=Number(body.amount)<Number(rule.condition_value);
           else if(rule.condition_type==="no_category")matches=!body.categoryId;
           else if(rule.condition_type==="currency_is")matches=body.currency===rule.condition_value;
+          else if(rule.condition_type==="note_contains")matches=String(body.note||"").toLowerCase().includes(String(rule.condition_value||"").toLowerCase());
           if(!matches)continue;
           if(rule.action_type==="set_category"&&rule.action_category_id){
             await supabase.from("transactions").update({category_id:rule.action_category_id}).eq("id",result.data.id).eq("household_id",householdId);
@@ -116,6 +117,17 @@ export async function POST(request: Request) {
             result = await supabase.from("transactions").update({
               account_id:newAccountId,amount:newAmount,type:newType,category_id:body.categoryId||null,note:String(body.note||"").slice(0,500),booked_at:body.bookedAt||undefined,
             }).eq("id",body.id).eq("household_id",householdId).select().single();
+            // Якщо переказ — оновити другу ногу (to_transaction)
+            if (!result.error && body.transferToAccountId) {
+              const { data: transferRow } = await supabase.from("transfers")
+                .select("to_transaction_id").eq("from_transaction_id", body.id).maybeSingle();
+              if (transferRow?.to_transaction_id) {
+                await supabase.from("transactions")
+                  .update({ account_id: body.transferToAccountId, type: "income" })
+                  .eq("id", transferRow.to_transaction_id)
+                  .eq("household_id", householdId);
+              }
+            }
             if(!result.error&&Array.isArray(body.tags)){
               await supabase.from("transaction_tags").delete().eq("transaction_id",body.id);
               for(const rawTag of body.tags.slice(0,10)){
@@ -123,6 +135,35 @@ export async function POST(request: Request) {
                 if(!name)continue;
                 const { data: tag } = await supabase.from("tags").upsert({household_id:householdId,name},{onConflict:"household_id,name"}).select("id").single();
                 if(tag)await supabase.from("transaction_tags").insert({transaction_id:body.id,tag_id:tag.id});
+              }
+            }
+            // Auto-learn: save a note_contains rule when user sets a category
+            if (!result.error && body.categoryId) {
+              const txNote = String(body.note || "").trim();
+              if (txNote.length >= 3) {
+                const { data: existingRule } = await supabase
+                    .from("transaction_rules")
+                    .select("id,action_category_id")
+                    .eq("household_id", householdId)
+                    .eq("condition_type", "note_contains")
+                    .ilike("condition_value", txNote)
+                    .maybeSingle();
+                if (!existingRule) {
+                  await supabase.from("transaction_rules").insert({
+                    household_id: householdId,
+                    name: `Авто: ${txNote.slice(0, 50)}`,
+                    condition_type: "note_contains",
+                    condition_value: txNote,
+                    action_type: "set_category",
+                    action_category_id: body.categoryId,
+                    active: true,
+                    created_by: user.id,
+                  });
+                } else if (existingRule.action_category_id !== body.categoryId) {
+                  await supabase.from("transaction_rules")
+                      .update({ action_category_id: body.categoryId })
+                      .eq("id", existingRule.id);
+                }
               }
             }
             break;

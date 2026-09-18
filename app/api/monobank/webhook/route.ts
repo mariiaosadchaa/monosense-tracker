@@ -46,14 +46,30 @@ export async function POST(request: Request) {
   const amount = item.amount / 100;
   const type = amount < 0 ? "expense" : "income";
 
-  const categoryNameByItemId = await categorizeMonobankItems(
-      [{ id: item.id, description: item.description || "", type }],
-      categories || []
-  );
+  // Check learned note_contains rules first
+  const { data: learnedRules } = await admin
+      .from("transaction_rules")
+      .select("condition_value,action_category_id")
+      .eq("household_id", link.household_id)
+      .eq("condition_type", "note_contains")
+      .eq("active", true);
+
+  const learnedCategoryId = (learnedRules || []).find(
+      (r) => (item.description || "").toLowerCase().includes(String(r.condition_value || "").toLowerCase())
+  )?.action_category_id || null;
+
+  const categoryNameByItemId = learnedCategoryId
+      ? {}
+      : await categorizeMonobankItems(
+          [{ id: item.id, description: item.description || "", type }],
+          categories || []
+        );
   const categoryName = categoryNameByItemId[item.id];
-  const category = (categories || []).find(
-      (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
-  );
+  const category = learnedCategoryId
+      ? { id: learnedCategoryId }
+      : (categories || []).find(
+          (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
+        );
 
   const { data: transaction } = await admin.rpc("create_finance_transaction_admin", {
     p_user_id: connection.connected_by,
