@@ -936,6 +936,12 @@ header h1 {
     color: var(--green)
 }
 
+.tx-icon.topup {
+    background: linear-gradient(135deg, #d4f0e4 0%, #b8e6d0 100%);
+    color: #0a8a57;
+    box-shadow: 0 1px 4px #0a8a5720;
+}
+
 .tx-info {
     display: flex;
     flex-direction: column;
