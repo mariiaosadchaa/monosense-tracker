@@ -118,6 +118,8 @@ import {
   Candy,
   Apple,
   Fish,
+  ChevronLeft,
+  LogOut,
 } from "lucide-react";
 import { PasskeyButton } from "./components/passkey-button";
 import { Dashboard } from "./components/Dashboard";
@@ -136,7 +138,7 @@ import { AccountsView } from "./components/AccountsView";
 import { GoalsView } from "./components/GoalsView";
 import { AnalyticsView } from "./components/AnalyticsView";
 
-import { SettingsView } from "./components/SettingsView";
+import { SettingsView, settingsTabs, type SettingsTabKey } from "./components/SettingsView";
 import { MembersPanel, RecategorizePanel, GuideFeedback } from "./components/SettingsPanels";
 import { ModalHead } from "./components/modal-head";
 import { MilestoneModal, EmptyState, ScanReceiptModal, ScanReviewRow } from "./components/ScanReceipt";
@@ -1762,6 +1764,21 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   }
   const [inviteResult, setInviteResult] = useState<{ url: string; emailed: boolean; copied: boolean; to: string } | null>(null);
   const [membersVersion, setMembersVersion] = useState(0);
+  const [prevPage, setPrevPage] = useState<Page>("Головна");
+  const [settingsTab, setSettingsTab] = useState<SettingsTabKey>("profile");
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("rivna-settings-tab") as SettingsTabKey | null;
+      if (saved) setSettingsTab(saved);
+    } catch {}
+  }, []);
+  const chooseSettingsTab = (key: SettingsTabKey) => {
+    setSettingsTab(key);
+    try {
+      sessionStorage.setItem("rivna-settings-tab", key);
+    } catch {}
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   async function createInvite(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -2581,9 +2598,43 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     ["Борги", <HandCoins key="d" />],
   ];
 
+  const inSettings = page === "Налаштування";
+  const sTabs = settingsTabs(initialLoggedIn);
+  const openSettings = () => {
+    if (!inSettings) setPrevPage(page);
+    setPage("Налаштування");
+  };
+  const logout = async () => {
+    if (initialLoggedIn) {
+      await fetch("/auth/signout", { method: "POST" });
+      window.location.href = "/auth";
+    } else setLoggedIn(false);
+  };
+
   return (
-      <main className="app-shell">
+      <main className={inSettings ? "app-shell settings-mode" : "app-shell"}>
         <aside className="sidebar">
+          {inSettings ? (
+              <div className="sb-settings" key="settings">
+                <button className="sb-back" onClick={() => setPage(prevPage)}>
+                  <ChevronLeft /> Назад
+                </button>
+                <h2 className="sb-title">Налаштування</h2>
+                <nav>
+                  {sTabs.map(({ key, label, icon: Icon }) => (
+                      <button key={key} className={settingsTab === key ? "active" : ""} onClick={() => chooseSettingsTab(key)}>
+                        <Icon /> {label}
+                      </button>
+                  ))}
+                </nav>
+                <div className="side-bottom">
+                  <button className="sb-logout" onClick={logout}>
+                    <LogOut /> Вийти з акаунта
+                  </button>
+                </div>
+              </div>
+          ) : (
+          <div className="sb-main" key="main">
           <button className="brand brand-button" onClick={() => setPage("Головна")}>
             <span className="brand-mark-logo" />
           </button>{" "}
@@ -2600,13 +2651,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             ))}
           </nav>
           <div className="side-bottom">
-            <button
-                className={page === "Налаштування" ? "active" : ""}
-                onClick={() => setPage("Налаштування")}
-            >
+            <button onClick={openSettings}>
               <Settings /> Налаштування
             </button>
-            <button className="profile" onClick={() => setPage("Налаштування")}>
+            <button className="profile" onClick={openSettings}>
               <span>{(topProfile?.name || "??").slice(0, 2).toUpperCase()}</span>
               <div>
                 <strong>{topProfile?.name || "Профіль"}</strong>
@@ -2615,6 +2663,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               <MoreHorizontal />
             </button>
           </div>
+          </div>
+          )}
         </aside>
 
         <section className="content">
@@ -2623,7 +2673,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               <p className="hello">
                 {topProfile?.name ? `Вітаємо, ${topProfile.name}` : "Вітаємо"} <span>☀</span>
               </p>
-              <h1>{page === "Головна" ? "Ваші фінанси" : page}</h1>
+              <h1>
+                {page === "Головна"
+                    ? "Ваші фінанси"
+                    : inSettings
+                        ? sTabs.find((t) => t.key === settingsTab)?.label || "Налаштування"
+                        : page}
+              </h1>
             </div>
             <div className="header-actions">
               <button className="theme-btn" onClick={() => setDark(!dark)} aria-label="Змінити тему">
@@ -2900,13 +2956,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   deleteCategory={(id) =>
                       financeAction({ action: "deleteCategory", id }, "Категорію видалено")
                   }
-                  logout={async () => {
-                    if (initialLoggedIn) {
-                      await fetch("/auth/signout", { method: "POST" });
-                      window.location.href = "/auth";
-                    } else setLoggedIn(false);
-                  }}
+                  logout={logout}
                   notify={notify}
+                  tab={settingsTab}
+                  setTab={chooseSettingsTab}
                   security={
                     initialLoggedIn ? (
                         <div className="st-card st-row">

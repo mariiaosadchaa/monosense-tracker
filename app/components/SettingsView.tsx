@@ -2,7 +2,7 @@
 import type { CategoryItem, AuditItem, GoalItem, BudgetItem, DebtItem, Transaction, RuleItem } from "../types";
 import { ProfileSettings } from "./SettingsPanels";
 import { AchievementsPanel, RulesPanel } from "./SettingsPanels2";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
     ArrowRight,
     Award,
@@ -21,6 +21,28 @@ import {
     Users,
 } from "lucide-react";
 import { translateEntity, translateAction } from "./translate";
+
+export type SettingsTabKey =
+    | "profile"
+    | "look"
+    | "budget"
+    | "notify"
+    | "members"
+    | "data"
+    | "achievements"
+    | "history";
+export function settingsTabs(withMembers: boolean) {
+    return [
+        { key: "profile", label: "Профіль", icon: User },
+        { key: "look", label: "Вигляд", icon: Palette },
+        { key: "budget", label: "Категорії й правила", icon: Tags },
+        { key: "notify", label: "Сповіщення", icon: Bell },
+        ...(withMembers ? [{ key: "members", label: "Спільний бюджет", icon: Users }] : []),
+        { key: "data", label: "Дані та пристрої", icon: Database },
+        { key: "achievements", label: "Досягнення", icon: Award },
+        { key: "history", label: "Історія змін", icon: History },
+    ] as { key: SettingsTabKey; label: string; icon: typeof User }[];
+}
 
 export function SettingsView({
                           dark,
@@ -49,11 +71,15 @@ export function SettingsView({
                           rules,
                           openAddRule,
                           removeRule,
+                          tab: tabProp,
+                          setTab: setTabProp,
                           security,
                           members,
                           recategorize,
                           feedback,
                       }: {
+    tab?: string;
+    setTab?: (key: SettingsTabKey) => void;
     security?: ReactNode;
     members?: ReactNode;
     recategorize?: ReactNode;
@@ -85,31 +111,11 @@ export function SettingsView({
     openAddRule: () => void;
     removeRule: (id: string) => void;
 }) {
-    const TABS = [
-        { key: "profile", label: "Профіль", icon: User },
-        { key: "look", label: "Вигляд", icon: Palette },
-        { key: "budget", label: "Категорії й правила", icon: Tags },
-        { key: "notify", label: "Сповіщення", icon: Bell },
-        ...(members ? [{ key: "members", label: "Спільний бюджет", icon: Users }] : []),
-        { key: "data", label: "Дані та пристрої", icon: Database },
-        { key: "achievements", label: "Досягнення", icon: Award },
-        { key: "history", label: "Історія змін", icon: History },
-    ] as const;
-    type TabKey = (typeof TABS)[number]["key"];
-    const [tab, setTab] = useState<TabKey>("profile");
-    useEffect(() => {
-        try {
-            const saved = sessionStorage.getItem("rivna-settings-tab") as TabKey | null;
-            if (saved && TABS.some((t) => t.key === saved)) setTab(saved);
-        } catch {}
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    const choose = (key: TabKey) => {
-        setTab(key);
-        try {
-            sessionStorage.setItem("rivna-settings-tab", key);
-        } catch {}
-    };
+    const TABS = settingsTabs(Boolean(members));
+    type TabKey = SettingsTabKey;
+    const [ownTab, setOwnTab] = useState<TabKey>("profile");
+    const tab = (tabProp as TabKey) || ownTab;
+    const choose = (key: TabKey) => (setTabProp ? setTabProp(key) : setOwnTab(key));
     const profileProps = {
         dark,
         setDark,
@@ -151,7 +157,6 @@ export function SettingsView({
             </button>
         </div>
     );
-    const current = TABS.find((t) => t.key === tab) || TABS[0];
 
     return (
         <div className="st">
@@ -174,7 +179,6 @@ export function SettingsView({
             </nav>
 
             <div className="st-body" key={tab}>
-                <h2 className="st-title">{current.label}</h2>
 
                 {(tab === "profile" || tab === "look" || tab === "notify") && (
                     <ProfileSettings {...profileProps} section={tab} />

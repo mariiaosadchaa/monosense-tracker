@@ -1,6 +1,30 @@
 
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
+// Анімація «набігання» числа від 0 до значення
+function useCountUp(value: number, active: boolean, duration = 1100) {
+    const [shown, setShown] = useState(value);
+    const started = useRef(false);
+    useEffect(() => {
+        if (!active || started.current) {
+            setShown(value);
+            return;
+        }
+        started.current = true;
+        let raf = 0;
+        const t0 = performance.now();
+        const tick = (now: number) => {
+            const p = Math.min(1, (now - t0) / duration);
+            const eased = 1 - Math.pow(1 - p, 3);
+            setShown(value * eased);
+            if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [value, active, duration]);
+    return shown;
+}
 import type { Page, Account, Transaction, GoalItem, RecurringItem } from "../types";
 import { formatMoney, currencySymbol } from "../lib/format";
 import { isLight } from "../lib/transfers";
@@ -154,6 +178,21 @@ export function Dashboard({
             ? Math.min(100, Math.round((primaryGoal.current / Math.max(1, primaryGoal.target)) * 100))
             : 0;
     const symbol = currencySymbol(baseCurrency);
+    // Вступна анімація — один раз за сеанс (при відкритті застосунку)
+    const [intro, setIntro] = useState(false);
+    const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+    useIso(() => {
+        try {
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            if (sessionStorage.getItem("rivna-intro")) return;
+            sessionStorage.setItem("rivna-intro", "1");
+            setIntro(true);
+        } catch {}
+    }, []);
+    const aBalance = useCountUp(balance, intro);
+    const aIncome = useCountUp(income, intro);
+    const aExpense = useCountUp(expense, intro);
+    const aProjected = useCountUp(projectedBalance, intro);
     const money = (v: number) => `${v < 0 ? "−" : ""}${symbol} ${formatMoney(v)}`;
     const monthGen = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long" }).format(now).replace(/^\d+\s*/, "");
     const currentMonthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -170,9 +209,10 @@ export function Dashboard({
     const upcoming = [...recurring].sort((a, b) => new Date(a.next).getTime() - new Date(b.next).getTime());
     return (
         <>
+            <div className={intro ? "dc-root dc-intro" : "dc-root"}>
             <GracePeriodAlert accounts={accounts} />
             <div className="dc-tiles">
-                <article className="dc-tile dark">
+                <article className="dc-tile dark" style={{ "--i": 0 } as React.CSSProperties}>
                     <div className="dc-tile-head">
                         <small>Баланс</small>
                         <details className="currency-select">
@@ -197,26 +237,26 @@ export function Dashboard({
                             </div>
                         </details>
                     </div>
-                    <b>{money(balance)}</b>
+                    <b>{money(aBalance)}</b>
                     <em>
                         {accounts.length} {accounts.length === 1 ? "рахунок" : accounts.length < 5 ? "рахунки" : "рахунків"}
                     </em>
                 </article>
-                <article className="dc-tile">
+                <article className="dc-tile" style={{ "--i": 1 } as React.CSSProperties}>
                     <small>Доходи · {monthLabel}</small>
-                    <b className="pos">+{symbol} {formatMoney(income)}</b>
+                    <b className="pos">+{symbol} {formatMoney(aIncome)}</b>
                     <em>{plannedIncome > 0 ? `з ${formatMoney(plannedIncome)} плану` : "за цей місяць"}</em>
                 </article>
-                <article className="dc-tile">
+                <article className="dc-tile" style={{ "--i": 2 } as React.CSSProperties}>
                     <small>Витрати · {monthLabel}</small>
-                    <b>−{symbol} {formatMoney(expense)}</b>
+                    <b>−{symbol} {formatMoney(aExpense)}</b>
                     <em className={difference > 0 ? "neg" : "pos"}>
                         {previousExpense ? `${difference > 0 ? "+" : ""}${difference}% до минулого місяця` : "перший період"}
                     </em>
                 </article>
-                <article className="dc-tile">
+                <article className="dc-tile" style={{ "--i": 3 } as React.CSSProperties}>
                     <small>Прогноз на {daysInMonth} {monthGen}</small>
-                    <b className={projectedBalance < 0 ? "neg" : ""}>{money(projectedBalance)}</b>
+                    <b className={projectedBalance < 0 ? "neg" : ""}>{money(aProjected)}</b>
                     <em>
                         {daysLeft} {daysLeft === 1 ? "день" : daysLeft < 5 ? "дні" : "днів"} лишилось
                         {feesByMonth[currentMonthKey] ? ` · комісії ${symbol} ${formatMoney(feesByMonth[currentMonthKey])}` : ""}
@@ -224,7 +264,7 @@ export function Dashboard({
                 </article>
             </div>
 
-            <div className="dc-chips">
+            <div className="dc-chips" style={{ "--i": 4 } as React.CSSProperties}>
                 {accounts.map((a) => {
                     const available = (a.balance || 0) + (a.creditLimit || 0);
                     const logo = a.bank.toLowerCase().includes("mono")
@@ -265,7 +305,7 @@ export function Dashboard({
             </div>
 
             <div className="dc-grid">
-                <section className="panel dc-panel">
+                <section className="panel dc-panel" style={{ "--i": 5 } as React.CSSProperties}>
                     <div className="dc-title">
                         <h2>Останні операції</h2>
                         <button onClick={() => openPage("Операції")}>
@@ -275,7 +315,7 @@ export function Dashboard({
                     <TransactionList transactions={transactions.slice(0, 5)} />
                 </section>
 
-                <section className="panel dc-panel">
+                <section className="panel dc-panel" style={{ "--i": 6 } as React.CSSProperties}>
                     <div className="dc-title">
                         <h2>Бюджет · {monthLabel}</h2>
                         <button onClick={() => openPage("Бюджет")}>
@@ -324,7 +364,7 @@ export function Dashboard({
                     )}
                 </section>
 
-                <section className="panel dc-panel dc-wide">
+                <section className="panel dc-panel dc-wide" style={{ "--i": 7 } as React.CSSProperties}>
                     <div className="dc-title">
                         <h2>Регулярні платежі та доходи</h2>
                         <button onClick={addRecurring}>
@@ -366,6 +406,7 @@ export function Dashboard({
                         <p className="empty-inline">Регулярних платежів чи доходів поки немає</p>
                     )}
                 </section>
+            </div>
             </div>
         </>
     );
