@@ -2,14 +2,21 @@ import { NextResponse } from "next/server";
 import { getFinanceContext } from "@/lib/supabase/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { categorizeMonobankItems } from "@/lib/monobank/categorize";
+import { mccCategoryCandidates } from "@/lib/monobank/mcc";
+import { monoItemFee } from "@/lib/monobank/fee";
+import { nbuRate } from "@/lib/nbu";
 
-type MonoItem = { id: string; time: number; description?: string; amount: number; balance: number };
+type MonoItem = { id: string; time: number; description?: string; amount: number; balance: number; mcc?: number; operationAmount?: number; currencyCode?: number; commissionRate?: number };
 type FlatItem = { monoAccountId: string; appAccountId: string; currency: string; item: MonoItem };
 
 export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const force = Boolean(body.force);
     const days = Math.min(365, Math.max(1, Number(body.days) || 31));
+    // Оновлення лише однієї картки (monoAccountId) — без 61-секундних пауз між картками
+    const onlyMonoAccountId = body.monoAccountId ? String(body.monoAccountId) : null;
+    // Довантаження після звірки: не «склеювати» з наявними операціями як дублікат
+    const noDedupe = Boolean(body.noDedupe);
     const context = await getFinanceContext();
     if (!context) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -39,7 +46,7 @@ export async function POST(request: Request) {
         .select("id,name,kind")
         .eq("household_id", context.householdId);
     const debtCategoryId = (categories || []).find((c) => c.name === "Борги" && c.kind === "expense")?.id || null;
-
+    const transferCategoryId = (categories || []).find((c) => c.name === "Переказ" && c.kind === "expense")?.id || null;
     const { data: learnedRules } = await admin
         .from("transaction_rules")
         .select("condition_value,action_category_id")
@@ -68,7 +75,8 @@ export async function POST(request: Request) {
     const { data: allHouseholdAccounts } = await admin
         .from("accounts")
         .select("id,name,currency")
-        .eq("household_id", context.householdId);
+        .eq("household_id", context.householdId)
+        .eq("archived", false); // видалені (приховані) рахунки не беремо для зв'язування переказів
 
     const debug: { monoAccountId: string; status?: number; error?: string; itemsFound?: number }[] = [];
     const to = Math.floor(Date.now() / 1000);
@@ -76,7 +84,12 @@ export async function POST(request: Request) {
 
     const flatItems: FlatItem[] = [];
 
-    for (const link of links) {
+    const activeLinks = onlyMonoAccountId ? links.filter((l) => l.mono_account_id === onlyMonoAccountId) : links;
+    if (!activeLinks.length) {
+        return NextResponse.json({ error: "Цю картку не прив'язано" }, { status: 400 });
+    }
+    for (const link of activeLinks) {
+        if (activeLinks.indexOf(link) > 0) await new Promise((resolve) => setTimeout(resolve, 61000));
         const account = accountById.get(link.app_account_id);
         if (!account) {
             debug.push({ monoAccountId: link.mono_account_id, error: "рахунок у застосунку не знайдено" });
@@ -109,7 +122,7 @@ export async function POST(request: Request) {
             const chunkItems: MonoItem[] = await chunkResponse.json();
             items.push(...chunkItems);
             chunkTo = chunkFrom - 1;
-            if (chunkTo > from) await new Promise((resolve) => setTimeout(resolve, 650));
+            if (chunkTo > from) await new Promise((resolve) => setTimeout(resolve, 61000));
         }
 
         if (chunkError) {
@@ -141,7 +154,7 @@ export async function POST(request: Request) {
                         .maybeSingle();
 
                     if (!existingChange) {
-                        const newLimit = Math.max(0, Number(account.credit_limit) + diff);
+                        const newLimit = Math.round(Math.max(0, Number(account.credit_limit) + diff) * 100) / 100;
                         await admin.from("credit_limit_changes").insert({
                             household_id: context.householdId,
                             account_id: link.app_account_id,
@@ -161,12 +174,11 @@ export async function POST(request: Request) {
             }
 
             for (const item of items) {
-                const { data: alreadySynced } = await admin
+                const { data: claimed } = await admin
                     .from("monobank_synced_items")
-                    .select("statement_item_id")
-                    .eq("statement_item_id", item.id)
-                    .maybeSingle();
-                if (alreadySynced && !force) continue;
+                    .upsert({ statement_item_id: item.id, transaction_id: null }, { onConflict: "statement_item_id", ignoreDuplicates: true })
+                    .select("statement_item_id");
+                if (!claimed?.length && !force) continue; // вже оброблено або обробляється паралельно
 
                 const itemDate = new Date(item.time * 1000);
                 const dayStart = new Date(itemDate);
@@ -186,11 +198,10 @@ export async function POST(request: Request) {
                     .ilike("note", "%розстрочк%")
                     .maybeSingle();
 
-                if (matchingAutoDebit) {
-                    await admin.from("monobank_synced_items").insert({
-                        statement_item_id: item.id,
-                        transaction_id: matchingAutoDebit.id,
-                    });
+                if (matchingAutoDebit && !noDedupe) {
+                    await admin.from("monobank_synced_items")
+                        .update({ transaction_id: matchingAutoDebit.id })
+                        .eq("statement_item_id", item.id);
                     debug.push({
                         monoAccountId: link.mono_account_id,
                         error: `Пропущено дублікат: вже списано автоматично за розстрочкою (транзакція ${matchingAutoDebit.id})`,
@@ -200,12 +211,12 @@ export async function POST(request: Request) {
 
                 flatItems.push({ monoAccountId: link.mono_account_id, appAccountId: link.app_account_id, currency: account.currency, item });
             }
+        }
     }
 
     const used = new Set<string>();
     let imported = 0;
 
-    // 1. Шукаємо пари "переказ між своїми картками"
     for (const outgoing of flatItems) {
         if (used.has(outgoing.item.id)) continue;
         if (outgoing.item.amount >= 0) continue;
@@ -217,7 +228,7 @@ export async function POST(request: Request) {
                 candidate.appAccountId !== outgoing.appAccountId &&
                 candidate.currency === outgoing.currency &&
                 candidate.item.amount === Math.abs(outgoing.item.amount) &&
-                Math.abs(candidate.item.time - outgoing.item.time) <= 300
+                Math.abs(candidate.item.time - outgoing.item.time) <= 5
         );
         if (!match) continue;
 
@@ -234,7 +245,7 @@ export async function POST(request: Request) {
             p_type: "transfer",
             p_amount: amount,
             p_currency: outgoing.currency,
-            p_note: "Переказ",
+            p_note: outgoing.item.description || "Переказ",
             p_booked_at: bookedAt,
             p_is_impulsive: false,
             p_split_total: null,
@@ -252,7 +263,7 @@ export async function POST(request: Request) {
             p_type: "income",
             p_amount: amount,
             p_currency: match.currency,
-            p_note: "Поповнення переказом",
+            p_note: match.item.description || "Поповнення переказом",
             p_booked_at: bookedAt,
             p_is_impulsive: false,
             p_split_total: null,
@@ -264,27 +275,36 @@ export async function POST(request: Request) {
         }
 
         await admin.from("transactions").update({ type: "transfer" }).eq("id", toTx.id);
-        await admin.from("transfers").insert({
+        const { error: transferInsertError } = await admin.from("transfers").insert({
             household_id: context.householdId,
+            from_account_id: outgoing.appAccountId,
+            to_account_id: match.appAccountId,
             from_transaction_id: fromTx.id,
             to_transaction_id: toTx.id,
+            sent_amount: amount,
+            received_amount: amount,
+            exchange_rate: 1,
             fee_amount: 0,
             fee_currency: null,
             booked_at: bookedAt,
         });
-        await admin.from("monobank_synced_items").insert([
-            { statement_item_id: outgoing.item.id, transaction_id: fromTx.id },
-            { statement_item_id: match.item.id, transaction_id: toTx.id },
-        ]);
+        if (transferInsertError) {
+            debug.push({ monoAccountId: outgoing.monoAccountId, error: `Не вдалося зв'язати переказ: ${transferInsertError.message}` });
+        }
+        await admin.from("monobank_synced_items").update({ transaction_id: fromTx.id }).eq("statement_item_id", outgoing.item.id);
+        await admin.from("monobank_synced_items").update({ transaction_id: toTx.id }).eq("statement_item_id", match.item.id);
 
         imported += 2;
     }
-    // 1b. Шукаємо пари "обмін валют між своїми картками" (різні суми, різні валюти)
+
     for (const outgoing of flatItems) {
         if (used.has(outgoing.item.id)) continue;
         if (outgoing.item.amount >= 0) continue;
 
-        const match = flatItems.find(
+        // Кандидати на другу ногу обміну: інша валюта, зарахування, в межах 5 хв.
+        // Обираємо того, чия вартість за курсом НБУ найближча до відправленого
+        // (відсікає абсурдні пари типу 5225 ₴ ↔ $150).
+        const exchangeCandidates = flatItems.filter(
             (candidate) =>
                 !used.has(candidate.item.id) &&
                 candidate.item.id !== outgoing.item.id &&
@@ -293,6 +313,24 @@ export async function POST(request: Request) {
                 candidate.item.amount > 0 &&
                 Math.abs(candidate.item.time - outgoing.item.time) <= 300
         );
+        if (!exchangeCandidates.length) continue;
+        const outDate = new Date(outgoing.item.time * 1000);
+        const outRate = await nbuRate(outgoing.currency, outDate);
+        const sentUah = outRate ? (Math.abs(outgoing.item.amount) / 100) * outRate : null;
+        let match: FlatItem | undefined;
+        let bestRatioDiff = Infinity;
+        for (const candidate of exchangeCandidates) {
+            const candRate = await nbuRate(candidate.currency, outDate);
+            if (!sentUah || !candRate) {
+                // без курсу — беремо найближчого за часом, як раніше
+                if (!match) match = candidate;
+                continue;
+            }
+            const ratio = ((candidate.item.amount / 100) * candRate) / sentUah; // ~0.9–1.0 для реального обміну
+            if (ratio < 0.8 || ratio > 1.05) continue;
+            const diff = Math.abs(1 - ratio);
+            if (diff < bestRatioDiff) { bestRatioDiff = diff; match = candidate; }
+        }
         if (!match) continue;
 
         used.add(outgoing.item.id);
@@ -310,7 +348,7 @@ export async function POST(request: Request) {
             p_type: "exchange",
             p_amount: sentAmount,
             p_currency: outgoing.currency,
-            p_note: "Обмін валют",
+            p_note: outgoing.item.description || "Обмін валют",
             p_booked_at: bookedAt,
             p_is_impulsive: false,
             p_split_total: null,
@@ -328,7 +366,7 @@ export async function POST(request: Request) {
             p_type: "income",
             p_amount: receivedAmount,
             p_currency: match.currency,
-            p_note: "Поповнення обміном",
+            p_note: match.item.description || "Поповнення обміном",
             p_booked_at: bookedAt,
             p_is_impulsive: false,
             p_split_total: null,
@@ -340,8 +378,10 @@ export async function POST(request: Request) {
         }
 
         await admin.from("transactions").update({ type: "exchange" }).eq("id", toTx.id);
-        await admin.from("transfers").insert({
+        const { error: transferInsertError2 } = await admin.from("transfers").insert({
             household_id: context.householdId,
+            from_account_id: outgoing.appAccountId,
+            to_account_id: match.appAccountId,
             from_transaction_id: fromTx.id,
             to_transaction_id: toTx.id,
             sent_amount: sentAmount,
@@ -351,15 +391,26 @@ export async function POST(request: Request) {
             fee_currency: null,
             booked_at: bookedAt,
         });
-        await admin.from("monobank_synced_items").insert([
-            { statement_item_id: outgoing.item.id, transaction_id: fromTx.id },
-            { statement_item_id: match.item.id, transaction_id: toTx.id },
-        ]);
+        if (transferInsertError2) {
+            debug.push({ monoAccountId: outgoing.monoAccountId, error: `Не вдалося зв'язати обмін: ${transferInsertError2.message}` });
+        }
+        if (sentUah) {
+            const recvRate = await nbuRate(match.currency, outDate);
+            if (recvRate) {
+                const fee = Math.max(0, Math.round((sentUah - receivedAmount * recvRate) * 100) / 100);
+                await admin.from("transactions").update({
+                    fee_amount: fee,
+                    original_amount: receivedAmount,
+                    original_currency: match.currency,
+                }).eq("id", fromTx.id);
+            }
+        }
+        await admin.from("monobank_synced_items").update({ transaction_id: fromTx.id }).eq("statement_item_id", outgoing.item.id);
+        await admin.from("monobank_synced_items").update({ transaction_id: toTx.id }).eq("statement_item_id", match.item.id);
 
         imported += 2;
     }
 
-    // 1c. Зовнішні перекази (назва рахунку в описі — наприклад "Платіж Payoneer")
     for (const incoming of flatItems) {
         if (used.has(incoming.item.id)) continue;
         if (incoming.item.amount <= 0) continue;
@@ -411,23 +462,28 @@ export async function POST(request: Request) {
 
         await admin.from("transactions").update({ type: "transfer" }).eq("id", fromTx.id);
         await admin.from("transactions").update({ type: "transfer" }).eq("id", toTx.id);
-        await admin.from("transfers").insert({
+        const { error: transferInsertError3 } = await admin.from("transfers").insert({
             household_id: context.householdId,
+            from_account_id: matchAccount.id,
+            to_account_id: incoming.appAccountId,
             from_transaction_id: fromTx.id,
             to_transaction_id: toTx.id,
+            sent_amount: amount,
+            received_amount: amount,
+            exchange_rate: 1,
             fee_amount: 0,
             fee_currency: null,
             booked_at: bookedAt,
         });
-        await admin.from("monobank_synced_items").insert({
-            statement_item_id: incoming.item.id,
-            transaction_id: toTx.id,
-        });
-
+        if (transferInsertError3) {
+            debug.push({ monoAccountId: incoming.monoAccountId, error: `Не вдалося зв'язати зовнішній переказ: ${transferInsertError3.message}` });
+        }
+        await admin.from("monobank_synced_items")
+            .update({ transaction_id: toTx.id })
+            .eq("statement_item_id", incoming.item.id);
         imported += 2;
     }
 
-    // 2. Решта — звичайні операції з підбором категорії
     const remaining = flatItems.filter((f) => !used.has(f.item.id));
     const byAccount = new Map<string, FlatItem[]>();
     for (const f of remaining) {
@@ -435,6 +491,8 @@ export async function POST(request: Request) {
         byAccount.get(f.appAccountId)!.push(f);
     }
 
+    const salaryCategoryId = ((categories || []).find((c) => c.name === "Зарплата" && c.kind === "income")
+        || (categories || []).find((c) => c.kind === "income" && /^зарплата/i.test(c.name)))?.id;
     for (const [appAccountId, items] of byAccount) {
         const account = accountById.get(appAccountId)!;
 
@@ -442,11 +500,28 @@ export async function POST(request: Request) {
         const needsGemini: typeof items = [];
         for (const f of items) {
             const desc = (f.item.description || "").toLowerCase();
+            if (salaryCategoryId && f.item.amount > 0 && /універсал\s*банк|universal\s*bank|universalbank/i.test(desc)) {
+                learnedItems[f.item.id] = salaryCategoryId;
+                continue;
+            }
+            // Банки (накопичення) — завжди Переказ
+            if (/(зняття\s+(з\s+)?банки|виплата\s+банки|поповнення\s+банки|на\s+банку|з\s+банки)/i.test(desc)) {
+                const jarCat = (categories || []).find((c) => c.name === "Переказ" && c.kind === (f.item.amount > 0 ? "income" : "expense"))?.id || transferCategoryId;
+                if (jarCat) { learnedItems[f.item.id] = jarCat; continue; }
+            }
             const rule = (learnedRules || []).find(
-                (r) => desc.includes(String(r.condition_value || "").toLowerCase())
+                (r) => desc.replace(/\s+/g, " ").includes(String(r.condition_value || "").toLowerCase().replace(/\s+/g, " ").trim())
             );
             if (rule?.action_category_id) {
                 learnedItems[f.item.id] = rule.action_category_id;
+                continue;
+            }
+            const itemType = f.item.amount < 0 ? "expense" : "income";
+            const mccMatch = (categories || []).find(
+                (c) => c.kind === itemType && mccCategoryCandidates(f.item.mcc).some((n) => c.name.toLowerCase() === n.toLowerCase())
+            );
+            if (mccMatch) {
+                learnedItems[f.item.id] = mccMatch.id;
             } else {
                 needsGemini.push(f);
             }
@@ -502,19 +577,17 @@ export async function POST(request: Request) {
                             .update({ amount: newAmount, settled: newAmount <= 0 })
                             .eq("id", matchingInstallment.debt_id);
                     }
-                    await admin.from("monobank_synced_items").insert({
-                        statement_item_id: f.item.id,
-                        transaction_id: transaction?.id || null,
-                    });
+                    await admin.from("monobank_synced_items")
+                        .update({ transaction_id: transaction?.id || null })
+                        .eq("statement_item_id", f.item.id);
                     imported++;
                     continue;
                 }
             }
 
-            const learnedCategoryId = learnedItems[f.item.id] || null;
-            const description = f.item.description || "";
+            const description2 = f.item.description || "";
             let refundCategoryId: string | null = null;
-            const cancellationMatch = description.match(/^Скасування\.\s*(.+)$/i);
+            const cancellationMatch = description2.match(/^Скасування\.\s*(.+)$/i);
             if (cancellationMatch) {
                 const originalName = cancellationMatch[1].trim();
                 const { data: originalTx } = await admin
@@ -529,11 +602,41 @@ export async function POST(request: Request) {
                 refundCategoryId = originalTx?.category_id || null;
             }
 
-            const categoryName = categoryNameByItemId[f.item.id];
-            const category = (categories || []).find(
-                (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
-            );
+            const itemDate2 = new Date(f.item.time * 1000);
+            const dayStart2 = new Date(itemDate2);
+            dayStart2.setUTCHours(0, 0, 0, 0);
+            const dayEnd2 = new Date(itemDate2);
+            dayEnd2.setUTCHours(23, 59, 59, 999);
 
+            const { data: possibleDuplicate } = await admin
+                .from("transactions")
+                .select("id")
+                .eq("account_id", account.id)
+                .eq("amount", Math.abs(amount))
+                .eq("type", type)
+                .not("id", "in", `(select transaction_id from monobank_synced_items where transaction_id is not null)`)
+                .gte("booked_at", dayStart2.toISOString())
+                .lte("booked_at", dayEnd2.toISOString())
+                .maybeSingle();
+
+            if (possibleDuplicate && !noDedupe) {
+                await admin.from("monobank_synced_items")
+                    .update({ transaction_id: possibleDuplicate.id })
+                    .eq("statement_item_id", f.item.id);
+                debug.push({
+                    monoAccountId: f.monoAccountId,
+                    error: `Пропущено дублікат: знайдено схожу вручну додану транзакцію того ж дня (${possibleDuplicate.id})`,
+                });
+                continue;
+            }
+
+            const categoryName = categoryNameByItemId[f.item.id];
+            const learnedCategoryId = learnedItems[f.item.id];
+            const category = learnedCategoryId
+                ? { id: learnedCategoryId }
+                : (categories || []).find(
+                    (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
+                );
             const { data: transaction, error: txError } = await admin.rpc("create_finance_transaction_admin", {
                 p_user_id: connection.connected_by,
                 p_account_id: account.id,
@@ -553,10 +656,18 @@ export async function POST(request: Request) {
                 continue;
             }
 
-            await admin.from("monobank_synced_items").insert({
-                statement_item_id: f.item.id,
-                transaction_id: transaction?.id || null,
-            });
+            const feeInfo = await monoItemFee(f.item, account.currency);
+            if (feeInfo && transaction?.id) {
+                await admin.from("transactions").update({
+                    fee_amount: feeInfo.feeUah,
+                    original_amount: feeInfo.originalAmount,
+                    original_currency: feeInfo.originalCurrency,
+                }).eq("id", transaction.id);
+            }
+
+            await admin.from("monobank_synced_items")
+                .update({ transaction_id: transaction?.id || null })
+                .eq("statement_item_id", f.item.id);
 
             imported++;
         }

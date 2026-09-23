@@ -1,10 +1,13 @@
 "use client";
 import { useMemo, useState } from "react";
-import type { Transaction, RecurringItem, CategoryItem } from "../types";
+import type { Transaction, RecurringItem, CategoryItem, Account } from "../types";
 import { formatMoney, currencySymbol, conversionRate } from "../lib/format";
 import {ArrowDownLeft, Sparkles} from "lucide-react";
+import { CashflowCalendar, AnomalyAlerts } from "./Analytics";
 
-function AnalyticsView({
+const NativeMap = globalThis.Map;
+
+export function AnalyticsView({
                            transactions,
                            baseCurrency,
                            recurring,
@@ -12,6 +15,7 @@ function AnalyticsView({
                            rates,
                            customRates,
                            categories,
+                           accounts = [],
                        }: {
     transactions: Transaction[];
     baseCurrency: string;
@@ -20,8 +24,39 @@ function AnalyticsView({
     rates: { currency: string; rate: number }[];
     customRates: { currency: string; rate: number }[];
     categories: CategoryItem[];
+    accounts?: Account[];
 }) {
     const plannedIncomeItems = recurring.filter((r) => r.kind === "income");
+    const [openIncome, setOpenIncome] = useState<string | null>(null);
+    const FREQ: Record<string, string> = { monthly: "щомісяця", weekly: "щотижня", yearly: "щороку" };
+    // Скільки вже надійшло цього місяця: доходи на рахунок правила (і в його категорію, якщо задана)
+    const receivedThisMonth = (r: RecurringItem) => {
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const accountName = accounts.find((a) => String(a.id) === r.accountId)?.name;
+        const toRule = (t: Transaction) => {
+            const cur = t.currency || "UAH";
+            if (cur === r.currency) return t.amount;
+            const inUah = t.amount * conversionRate(cur, rates, customRates);
+            return inUah / conversionRate(r.currency, rates, customRates);
+        };
+        const items = transactions.filter(
+            (t) =>
+                t.amount > 0 &&
+                t.kind !== "transfer" &&
+                t.kind !== "exchange" &&
+                t.kind !== "credit_limit_change" &&
+                !!t.bookedAt &&
+                new Date(t.bookedAt) >= monthStart &&
+                (!accountName || (t.account || "").trim() === accountName.trim()) &&
+                // Лише зарплатні надходження: категорія правила, або категорія/назва схожа на зарплату
+                (r.categoryId
+                    ? t.categoryId === r.categoryId
+                    : /зарплат|з\/п|\bзп\b|salary|payroll|аванс|payoneer/i.test(`${t.category} ${t.title}`) ||
+                      t.title.trim().toLowerCase() === r.name.trim().toLowerCase()),
+        );
+        return { sum: items.reduce((acc, t) => acc + toRule(t), 0), count: items.length, items, toRule };
+    };
     const [period, setPeriod] = useState<"month" | "week">("month"),
         [renderedAt] = useState(() => Date.now()),
         now = new Date(renderedAt);
@@ -103,7 +138,17 @@ function AnalyticsView({
                 (sum, transaction) => sum + Math.abs(transaction.baseAmount ?? transaction.amount),
                 0,
             );
-    const groupByCategoryName = new NativeMap(categories.map((c) => [c.name, c.budgetGroup]));
+    // Якщо категорії не призначено групу — вгадуємо за назвою/іконкою
+    const guessGroup = (name: string, icon = ""): "needs" | "wants" | "savings" | null => {
+        const n = `${name} ${icon}`.toLowerCase();
+        if (/заощадж|депозит|інвест|борг|кредит|розстроч|ціл|скарбн|savings|piggy/.test(n)) return "savings";
+        if (/продукт|комунал|дім|житл|оренд|квартир|транспорт|пальн|бензин|здоров|аптек|медиц|лікар|зв.язок|інтернет|мобіл|дит|освіт|страх|тварин|пес|собак|кіт|вет|paw|dog|cat|utilit|home|house|pill|stethoscope|fuel|car|bus/.test(n)) return "needs";
+        if (/кафе|ресторан|доставк|розваг|одяг|краса|подарун|хобі|подорож|підписк|спорт|кіно|шопінг|гра|coffee|gift|party|shirt|sparkle|plane|gamepad|film|shopping/.test(n)) return "wants";
+        return null;
+    };
+    const groupByCategoryName = new NativeMap(
+        categories.map((c) => [c.name, c.budgetGroup || guessGroup(c.name, c.icon)]),
+    );
     const groupTotals = { needs: 0, wants: 0, savings: 0, unassigned: 0 };
     expenses.forEach((t) => {
         const group = groupByCategoryName.get(t.category);
@@ -242,21 +287,59 @@ function AnalyticsView({
                 </div>
                 <div className="recurring-list">
                     {plannedIncomeItems.length ? (
-                        plannedIncomeItems.map((r) => (
-                            <div key={r.id}>
-                <span className="recurring-icon">
-                  <ArrowDownLeft />
-                </span>
-                                <strong>{r.name}</strong>
-                                <small>
-                                    {r.frequency} · наступний {new Date(r.next).toLocaleDateString("uk-UA")}
-                                </small>
-                                <b className="income-amount">
-                                    +{r.currency} {formatMoney(r.amount)}
-                                </b>
-                                <em>{r.auto ? "Автоматично" : "Нагадування"}</em>
-                            </div>
-                        ))
+                        plannedIncomeItems.map((r) => {
+                            const { sum, count, items, toRule } = receivedThisMonth(r);
+                            const isOpen = openIncome === r.id;
+                            const pct = r.amount ? Math.min(100, Math.round((sum / r.amount) * 100)) : 0;
+                            const sym = currencySymbol(r.currency);
+                            return (
+                                <div
+                                    key={r.id}
+                                    className="income-plan"
+                                    onClick={() => setOpenIncome(isOpen ? null : r.id)}
+                                    title="Показати, що враховано"
+                                >
+                                    <span className="recurring-icon">
+                                        <ArrowDownLeft />
+                                    </span>
+                                    <div className="income-plan-main">
+                                        <div className="income-plan-top">
+                                            <strong>{r.name}</strong>
+                                            <span className={pct >= 100 ? "income-plan-sum done" : "income-plan-sum"}>
+                                                {formatMoney(sum)} / {formatMoney(r.amount)} {sym}
+                                            </span>
+                                        </div>
+                                        <span className="income-plan-bar">
+                                            <i style={{ width: `${pct}%` }} />
+                                        </span>
+                                        <small>
+                                            {pct >= 100
+                                                ? "✓ Цього місяця отримано"
+                                                : sum > 0
+                                                    ? `Отримано ${pct}% · ще ${formatMoney(r.amount - sum)} ${sym}`
+                                                    : "Цього місяця ще не надходило"}
+                                            {count > 1 ? ` · ${count} надходж.` : ""}
+                                            {" · "}
+                                            {FREQ[r.frequency] || r.frequency}, наступний{" "}
+                                            {new Date(r.next).toLocaleDateString("uk-UA", { day: "numeric", month: "long" })}
+                                            {count > 0 && (isOpen ? " · сховати ▲" : " · що враховано ▼")}
+                                        </small>
+                                        {isOpen && count > 0 && (
+                                            <div className="income-plan-items">
+                                                {items.map((t) => (
+                                                    <div key={t.id}>
+                                                        <span>{t.bookedAt ? new Date(t.bookedAt).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : ""}</span>
+                                                        <span>{t.title}</span>
+                                                        <span>{t.category}</span>
+                                                        <b>+{formatMoney(toRule(t))} {sym}</b>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
                     ) : (
                         <p className="empty-inline">
                             Планових доходів поки немає — додай через «Регулярний платіж», обравши «Дохід»
@@ -276,7 +359,10 @@ function AnalyticsView({
                 <div className="section-title">
                     <div>
                         <h2>Правило 50/30/20</h2>
-                        <p>Порівняння твоїх витрат з класичним фінансовим правилом</p>
+                        <p>
+                            Від доходу цього місяця{income ? ` (${symbol} ${formatMoney(income)})` : ""}: 50% — потреби,
+                            30% — бажання, 20% — відкласти
+                        </p>
                     </div>
                 </div>
                 <div className="budget-rule-grid">
@@ -285,9 +371,25 @@ function AnalyticsView({
                         { key: "wants" as const, label: "Бажання / Розваги", target: 30, color: "#f4b740" },
                         { key: "savings" as const, label: "Заощадження / Борги", target: 20, color: "#6558e8" },
                     ].map((row) => {
-                        const value = groupTotals[row.key];
-                        const actualPercent = total ? Math.round((value / total) * 100) : 0;
+                        // База — дохід; заощадження = те, що лишилось від доходу (+ явні внески в групу «Заощадження»)
+                        const base = income || total;
+                        const value =
+                            row.key === "savings" && income
+                                ? Math.max(0, income - groupTotals.needs - groupTotals.wants - groupTotals.unassigned)
+                                : groupTotals[row.key];
+                        const actualPercent = base ? Math.round((value / base) * 100) : 0;
                         const diff = actualPercent - row.target;
+                        const bad = row.key === "savings" ? diff < 0 : diff > 0;
+                        const note =
+                            diff === 0
+                                ? "рівно як треба"
+                                : row.key === "savings"
+                                    ? diff > 0
+                                        ? `на ${diff}% більше за ціль 👍`
+                                        : `на ${-diff}% менше за ціль`
+                                    : diff > 0
+                                        ? `перевищено на ${diff}%`
+                                        : `у межах, запас ${-diff}%`;
                         return (
                             <div key={row.key} className="budget-rule-row">
                                 <div className="budget-rule-head">
@@ -300,9 +402,8 @@ function AnalyticsView({
                                     <i style={{ width: `${Math.min(100, actualPercent)}%`, background: row.color }} />
                                     <b style={{ left: `${row.target}%` }} />
                                 </div>
-                                <small className={diff > 0 ? "negative" : "positive"}>
-                                    {symbol} {formatMoney(value)}
-                                    {diff !== 0 && ` · ${diff > 0 ? "+" : ""}${diff}% від цілі`}
+                                <small className={bad ? "negative" : "positive"}>
+                                    {symbol} {formatMoney(value)} · {note}
                                 </small>
                             </div>
                         );
@@ -310,8 +411,13 @@ function AnalyticsView({
                 </div>
                 {groupTotals.unassigned > 0 && (
                     <p className="empty-inline">
-                        {symbol} {formatMoney(groupTotals.unassigned)} витрат без групи — признач групу категоріям у
-                        Налаштуваннях, щоб врахувати їх тут.
+                        {symbol} {formatMoney(groupTotals.unassigned)} витрат не вдалося віднести до групи (
+                        {Array.from(
+                            new Set(expenses.filter((t) => !groupByCategoryName.get(t.category)).map((t) => t.category)),
+                        )
+                            .slice(0, 5)
+                            .join(", ")}
+                        ) — признач їм групу в Налаштуваннях → Категорії.
                     </p>
                 )}
             </section>

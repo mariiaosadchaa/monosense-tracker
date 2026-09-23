@@ -1,7 +1,10 @@
 "use client";
 // @ts-ignore
 // @ts-ignore
+import { bankStyle, extractMerchant } from "./components/AccountCard";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useClickOutside } from "./lib/useClickOutside";
+import { markInternalTransfers } from "./lib/internalTransfers";
 import confetti from "canvas-confetti";
 import {
   ArrowDownLeft,
@@ -117,8 +120,32 @@ import {
   Fish,
 } from "lucide-react";
 import { PasskeyButton } from "./components/passkey-button";
+import { Dashboard } from "./components/Dashboard";
+import { Login } from "./components/Login";
+import { AccountCard, BankMark, TransactionList } from "./components/AccountCard";
+import { GracePeriodAlert, AnomalyAlerts, CashflowCalendar } from "./components/Analytics";
+import { InvestmentSimulator, BigPurchaseSimulator, WrappedModal, SettlementPanel } from "./components/Simulators";
 import type { Page, Transaction, Account, GoalItem, DebtItem, RecurringItem, CategoryItem, BudgetItem, RuleItem, AuditItem } from "./types";
 import { formatMoney, currencySymbol, conversionRate, crossRate, toDateKey } from "./lib/format";
+import { exportCsv, exportExcel, exportJson } from "./lib/export";
+import { BUDGET_COLORS, merchantSkeleton } from "./lib/icons";
+import { DebtsView } from "./components/DebtsView";
+import { TransactionsView } from "./components/TransactionsView";
+import { BudgetView, LiveBudgetView } from "./components/BudgetViews";
+import { AccountsView } from "./components/AccountsView";
+import { GoalsView } from "./components/GoalsView";
+import { AnalyticsView } from "./components/AnalyticsView";
+
+import { SettingsView } from "./components/SettingsView";
+import { MembersPanel, RecategorizePanel, GuideFeedback } from "./components/SettingsPanels";
+import { ModalHead } from "./components/modal-head";
+import { MilestoneModal, EmptyState, ScanReceiptModal, ScanReviewRow } from "./components/ScanReceipt";
+import {
+  ExpenseModal, WheelField, CategoryGridField, DateWheelField, DateTimeField, CalendarPickerInput,
+  AccountModal, GoalModal, GoalActionModal, DebtModal, SplitBillModal, SettleDebtModal,
+  EditTransactionModal, PayInstallmentModal, RecurringModal, ImportPreviewModal, TransferModal,
+  BudgetModal, CategoryModal, RuleModal, InviteModal, CustomRateModal, MonoSyncDebugModal,
+} from "./components/modals";
 // Explicit alias for the built-in Map to avoid Turbopack shadowing it with the Lucide "Map" icon
 const NativeMap = globalThis.Map;
 const APP_VERSION = "2026.08.06-2";
@@ -133,20 +160,8 @@ export {
   findMerchantDomain,
   BudgetIcon,
   MerchantIcon,
+  BUDGET_COLORS,
 } from "./lib/icons";
-const BUDGET_COLORS = [
-  "#6558e8",
-  "#ff7a66",
-  "#f0a94a",
-  "#28a879",
-  "#4c91e8",
-  "#e874a6",
-  "#8875d1",
-  "#42a7a2",
-  "#d3a032",
-  "#66717d",
-];
-
 
 const seedTransactions: Transaction[] = [
   { id: 1, title: "Сільпо", category: "Продукти", date: "Сьогодні, 12:42", amount: -1248 },
@@ -183,12 +198,6 @@ const seedAccounts: Account[] = [
     style: "stash",
   },
 ];
-const budgetRows = [
-  { name: "Продукти", spent: 6840, limit: 10000, color: "#ff6b55" },
-  { name: "Транспорт", spent: 2260, limit: 4000, color: "#6c63ff" },
-  { name: "Розваги", spent: 3920, limit: 4500, color: "#f4b740" },
-  { name: "Здоров’я", spent: 1180, limit: 3000, color: "#19a974" },
-];
 const seedCategories: CategoryItem[] = [
   { id: "cat-food", name: "Продукти", kind: "expense", color: "#ff6b55", icon: "ShoppingCart" },
   { id: "cat-cafe", name: "Кафе та ресторани", kind: "expense", color: "#f4b740", icon: "Coffee" },
@@ -216,6 +225,15 @@ const seedGoals: GoalItem[] = [
     color: "#159B70",
   },
 ];
+import {
+  getOfflineQueue,
+  saveOfflineQueue,
+  addToOfflineQueue,
+  mergeTransferPairs,
+  evaluateExpression,
+  budgetPeriodBounds,
+  isLight,
+} from "./lib/transfers";
 export {
   getOfflineQueue,
   saveOfflineQueue,
@@ -225,7 +243,6 @@ export {
   budgetPeriodBounds,
   isLight,
 } from "./lib/transfers";
-};
 
 export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolean }) {
   const [seenMilestones, setSeenMilestones] = useState<Record<string, number>>(() => {
@@ -238,7 +255,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [milestoneCelebration, setMilestoneCelebration] = useState<{ goalName: string; percent: number } | null>(null);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [showPassword, setShowPassword] = useState(false);
-  const [page, setPage] = useState<Page>("Головна");
+  const [page, setPage] = useState<Page>(() =>
+      typeof window !== "undefined" ? (localStorage.getItem("rivna-last-page") as Page) || "Головна" : "Головна",
+  );
   const [dark, setDark] = useState(
       () => typeof window !== "undefined" && localStorage.getItem("rivna-theme") === "dark",
   );
@@ -324,6 +343,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [savedBudgets, setSavedBudgets] = useState<BudgetItem[]>([]);
   const [planningPeriod, setPlanningPeriod] = useState<"month" | "week">("month");
   const [budgetPeriodType, setBudgetPeriodType] = useState<"month" | "week">("month");
+  const [budgetPresetCategory, setBudgetPresetCategory] = useState<string | undefined>();
   const [budgetAnchor, setBudgetAnchor] = useState<string>(() => toDateKey(new Date()));
   const [baseCurrency, setBaseCurrency] = useState("UAH");
   const [audit, setAudit] = useState<AuditItem[]>([]);
@@ -374,7 +394,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
     if (navigator.onLine) void syncOfflineQueue();
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
     const onInstall = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event);
@@ -467,15 +493,25 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             style: bankStyle(String(item.bank || ""), index),
             color: item.card_color ? String(item.card_color) : undefined,
             cardImage: item.card_image_url ? String(item.card_image_url) : undefined,
+            cardLast4: item.card_last4 ? String(item.card_last4) : undefined,
             creditLimit: Number(item.credit_limit) || 0,
             graceEnd: item.grace_period_end ? String(item.grace_period_end) : undefined,
             graceBalance: item.grace_balance ? Number(item.grace_balance) : undefined,
           })),
       );
       const transferDirection: Record<string, "in" | "out"> = {};
+      const transferCounterpartId: Record<string, string> = {};
       (data.transfers || []).forEach((tr: Record<string, unknown>) => {
         if (tr.from_transaction_id) transferDirection[String(tr.from_transaction_id)] = "out";
         if (tr.to_transaction_id) transferDirection[String(tr.to_transaction_id)] = "in";
+        if (tr.from_transaction_id && tr.to_transaction_id) {
+          transferCounterpartId[String(tr.from_transaction_id)] = String(tr.to_transaction_id);
+          transferCounterpartId[String(tr.to_transaction_id)] = String(tr.from_transaction_id);
+        }
+      });
+      const accountNameById: Record<string, string> = {};
+      (data.transactions || []).forEach((item: Record<string, unknown>) => {
+        accountNameById[String(item.id)] = String((item.accounts as { name?: string } | null)?.name || "");
       });
       const limitEvents = (data.creditLimitChanges || []).map((item: Record<string, unknown>) => {
         const oldLimit = Number(item.old_limit),
@@ -504,7 +540,14 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 const direction = transferDirection[id];
                 const isIncomeLike = item.type === "income" || (isTransferLeg && direction === "in");
                 return {
-                  id, title: String(item.note || (isTransferLeg ? (direction==="in"?"Поповнення переказом":"Переказ") : (item.type === "income" ? "Дохід" : "Витрата"))),
+                  id, title: isTransferLeg
+                      ? (() => {
+                        const myAccount = accountNameById[id] || "";
+                        const counterpartId = transferCounterpartId[id];
+                        const otherAccount = counterpartId ? accountNameById[counterpartId] || "" : "";
+                        return direction === "in" ? `${otherAccount} → ${myAccount}` : `${myAccount} → ${otherAccount}`;
+                      })()
+                      : String(item.note || (item.type === "income" ? "Дохід" : "Витрата")),
                   category: isTransferLeg
                       ? "Переказ"
                       : String(
@@ -525,7 +568,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   amount: Number(item.amount) * (isIncomeLike ? 1 : -1),
                   currency: String(item.currency || "UAH"),
                   impulse: Boolean(item.is_impulsive),
-                  kind: String(item.type || "expense"),
+                  feeAmount: item.fee_amount != null ? Number(item.fee_amount) : undefined,
+                  originalAmount: item.original_amount != null ? Number(item.original_amount) : undefined,
+                  originalCurrency: item.original_currency ? String(item.original_currency) : undefined,
+                  kind: isTransferLeg ? (direction === "in" ? "transfer" : "transfer") : String(item.type || "expense"),
                 };
               })
               .concat(limitEvents),
@@ -571,6 +617,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             next: String(item.next_run_at),
             auto: Boolean(item.auto_create),
             kind: item.kind === "income" ? "income" : "expense",
+            accountId: item.account_id ? String(item.account_id) : undefined,
+            categoryId: item.category_id ? String(item.category_id) : undefined,
           })),
       );
       setTransfers(
@@ -630,7 +678,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               actor: item.actor_id ? String(item.actor_id) : undefined,
             })),
         );
-      setRules(
+      if (data.rules) setRules(
           (data.rules || []).map((item: Record<string, unknown>) => ({
             id: String(item.id),
             name: String(item.name),
@@ -667,6 +715,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     localStorage.setItem("rivna-theme", dark ? "dark" : "light");
   }, [dark]);
+  useEffect(() => {
+    localStorage.setItem("rivna-last-page", page);
+  }, [page]);
 
   useEffect(() => {
     if (skin === "default") delete document.documentElement.dataset.skin;
@@ -722,23 +773,29 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       [accounts, rates, customRates, baseCurrency],
   );
 
-  const monthlyFees = useMemo(() => {
-    const now = new Date();
-    return transfers
-        .filter((transfer) => {
-          if (!transfer.bookedAt || !transfer.feeAmount) return false;
-          const date = new Date(transfer.bookedAt);
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        })
-        .reduce(
-            (sum, transfer) =>
-                sum +
-                (transfer.feeAmount *
-                    conversionRate(transfer.feeCurrency || baseCurrency, rates, customRates)) /
-                conversionRate(baseCurrency, rates, customRates),
-            0,
-        );
-  }, [transfers, rates, customRates, baseCurrency]);
+  // Комісії помісячно (ключ "YYYY-MM"), у базовій валюті:
+  // явні комісії переказів + поле fee_amount операцій (завжди в UAH).
+  const feesByMonth = useMemo(() => {
+    const toBase = (amount: number, currency: string) =>
+        (amount * conversionRate(currency || baseCurrency, rates, customRates)) /
+        conversionRate(baseCurrency, rates, customRates);
+    const monthKey = (iso: string) => {
+      const d = new Date(iso);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+    const result: Record<string, number> = {};
+    for (const transfer of transfers) {
+      if (!transfer.bookedAt || !transfer.feeAmount) continue;
+      const key = monthKey(transfer.bookedAt);
+      result[key] = (result[key] || 0) + toBase(transfer.feeAmount, transfer.feeCurrency || baseCurrency);
+    }
+    for (const t of transactions) {
+      if (!t.bookedAt || !t.feeAmount) continue;
+      const key = monthKey(t.bookedAt);
+      result[key] = (result[key] || 0) + toBase(t.feeAmount, "UAH");
+    }
+    return result;
+  }, [transfers, transactions, rates, customRates, baseCurrency]);
 
   const filteredTransactions = useMemo(() => {
     // Always return raw (both transfer legs present).
@@ -777,22 +834,44 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         ? toDateKey(periodStart)
         : `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, "0")}`;
   }, [budgetPeriodType, budgetAnchor]);
-  const normalizedTransactions = useMemo(
-      () =>
-          transactions.map((transaction) => ({
-            ...transaction,
-            baseAmount:
-                (transaction.amount * conversionRate(transaction.currency || "UAH", rates, customRates)) /
-                conversionRate(baseCurrency, rates, customRates),
-          })),
-      [transactions, rates, customRates, baseCurrency],
-  );
+  const normalizedTransactions = useMemo(() => {
+    const withBase = transactions.map((transaction) => ({
+      ...transaction,
+      baseAmount:
+          (transaction.amount * conversionRate(transaction.currency || "UAH", rates, customRates)) /
+          conversionRate(baseCurrency, rates, customRates),
+    }));
+    return markInternalTransfers(withBase, accounts);
+  }, [transactions, rates, customRates, baseCurrency, accounts]);
   const [seenAlerts, setSeenAlerts] = useState<string[]>(() =>
       typeof window !== "undefined"
           ? JSON.parse(localStorage.getItem("rivna-seen-alerts") || "[]")
           : [],
   );
   const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  useClickOutside(notifRef, () => setNotifOpen(false), notifOpen);
+  // Випадайки на <details> (календар, колесо, валюта) закриваються кліком поза ними
+  useEffect(() => {
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      document
+          .querySelectorAll<HTMLDetailsElement>("details.compact-picker[open], details.currency-select[open]")
+          .forEach((d) => {
+            if (!d.contains(e.target as Node)) d.open = false;
+          });
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModal(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
   const [welcomeAlert, setWelcomeAlert] = useState<{
     key: string;
     name: string;
@@ -931,6 +1010,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           repeatFrequency: form.get("repeatFrequency"),
           repeatDay: form.get("repeatDay"),
           debtId: !isIncome ? form.get("debtId") || null : null,
+          receiptAmount: form.get("receiptAmount") || null,
         };
         if (!navigator.onLine) {
           addToOfflineQueue(payload);
@@ -1015,6 +1095,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             graceEnd: form.get("graceEnd"),
             graceBalance: form.get("graceBalance"),
             cardColor: form.get("cardColor"),
+            cardLast4: form.get("cardLast4"),
           }),
         });
         const result = await response.json();
@@ -1277,6 +1358,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           setCategories((items) => items.filter((item) => item.id !== id));
         else if (action === "deleteBudget")
           setSavedBudgets((items) => items.filter((item) => item.id !== id));
+        else if (action === "updateBudget")
+          setSavedBudgets((items) =>
+              items.map((item) => (item.id === id ? { ...item, limit: Number(payload.limitAmount) } : item)),
+          );
         else if (action === "createCustomRate")
           setCustomRates((items) => [
             {
@@ -1630,6 +1715,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               icon: String(f.get("icon")),
               color: String(f.get("color")),
               budgetGroup: f.get("budgetGroup") || null,
+              ...(f.has("payerSources") ? { payerSources: String(f.get("payerSources") || "") } : {}),
             },
             id ? "Категорію оновлено" : "Категорію створено",
         )
@@ -1674,6 +1760,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     )
       setModal(null);
   }
+  const [inviteResult, setInviteResult] = useState<{ url: string; emailed: boolean; copied: boolean; to: string } | null>(null);
+  const [membersVersion, setMembersVersion] = useState(0);
   async function createInvite(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -1686,13 +1774,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       });
       const result = await response.json();
       if (!response.ok) return notify(result.error || "Не вдалося створити запрошення");
-      await navigator.clipboard.writeText(result.url);
-      setModal(null);
-      notify(
-          result.emailed
-              ? "Запрошення надіслано email, посилання скопійовано"
-              : "Посилання запрошення скопійовано",
-      );
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(result.url);
+        copied = true;
+      } catch {}
+      setInviteResult({ url: result.url, emailed: Boolean(result.emailed), copied, to: String(f.get("identifier") || "") });
+      setMembersVersion((v) => v + 1);
     } finally {
       setBusy(false);
     }
@@ -1792,13 +1880,29 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     }
     return name;
   }
+  // Людські назви для латиниці/трансліту з іноземних карток (порівняння за «скелетом» назви)
   const MERCHANT_DISPLAY_NAMES: [string, string][] = [
-    ["dimsadgorod", "ДімСадГород"],
-    ["anthropic", "Claude"],
+    ["дімсадгород", "ДімСадГород"],
+    ["anthropic", "Claude"], ["claude", "Claude"],
+    ["avrora", "Аврора"],
+    ["сімейна пекарня", "Сімейна пекарня"],
+    ["фотопослуги kodak", "Фотопослуги Кодак"], ["kodak", "Кодак"],
+    ["pethouse", "Pethouse"],
+    ["goldi", "Goldi"], ["new yorker", "New Yorker"], ["кав'ярня", "Кав'ярня"],
+    ["зоомагазин", "Зоомагазин"],
+    ["softserve", "SoftServe"],
+    ["ingo", "Інго"],
+    ["сільпо", "Сільпо"], ["фора", "Фора"], ["новус", "Новус"], ["варус", "Варус"], ["ашан", "Ашан"],
+    ["епіцентр", "Епіцентр"], ["нова пошта", "Нова пошта"], ["укрпошта", "Укрпошта"],
+    ["аптека доброго дня", "Аптека Доброго Дня"], ["аптека оптових цін", "Аптека оптових цін"],
+    ["подорожник", "Подорожник"], ["розетка", "Rozetka"], ["алло", "Алло"],
   ];
   function applyDisplayName(name: string): string {
-    const lower = name.toLowerCase();
-    const found = MERCHANT_DISPLAY_NAMES.find(([key]) => lower.includes(key));
+    const sk = merchantSkeleton(name);
+    const found = MERCHANT_DISPLAY_NAMES.find(([key]) => {
+      const keySk = merchantSkeleton(key);
+      return keySk.length >= 4 && sk.includes(keySk);
+    });
     return found ? found[1] : name;
   }
 
@@ -1828,7 +1932,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   async function importCsv(file: File) {
     const excel = /\.xlsx?$/i.test(file.name);
     const defaultAccountId = String(accounts[0]?.id || "");
-    type RawRow = { title: string; amount: number; date: string; categoryName: string; currency?: string; isPayoneerTransfer?: boolean };
+    type RawRow = { title: string; amount: number; date: string; categoryName: string; currency?: string; isPayoneerTransfer?: boolean; rawNote?: string };
     let rawRows: RawRow[] = [];
     try {
       if (excel) {
@@ -1890,7 +1994,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             );
             const categoryName = guessPayoneerCategory(description, merchantName);
             const isPayoneerTransfer = /monobank|transfer.*bank|bank.*transfer|withdraw|to debit card/i.test(description);
-            return [{ title: applyDisplayName(merchantName), amount, date, categoryName, currency, isPayoneerTransfer }];
+            return [{ title: applyDisplayName(merchantName), amount, date, categoryName, currency, isPayoneerTransfer, rawNote: description }];
           });
         } else {
           rawRows = lines3.slice(1).map((csvLine) => {
@@ -1929,69 +2033,145 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         isPayoneerTransfer: r.isPayoneerTransfer,
       };
     });
-    // For Payoneer withdrawal rows: try to match a deposit on a USD account to compute fee
-    // Then insert a separate fee preview row right after each matched withdrawal
-    // For Payoneer withdrawal rows (Payoneer -> monobank card): match the deposit that
-    // arrived on the UAH (monobank) account, convert the USD withdrawal to UAH at the
-    // current exchange rate, and treat the shortfall as the transfer fee.
-    // Then insert a separate fee preview row right after each matched withdrawal.
-    const usdToUahRate = conversionRate("USD", rates, customRates);
-    const withFees: ImportPreviewRow[] = [];
-    const usedTxIds = new Set<string>();
-    for (const row of previewRows) {
-      if (row.isPayoneerTransfer && row.amount < 0) {
-        const withdrawalAmt = Math.abs(row.amount);
-        const expectedUah = parseFloat((withdrawalAmt * usdToUahRate).toFixed(2));
-        const withdrawalTime = new Date(row.date).getTime();
-        // Не рахуємось на курс на сьогодні — просто шукаємо гривневе зарахування
-        // в межах кількох днів від виводу, найближче за сумою (курс на момент
-        // виводу міг відрізнятись від поточного).
-        let matched: typeof transactions[number] | undefined;
-        let bestDiff = Infinity;
-        for (const t of transactions) {
-          if (!t.bookedAt || t.amount <= 0) continue;
-          const isUah = !t.currency || t.currency === "UAH";
-          if (!isUah) continue;
-          if (usedTxIds.has(String(t.id))) continue;
-          const timeDiff = Math.abs(new Date(t.bookedAt).getTime() - withdrawalTime);
-          if (timeDiff > 7 * 24 * 3600 * 1000) continue; // within 7 days
-          const diff = Math.abs(t.amount - expectedUah);
-          if (diff / expectedUah > 0.5) continue; // guard від випадкового чужого зарахування
-          if (diff < bestDiff) { bestDiff = diff; matched = t; }
-        }
-        if (matched) {
-          usedTxIds.add(String(matched.id));
-          const fee = parseFloat((expectedUah - matched.amount).toFixed(2));
-          if (fee > 0) {
-            const updatedRow: ImportPreviewRow = {
-              ...row,
-              matchedTxId: matched.id,
-              matchedTxAmount: matched.amount,
-              matchedTxAccount: matched.account,
-              expectedUah,
-              fee,
-            };
-            withFees.push(updatedRow);
-            // Fee row — separate preview entry so dedup works on re-import
-            const feeKey = `${row.date.slice(0, 10)}|${fee.toFixed(2)}|UAH`;
-            const feeIsDup = existingKeys.has(feeKey);
-            withFees.push({
-              id: `${row.id}-fee`,
-              title: `Комісія Payoneer (${row.title})`,
-              amount: -fee,
-              date: row.date,
-              categoryName: "Комісія",
-              isDuplicate: feeIsDup,
-              selected: !feeIsDup,
-              currency: "UAH",
-            });
-            continue;
+    // Правила користувача ("Звідки приходить платіж", авто-вивчені назви) мають пріоритет над вгадуванням
+    const noteRules = rules.filter(
+        (r) => r.conditionType === "note_contains" && r.actionType === "set_category" && r.actionCategoryId && r.conditionValue,
+    );
+    const categoryById = new NativeMap(categories.map((c) => [String(c.id), c]));
+    previewRows = previewRows.map((row, i) => {
+      const text = `${rawRows[i]?.rawNote || ""} ${row.title}`.toLowerCase();
+      const rowKind = row.amount >= 0 ? "income" : "expense";
+      const rule = noteRules.find((r) => {
+        const cat = categoryById.get(String(r.actionCategoryId));
+        return cat?.kind === rowKind && text.replace(/\s+/g, " ").includes(String(r.conditionValue).toLowerCase().replace(/\s+/g, " ").trim());
+      });
+      const cat = rule ? categoryById.get(String(rule.actionCategoryId)) : undefined;
+      return cat ? { ...row, categoryName: cat.name } : row;
+    });
+
+    // Payoneer: вивід (−$) → зарахування на будь-якому іншому рахунку (USD чи UAH)
+    // в ТОЙ САМИЙ день, найближче за сумою (за день може бути кілька виводів).
+    // Різниця з курсом НБУ на дату → комісія (окреме поле), пара імпортується як переказ.
+    const payoneerAccount = accounts.find((a) => /payoneer|пайонер|піонер/i.test(`${a.name} ${a.bank}`));
+    const importAccountId = previewRows.some((r) => r.isPayoneerTransfer) && payoneerAccount
+        ? String(payoneerAccount.id)
+        : defaultAccountId;
+    const importAccountName = accounts.find((a) => String(a.id) === importAccountId)?.name;
+    const kyivDay = (iso: string) =>
+        new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Kyiv" }).format(new Date(iso));
+    const withdrawals = previewRows.filter((r) => r.isPayoneerTransfer && r.amount < 0 && !r.isDuplicate);
+    const neededCurrencies = Array.from(new Set(["USD", ...accounts.map((a) => a.currency)]))
+        .filter((c) => c && c !== "UAH").join(",");
+    const rateByDay: Record<string, Record<string, number | null>> = {};
+    await Promise.all(
+        Array.from(new Set(withdrawals.map((r) => kyivDay(r.date)))).map(async (day) => {
+          try {
+            const res = await fetch(`/api/exchange-rates?date=${day}&currency=${neededCurrencies}`);
+            rateByDay[day] = res.ok ? (await res.json()).rates || {} : {};
+          } catch {
+            rateByDay[day] = {};
           }
-        }
+        }),
+    );
+    const uahRate = (cur: string, day: string) =>
+        cur === "UAH" ? 1 : (rateByDay[day]?.[cur] ?? conversionRate(cur, rates, customRates));
+
+    type Candidate = {
+      rowId: string; tx: (typeof transactions)[number]; diff: number; score: number; fee: number; expectedUah: number;
+      existingFromTxId?: string;
+    };
+    // Зарахування, які Монобанк уже зв'язав як переказ З ЦЬОГО Ж рахунку (опис "Payoneer")
+    const linkedFromImport = new NativeMap<string, string>();
+    for (const tr of transfers) {
+      if (tr.toTransactionId && tr.fromTransactionId && String(tr.fromAccountId) === importAccountId) {
+        linkedFromImport.set(String(tr.toTransactionId), String(tr.fromTransactionId));
       }
-      withFees.push(row);
     }
-    setImportPreview({ rows: withFees, accountId: defaultAccountId });
+    const dayMs = 24 * 3600 * 1000;
+    const candidates: Candidate[] = [];
+    for (const row of withdrawals) {
+      const day = kyivDay(row.date);
+      const rowDayTime = new Date(`${day}T12:00:00`).getTime();
+      const sentCur = (row.currency || "USD").toUpperCase();
+      const sentUah = Math.abs(row.amount) * uahRate(sentCur, day);
+      for (const t of transactions) {
+        if (!t.bookedAt || t.amount <= 0) continue;
+        if (importAccountName && t.account === importAccountName) continue;
+        const existingFromTxId = linkedFromImport.get(String(t.id));
+        // Чужі перекази не чіпаємо; перекази з цього ж рахунку — це той самий вивід
+        if ((t.kind === "transfer" || t.kind === "exchange") && !existingFromTxId) continue;
+        // Той самий день; сусідній — лише як запасний варіант (різниця часових поясів / зарахування наступного дня)
+        const dayDiff = Math.round(Math.abs(new Date(`${kyivDay(t.bookedAt)}T12:00:00`).getTime() - rowDayTime) / dayMs);
+        if (dayDiff > 3) continue; // до 3 днів: Payoneer часто зараховує наступного дня або пізніше
+        const cur = (t.currency || "UAH").toUpperCase();
+        const receivedUah = t.amount * uahRate(cur, day);
+        const diff = Math.abs(sentUah - receivedUah) / sentUah;
+        if (diff > 0.15) continue; // не схоже на цей вивід
+        candidates.push({
+          rowId: row.id, tx: t, diff, score: diff + dayDiff * 0.05, // ближча дата — пріоритет, але сума важливіша
+          fee: Math.max(0, Math.round((sentUah - receivedUah) * 100) / 100),
+          expectedUah: Math.round(sentUah * 100) / 100,
+          existingFromTxId,
+        });
+      }
+    }
+    // Жадібно: спершу найточніші пари (той самий день, найближча сума), кожен вивід і зарахування — лише раз
+    candidates.sort((a, b) => a.score - b.score);
+    const matchedRows = new Set<string>();
+    const matchedTx = new Set<string>();
+    const matchByRow = new NativeMap<string, Candidate>();
+    for (const c of candidates) {
+      if (matchedRows.has(c.rowId) || matchedTx.has(String(c.tx.id))) continue;
+      matchedRows.add(c.rowId);
+      matchedTx.add(String(c.tx.id));
+      matchByRow.set(c.rowId, c);
+    }
+    // Підказка для виводів без пари: що найближче знайшлося і чому не підійшло
+    const hintFor = (row: ImportPreviewRow): string => {
+      const day = kyivDay(row.date);
+      const rowDayTime = new Date(`${day}T12:00:00`).getTime();
+      const sentCur = (row.currency || "USD").toUpperCase();
+      const sentUah = Math.abs(row.amount) * uahRate(sentCur, day);
+      let best: { text: string; score: number } | null = null;
+      for (const t of transactions) {
+        if (!t.bookedAt || t.amount <= 0) continue;
+        if (importAccountName && t.account === importAccountName) continue;
+        const dayDiff = Math.round(Math.abs(new Date(`${kyivDay(t.bookedAt)}T12:00:00`).getTime() - rowDayTime) / dayMs);
+        if (dayDiff > 5) continue;
+        const cur = (t.currency || "UAH").toUpperCase();
+        const diff = Math.abs(sentUah - t.amount * uahRate(cur, day)) / sentUah;
+        const score = diff + dayDiff * 0.2;
+        if (best && best.score <= score) continue;
+        const reasons: string[] = [];
+        if (dayDiff > 3) reasons.push(`різниця ${dayDiff} дн.`);
+        if (diff > 0.15) reasons.push(`сума відрізняється на ${Math.round(diff * 100)}%`);
+        if ((t.kind === "transfer" || t.kind === "exchange") && !linkedFromImport.get(String(t.id))) reasons.push("вже переказ з іншого рахунку");
+        if (matchedTx.has(String(t.id))) reasons.push("вже зайняте іншим виводом");
+        best = {
+          score,
+          text: `найближче: +${t.amount.toFixed(2)} ${cur} на ${t.account || "?"} ${t.bookedAt.slice(0, 10)}${reasons.length ? ` — ${reasons.join(", ")}` : ""}`,
+        };
+      }
+      return best ? best.text : "зарахувань ±5 днів не знайдено (онови сторінку, якщо щойно міняла дані)";
+    };
+    const withFees: ImportPreviewRow[] = previewRows.map((row) => {
+      const m = matchByRow.get(row.id);
+      if (!m) return row.isPayoneerTransfer && row.amount < 0 ? { ...row, matchHint: hintFor(row) } : row;
+      // Уже є такий переказ і суми збігаються — нічого не робимо, позначаємо як дублікат
+      const alreadyExact = Boolean(m.existingFromTxId) && m.fee < 0.01;
+      return {
+        ...row,
+        matchedTxId: m.tx.id,
+        matchedTxAmount: m.tx.amount,
+        matchedTxAccount: `${m.tx.account || ""} · ${(m.tx.currency || "UAH").toUpperCase()}`,
+        expectedUah: m.expectedUah,
+        fee: m.fee,
+        existingFromTxId: m.existingFromTxId,
+        isDuplicate: row.isDuplicate || alreadyExact,
+        selected: alreadyExact ? false : row.selected,
+      };
+    });
+    setImportPreview({ rows: withFees, accountId: importAccountId });
   }
 
   async function confirmImport(rows: ImportPreviewRow[], accountId: string) {
@@ -2007,8 +2187,30 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       return;
     }
     const catMap = new NativeMap(categories.map((c) => [c.name.toLowerCase(), c.id]));
-    // Fee rows are already included as regular rows in the preview (with categoryName="Комісія")
-    const apiRows = rows.map((r) => ({
+    // Payoneer-виводи зі знайденою парою імпортуємо як переказ (з комісією в окремому полі)
+    const linkedRows = rows.filter((r) => r.isPayoneerTransfer && r.matchedTxId && r.amount < 0);
+    const plainRows = rows.filter((r) => !linkedRows.includes(r));
+    if (linkedRows.length) {
+      const res = await fetch("/api/import/payoneer-links", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId,
+          links: linkedRows.map((r) => ({
+            note: r.title, amount: Math.abs(r.amount), booked_at: r.date, matchedTxId: r.matchedTxId,
+            existingFromTxId: r.existingFromTxId,
+          })),
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) { notify(result.error || "Помилка імпорту переказів Payoneer"); return; }
+      if (!plainRows.length) {
+        notify(`Зв'язано переказів: ${result.linked}`);
+        setImportPreview(null);
+        await refreshFinance();
+        return;
+      }
+    }
+    const apiRows = plainRows.map((r) => ({
       note: r.title, amount: Math.abs(r.amount),
       type: r.amount >= 0 ? "income" : "expense",
       booked_at: r.date,
@@ -2043,6 +2245,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     matchedTxAccount?: string;      // matched deposit account name
     expectedUah?: number;           // withdrawal converted to UAH at current rate
     fee?: number;                   // calculated fee, in UAH (expectedUah - matchedTxAmount)
+    existingFromTxId?: string;      // переказ уже створено синхронізацією Монобанку — оновимо суму/комісію
+    matchHint?: string;             // чому вивід не знайшов пару
   };
   const [importPreview, setImportPreview] = useState<{
     rows: ImportPreviewRow[];
@@ -2075,6 +2279,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [monoLinks, setMonoLinks] = useState<Record<string, string>>({});
   const [monoStatusLoaded,setMonoStatusLoaded]=useState(false);
   const [monoLastSyncedAt,setMonoLastSyncedAt]=useState<string|null>(null);
+  const [monoResyncingCard, setMonoResyncingCard] = useState<string | null>(null);
   useEffect(() => {
     if (!initialLoggedIn) return;
     fetch("/api/monobank/status")
@@ -2089,6 +2294,25 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         })
         .catch(() => setMonoStatusLoaded(true));
   }, [initialLoggedIn]);
+
+  const [autoLinkAttempted, setAutoLinkAttempted] = useState(false);
+  useEffect(() => {
+    if (autoLinkAttempted) return;
+    if (!monoStatusLoaded || !accounts.length || !monoAccounts.length) return;
+    setAutoLinkAttempted(true);
+    for (const ma of monoAccounts) {
+      if (monoLinks[ma.id]) continue;
+      const panDigits = String(ma.maskedPan || "").replace(/\D/g, "");
+      const last4 = panDigits.slice(-4);
+      if (!last4 || last4.length !== 4) continue;
+      const matchedAccount = accounts.find(
+          (a) => a.bank?.toLowerCase().includes("mono") && a.cardLast4 === last4,
+      );
+      if (matchedAccount) {
+        linkMonobankAccount(ma.id, String(matchedAccount.id));
+      }
+    }
+  }, [monoStatusLoaded, accounts, monoAccounts, monoLinks, autoLinkAttempted]);
   async function connectMonobank() {
     if (!monoToken.trim()) return notify("Встав токен Monobank");
     setMonoConnecting(true);
@@ -2171,13 +2395,15 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     await refreshFinance();
   }
   const [monoResyncing, setMonoResyncing] = useState(false);
-  async function resyncMonobank(force?: boolean, days?: number) {
+  const [monoResyncDebug, setMonoResyncDebug] = useState<{ monoAccountId: string; status?: number; error?: string; itemsFound?: number }[] | null>(null);
+  async function resyncMonobank(force?: boolean, days?: number, monoAccountId?: string, noDedupe?: boolean) {
     setMonoResyncing(true);
+    setMonoResyncingCard(monoAccountId || null);
     try {
       const response = await fetch("/api/monobank/resync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: Boolean(force), days: days || 31 }),
+        body: JSON.stringify({ force: Boolean(force), days: days || 31, monoAccountId: monoAccountId || undefined, noDedupe: Boolean(noDedupe) }),
       });
       let result: {
         error?: string;
@@ -2197,15 +2423,12 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       );
       if (result.imported) setMonoLastSyncedAt(new Date().toISOString());
       if (result.debug?.length) {
-        window.alert(
-            result.debug
-                .map((d) => `${d.monoAccountId}: ${d.error ? `ПОМИЛКА — ${d.error} (${d.status ?? "—"})` : `OK, знайдено ${d.itemsFound ?? 0}`}`)
-                .join("\n"),
-        );
+        setMonoResyncDebug(result.debug);
       }
       await refreshFinance();
     } finally {
       setMonoResyncing(false);
+      setMonoResyncingCard(null);
     }
   }
   async function scanReceipt(file: File) {
@@ -2406,7 +2629,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               <button className="theme-btn" onClick={() => setDark(!dark)} aria-label="Змінити тему">
                 {dark ? <Sun /> : <Moon />}
               </button>
-              <div className="notification-wrap">
+              <div className="notification-wrap" ref={notifRef}>
                 <button
                     className="theme-btn notification"
                     onClick={openNotifications}
@@ -2466,7 +2689,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   openPage={setPage}
                   addAccount={() => setModal("account")}
                   changeCurrency={setBaseCurrency}
-                  monthlyFees={monthlyFees}
+                  feesByMonth={feesByMonth}
                   plannedIncome={plannedMonthlyIncome}
                   recurring={recurring}
                   addRecurring={() => setModal("recurring")}
@@ -2489,6 +2712,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   scanning={scanning}
                   transfers={transfers}
                   categories={categories}
+                  accounts={accounts}
               />
           )}{" "}
           {page === "Бюджет" &&
@@ -2501,9 +2725,30 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                       anchor={budgetAnchor}
                       setAnchor={setBudgetAnchor}
                       baseCurrency={baseCurrency}
-                      add={() => setModal("budget")}
+                      add={(categoryName?: string) => {
+                        setBudgetPresetCategory(categories.find((c) => c.name === categoryName)?.id);
+                        setModal("budget");
+                      }}
                       remove={(id: string | number) =>
                           financeAction({ action: "deleteBudget", id }, "Ліміт видалено")
+                      }
+                      update={(id: string, limitAmount: number) =>
+                          financeAction({ action: "updateBudget", id, limitAmount }, "Ліміт оновлено")
+                      }
+                      createFrom={(b: BudgetItem, limitAmount: number) =>
+                          financeAction(
+                              {
+                                action: "createBudget",
+                                categoryId: b.categoryId,
+                                month: b.month,
+                                periodType: "month",
+                                limitAmount,
+                                currency: baseCurrency,
+                                icon: b.icon,
+                                color: b.color,
+                              },
+                              "Ліміт оновлено",
+                          )
                       }
                       rolloverEnabled={budgetRollover}
                   />
@@ -2512,7 +2757,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                       budgets={savedBudgets}
                       transactions={normalizedTransactions}
                       baseCurrency={baseCurrency}
-                      add={() => setModal("budget")}
+                      add={() => { setBudgetPresetCategory(undefined); setModal("budget"); }}
                       remove={(id: string | number) =>
                           financeAction({ action: "deleteBudget", id }, "Ліміт видалено")
                       }
@@ -2541,6 +2786,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   monoToken={monoToken}
                   setMonoToken={setMonoToken}
                   monoAccounts={monoAccounts}
+                  setMonoAccounts={setMonoAccounts}
                   monoConnecting={monoConnecting}
                   connectMonobank={connectMonobank}
                   linkMonobankAccount={linkMonobankAccount}
@@ -2549,6 +2795,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   resyncMonobank={resyncMonobank}
                   monoLinks={monoLinks}
                   monoResyncing={monoResyncing}
+                  monoLastSyncedAt={monoLastSyncedAt}
+                  monoResyncingCard={monoResyncingCard}
               />
           )}
           {page === "Накопичення" && (
@@ -2583,6 +2831,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   rates={rates}
                   customRates={customRates}
                   categories={categories}
+                  accounts={accounts}
               />
           )}
           {page === "Борги" && (
@@ -2660,53 +2909,26 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   notify={notify}
               />
           )}
+
           {page === "Налаштування" && initialLoggedIn && (
-              <section className="panel passkey-panel">
-                <div>
-                  <strong>Швидкий вхід на цьому пристрої</strong>
-                  <small>Face ID, Touch ID, Windows Hello або PIN пристрою</small>
-                </div>
-                <PasskeyButton mode="register" className="small-primary" onMessage={notify} />
-              </section>
+              <>
+                <section className="panel passkey-panel">
+                  <div>
+                    <strong>Швидкий вхід на цьому пристрої</strong>
+                    <small>Face ID, Touch ID, Windows Hello або PIN пристрою</small>
+                  </div>
+                  <PasskeyButton mode="register" className="small-primary" onMessage={notify} />
+                </section>
+
+                <MembersPanel notify={notify} onInvite={() => { setInviteResult(null); setModal("invite"); }} version={membersVersion} />
+                <RecategorizePanel notify={notify} />
+              </>
           )}
-          {page === "Налаштування" && initialLoggedIn && (
-              <section className="panel passkey-panel">
-                <div>
-                  <strong>Спільний фінансовий простір</strong>
-                  <small>Запросіть партнера або родину з окремою роллю доступу</small>
-                </div>
-                <button className="small-primary" onClick={() => setModal("invite")}>
-                  <Plus /> Запросити учасника
-                </button>
-              </section>
-          )}
-          {page === "Налаштування" && initialLoggedIn && <MembersPanel notify={notify} />}
-          {page === "Налаштування" && initialLoggedIn && (
-              <section className="panel passkey-panel">
-                <div>
-                  <strong>Імпорт Microsoft Excel</strong>
-                  <small>Файл .xlsx до 5 МБ, колонки: Назва, Категорія, Дата, Сума</small>
-                </div>
-                <label className="small-primary file-button">
-                  <Upload /> Обрати Excel
-                  <input
-                      type="file"
-                      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) void importCsv(file);
-                        e.target.value = "";
-                      }}
-                  />
-                </label>
-              </section>
-          )}
-          {page === "Налаштування" && initialLoggedIn && (
-              <RecategorizePanel notify={notify} />
-          )}
+
           {page === "Налаштування" && (
               <GuideFeedback notify={notify} authenticated={initialLoggedIn} />
           )}
+
           <button
               className="mobile-quick-add"
               onClick={() => setModal("expense")}
@@ -2714,6 +2936,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           >
             <Plus />
           </button>
+
           <nav className="mobile-nav" aria-label="Основна навігація">
             <button className={page === "Головна" ? "active" : ""} onClick={() => setPage("Головна")}>
               <Home />
@@ -2894,6 +3117,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 period={budgetPeriodType}
                 initialDate={budgetModalDefaultDate}
                 baseCurrency={baseCurrency}
+                initialCategoryId={budgetPresetCategory}
                 submit={addBudget}
                 close={() => setModal(null)}
             />
@@ -2901,6 +3125,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         {modal === "category" && (
             <CategoryModal
                 category={editingCategory}
+                payerSources={rules
+                    .filter((r) => editingCategory && r.actionCategoryId === editingCategory.id && r.conditionType === "note_contains" && r.name.startsWith("Джерело:"))
+                    .map((r) => r.name.replace(/^Джерело:\s*/, ""))}
                 submit={addCategory}
                 close={() => {
                   setModal(null);
@@ -2933,8 +3160,21 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 close={() => setMilestoneCelebration(null)}
             />
         )}
-        {modal === "invite" && <InviteModal submit={createInvite} close={() => setModal(null)} />}
+        {modal === "invite" && (
+            <InviteModal
+                submit={createInvite}
+                result={inviteResult}
+                again={() => setInviteResult(null)}
+                close={() => {
+                  setModal(null);
+                  setInviteResult(null);
+                }}
+            />
+        )}
         {modal === "rate" && <CustomRateModal submit={addCustomRate} close={() => setModal(null)} />}
+        {monoResyncDebug && (
+            <MonoSyncDebugModal debug={monoResyncDebug} close={() => setMonoResyncDebug(null)} />
+        )}
         {importPreview && (
             <ImportPreviewModal
                 preview={importPreview}
@@ -2969,4 +3209,3 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   );
 }
 
-export { Login } from "./components/Login";

@@ -13,7 +13,7 @@ import {
     Sun
 } from "lucide-react";
 
-function Login({
+export function Login({
                    dark,
                    setDark,
                    showPassword,
@@ -208,9 +208,7 @@ function Login({
         </main>
     );
 }
-export { GracePeriodAlert, AccountCard, BankMark, bankStyle, TransactionList } from "./components/AccountCard";
-export { MilestoneModal, EmptyState, ScanReceiptModal, ScanReviewRow } from "./components/ScanReceipt";
-function translateEntity(value: string) {
+export function translateEntity(value: string) {
     return (
         (
             {

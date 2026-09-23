@@ -5,7 +5,7 @@ import { formatMoney, currencySymbol } from "../lib/format";
 import { ModalHead } from "./modal-head";
 import {PiggyBank} from "lucide-react";
 
-function MilestoneModal({
+export function MilestoneModal({
                             goalName,
                             percent,
                             close,
@@ -31,7 +31,7 @@ function MilestoneModal({
         </div>
     );
 }
-function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
+export function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
     return (
         <div className="empty-state">
             <span className="empty-state-icon">{icon}</span>
@@ -39,10 +39,7 @@ function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
         </div>
     );
 }
-export * from "./components/modals";
-export { ModalHead } from "./components/modal-head";
-export { exportCsv, exportJson, exportExcel } from "./lib/export";блять я ж просила коротко і ясно, давай далі що переносити, омжешпо
-function ScanReceiptModal({
+export function ScanReceiptModal({
                               items,
                               accounts,
                               categories,
@@ -130,7 +127,7 @@ function ScanReceiptModal({
         </div>
     );
 }
-function ScanReviewRow({
+export function ScanReviewRow({
                            item,
                            accounts,
                            categories,

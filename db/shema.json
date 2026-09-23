@@ -1,0 +1,1770 @@
+[
+  {
+    "json_agg": [
+      {
+        "table_name": "accounts",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "bank",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "owner_label",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "balance",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "credit_limit",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "grace_period_end",
+        "data_type": "date",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "icon",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "color",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "archived",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "card_color",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "card_image_url",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "grace_balance",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "accounts",
+        "column_name": "card_last4",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "month",
+        "data_type": "date",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "period_type",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "limit_amount",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "alert_80_sent",
+        "data_type": "boolean",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "alert_100_sent",
+        "data_type": "boolean",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "category_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "active_budget_alerts",
+        "column_name": "spent",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "actor_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "entity_type",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "entity_id",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "action",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "old_data",
+        "data_type": "jsonb",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "new_data",
+        "data_type": "jsonb",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "audit_logs",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "month",
+        "data_type": "date",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "limit_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "alert_80_sent",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "alert_100_sent",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "period_type",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "icon",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "budgets",
+        "column_name": "color",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "icon",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "color",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "kind",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "is_default",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "categories",
+        "column_name": "budget_group",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "old_limit",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "new_limit",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "changed_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "credit_limit_changes",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "person",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "direction",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "due_date",
+        "data_type": "date",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "note",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "settled",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "is_installment",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "debts",
+        "column_name": "installment_months",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "rate_date",
+        "data_type": "date",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "base_currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "quote_currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "official_rate",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "custom_rate",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "exchange_rates",
+        "column_name": "source",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "feedback",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "feedback",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "feedback",
+        "column_name": "rating",
+        "data_type": "smallint",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "feedback",
+        "column_name": "message",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "feedback",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_contributions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_contributions",
+        "column_name": "goal_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_contributions",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_contributions",
+        "column_name": "contributed_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_contributions",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "goal_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "kind",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "note",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goal_transactions",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "target_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "current_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "target_date",
+        "data_type": "date",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "color",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "completed",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "asset_type",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "annual_rate",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "compound_interest",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "round_balance_to",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "round_expense_to",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "expense_percent",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "goals",
+        "column_name": "source_account_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "role",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "token_hash",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "invited_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "expires_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "accepted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_invitations",
+        "column_name": "username",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "household_members",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_members",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_members",
+        "column_name": "role",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "household_members",
+        "column_name": "joined_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "households",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "households",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "households",
+        "column_name": "base_currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "households",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "households",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_account_links",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_account_links",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_account_links",
+        "column_name": "mono_account_id",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_account_links",
+        "column_name": "app_account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_account_links",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "token",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "connected_by",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "accounts_json",
+        "data_type": "jsonb",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monobank_connections",
+        "column_name": "last_synced_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monobank_synced_items",
+        "column_name": "statement_item_id",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monobank_synced_items",
+        "column_name": "transaction_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monobank_synced_items",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "month",
+        "data_type": "date",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "category_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "spent",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "income",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "impulsive_count",
+        "data_type": "bigint",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "monthly_category_spending",
+        "column_name": "impulsive_spent",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "budget_80",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "budget_100",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "recurring_reminders",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "push_enabled",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "telegram_chat_id",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "digest_enabled",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "digest_frequency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "notification_preferences",
+        "column_name": "digest_email_enabled",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "credential_id",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "public_key",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "counter",
+        "data_type": "bigint",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "transports",
+        "data_type": "ARRAY",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "device_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "backed_up",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "passkey_credentials",
+        "column_name": "last_used_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "display_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "base_currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "locale",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "pin_hash",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "pin_enabled",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "pin_updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "username",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "onboarding_completed",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "planning_period",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "primary_goal",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "active_household_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "profiles",
+        "column_name": "budget_rollover",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "endpoint",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "p256dh",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "auth",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "user_agent",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "push_subscriptions",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "frequency",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "next_run_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "auto_create",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "active",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "last_reminded_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "kind",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "debt_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "recurring_rules",
+        "column_name": "goal_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "tags",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "tags",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "tags",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "telegram_chat_id",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "account_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "step",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_drafts",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "telegram_link_tokens",
+        "column_name": "token",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_link_tokens",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "telegram_link_tokens",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "condition_type",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "condition_value",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "action_type",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "action_category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "action_goal_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "action_value",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "active",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transaction_rules",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_splits",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_splits",
+        "column_name": "transaction_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_splits",
+        "column_name": "participant",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_splits",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_splits",
+        "column_name": "is_mine",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_tags",
+        "column_name": "transaction_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transaction_tags",
+        "column_name": "tag_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "type",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "booked_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "note",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "is_impulsive",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "split_total",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "personal_share",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "external_id",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transactions",
+        "column_name": "debt_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "household_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "from_account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "to_account_id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "from_transaction_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "to_transaction_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "sent_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "received_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "exchange_rate",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "fee_amount",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "fee_currency",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "booked_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "transfers",
+        "column_name": "credit_limit_delta",
+        "data_type": "numeric",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "challenge",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "purpose",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "expires_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "webauthn_challenges",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO"
+      }
+    ]
+  }
+]

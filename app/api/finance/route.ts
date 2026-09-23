@@ -1,5 +1,65 @@
 import { NextResponse } from "next/server";
 import { getFinanceContext } from "@/lib/supabase/context";
+import { fxFeeUah } from "@/lib/nbu";
+
+type FinanceClient = NonNullable<Awaited<ReturnType<typeof getFinanceContext>>>["supabase"];
+
+// "Звідки приходить платіж" для категорій доходу → правила note_contains + застосування до наявних
+async function syncPayerSources(
+    supabase: FinanceClient,
+    householdId: string,
+    userId: string,
+    category: { id: string; kind: string },
+    raw: string
+): Promise<string | null> {
+    if (category.kind !== "income") return null;
+    const sources = Array.from(new Set(raw.split(/[,;\n]/).map((s) => s.trim()).filter((s) => s.length >= 3))).slice(0, 20);
+    const { error: delError } = await supabase.from("transaction_rules").delete()
+        .eq("household_id", householdId).eq("condition_type", "note_contains")
+        .eq("action_category_id", category.id).like("name", "Джерело:%");
+    if (delError) return `Не вдалося оновити джерела: ${delError.message}`;
+    for (const source of sources) {
+        const { error: insError } = await supabase.from("transaction_rules").insert({
+            household_id: householdId,
+            name: `Джерело: ${source}`.slice(0, 80),
+            condition_type: "note_contains",
+            condition_value: source.toLowerCase().replace(/\s+/g, " "),
+            action_type: "set_category",
+            action_category_id: category.id,
+            active: true,
+            created_by: userId,
+        });
+        if (insError) return `Не вдалося зберегти джерело «${source}»: ${insError.message}`;
+        const pattern = `%${source.replace(/[%_\\]/g, (m) => "\\" + m).trim().split(/\s+/).join("%")}%`;
+        await supabase.from("transactions").update({ category_id: category.id })
+            .eq("household_id", householdId).eq("type", "income").ilike("note", pattern);
+    }
+    return null;
+}
+
+// Сума з чека (в іншій валюті) → комісія в UAH за курсом НБУ на дату операції
+async function applyReceiptFee(
+    supabase: FinanceClient,
+    householdId: string,
+    txId: string,
+    p: { amount: number; currency: string; type: string; receiptAmount: unknown; receiptCurrency?: unknown; bookedAt?: string }
+) {
+    const receipt = Number(p.receiptAmount);
+    const receiptCurrency = String(p.receiptCurrency || "UAH").toUpperCase();
+    if (!(receipt > 0) || receiptCurrency === String(p.currency).toUpperCase()) {
+        await supabase.from("transactions")
+            .update({ fee_amount: null, original_amount: null, original_currency: null })
+            .eq("id", txId).eq("household_id", householdId);
+        return;
+    }
+    const date = p.bookedAt || new Date().toISOString();
+    const fee = p.type === "income"
+        ? await fxFeeUah({ sentAmount: receipt, sentCurrency: receiptCurrency, receivedAmount: p.amount, receivedCurrency: p.currency, date })
+        : await fxFeeUah({ sentAmount: p.amount, sentCurrency: p.currency, receivedAmount: receipt, receivedCurrency: receiptCurrency, date });
+    await supabase.from("transactions")
+        .update({ fee_amount: fee, original_amount: receipt, original_currency: receiptCurrency })
+        .eq("id", txId).eq("household_id", householdId);
+}
 
 export async function GET(request: Request) {
     const light = new URL(request.url).searchParams.get("light") === "1";
@@ -7,7 +67,7 @@ export async function GET(request: Request) {
   if (!context) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { supabase, householdId } = context;
     const emptyQuery = Promise.resolve({ data: null, error: null });
-    const [accounts, transactions, categories, budgets, goals, debts, recurring, transfers, audit,exchangeRates,profile,household,creditLimitChanges] = await Promise.all([    supabase.from("accounts").select("*").eq("household_id", householdId).eq("archived", false).order("created_at"),
+    const [accounts, transactions, categories, budgets, goals, debts, recurring, transfers, audit,exchangeRates,profile,household,creditLimitChanges,rules] = await Promise.all([    supabase.from("accounts").select("*").eq("household_id", householdId).eq("archived", false).order("created_at"),
     supabase.from("transactions").select("*,categories(name,icon),accounts(name,owner_label),transaction_tags(tags(name))").eq("household_id", householdId).order("booked_at", { ascending: false }).limit(50000),
         light ? emptyQuery : supabase.from("categories").select("*").eq("household_id", householdId).order("name"),
     supabase.from("budgets").select("*,categories(name,color,icon)").eq("household_id", householdId),
@@ -20,8 +80,9 @@ export async function GET(request: Request) {
         light ? emptyQuery : supabase.from("profiles").select("planning_period,base_currency").eq("id",context.user.id).single(),
         light ? emptyQuery : supabase.from("households").select("base_currency").eq("id",householdId).single(),
     supabase.from("credit_limit_changes").select("*,accounts(name)").eq("household_id",householdId).order("changed_at",{ascending:false}).limit(100),
+        light ? emptyQuery : supabase.from("transaction_rules").select("*").eq("household_id",householdId).order("created_at",{ascending:false}),
     ]);
-const error = [accounts, transactions, categories, budgets, goals, debts, recurring, transfers, audit,exchangeRates,profile,household,creditLimitChanges].find(result => result.error)?.error;
+const error = [accounts, transactions, categories, budgets, goals, debts, recurring, transfers, audit,exchangeRates,profile,household,creditLimitChanges,rules].find(result => result.error)?.error;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({
       accounts: accounts.data, transactions: transactions.data, categories: categories.data,
@@ -29,6 +90,7 @@ const error = [accounts, transactions, categories, budgets, goals, debts, recurr
       planningPeriod: profile.data ? (profile.data?.planning_period==="week"?"week":"month") : undefined,
       baseCurrency: (household.data||profile.data) ? String(household.data?.base_currency||profile.data?.base_currency||"UAH") : undefined,
       creditLimitChanges: creditLimitChanges.data,
+      rules: rules.data ?? undefined,
       });
     }
 
@@ -42,21 +104,21 @@ export async function POST(request: Request) {
   if(body.action==="createTransaction"&&Number(body.splitTotal)>0&&(Number(body.personalShare)<0||Number(body.personalShare)>Number(body.splitTotal)))return NextResponse.json({error:"Особиста частка має бути від 0 до загальної суми"},{status:400});
   let result;
   switch (body.action) {
-    case "createAccount":
+      case "createAccount":
           result = await supabase.from("accounts").insert({
-            household_id: householdId, created_by: user.id, name: String(body.name).slice(0, 80),card_image_url:body.cardImageUrl||null,
-            bank: String(body.bank || "").slice(0, 80), owner_label: String(body.owner || "").slice(0, 80),
-            currency: String(body.currency || "UAH").toUpperCase().slice(0, 3), balance: Number(body.balance) || 0,
-            credit_limit:Number(body.creditLimit)||0,grace_period_end:body.graceEnd||null,grace_balance:body.graceBalance?Number(body.graceBalance):null,card_color:String(body.cardColor||"").slice(0,20)||null,
+              household_id: householdId, created_by: user.id, name: String(body.name).slice(0, 80),card_image_url:body.cardImageUrl||null,
+              bank: String(body.bank || "").slice(0, 80), owner_label: String(body.owner || "").slice(0, 80),
+              currency: String(body.currency || "UAH").toUpperCase().slice(0, 3), balance: Number(body.balance) || 0,
+              credit_limit:Number(body.creditLimit)||0,grace_period_end:body.graceEnd||null,grace_balance:body.graceBalance?Number(body.graceBalance):null,card_color:String(body.cardColor||"").slice(0,20)||null,card_last4:String(body.cardLast4||"").replace(/\D/g,"").slice(0,4)||null,
           }).select().single();
           break;
-    case "updateAccount":
-      result=await supabase.from("accounts").update({
-        name:String(body.name).slice(0,80),bank:String(body.bank||"").slice(0,80),owner_label:String(body.owner||"").slice(0,80),card_image_url:body.cardImageUrl||null,
-        currency:String(body.currency||"UAH").toUpperCase().slice(0,3),balance:Number(body.balance)||0,
-        credit_limit:Number(body.creditLimit)||0,grace_balance:body.graceBalance?Number(body.graceBalance):null,grace_period_end:body.graceEnd||null,card_color:String(body.cardColor||"").slice(0,20)||null,updated_at:new Date().toISOString(),
-      }).eq("id",body.id).eq("household_id",householdId).select().single();
-      break;
+      case "updateAccount":
+          result=await supabase.from("accounts").update({
+              name:String(body.name).slice(0,80),bank:String(body.bank||"").slice(0,80),owner_label:String(body.owner||"").slice(0,80),card_image_url:body.cardImageUrl||null,
+              currency:String(body.currency||"UAH").toUpperCase().slice(0,3),balance:Number(body.balance)||0,
+              credit_limit:Number(body.creditLimit)||0,grace_balance:body.graceBalance?Number(body.graceBalance):null,grace_period_end:body.graceEnd||null,card_color:String(body.cardColor||"").slice(0,20)||null,card_last4:String(body.cardLast4||"").replace(/\D/g,"").slice(0,4)||null,updated_at:new Date().toISOString(),
+          }).eq("id",body.id).eq("household_id",householdId).select().single();
+          break;
     case "deleteAccount":
       result = await supabase.from("accounts").update({ archived: true }).eq("id", body.id).eq("household_id", householdId);
       break;
@@ -82,7 +144,7 @@ export async function POST(request: Request) {
           else if(rule.condition_type==="amount_lt")matches=Number(body.amount)<Number(rule.condition_value);
           else if(rule.condition_type==="no_category")matches=!body.categoryId;
           else if(rule.condition_type==="currency_is")matches=body.currency===rule.condition_value;
-          else if(rule.condition_type==="note_contains")matches=String(body.note||"").toLowerCase().includes(String(rule.condition_value||"").toLowerCase());
+          else if(rule.condition_type==="note_contains")matches=String(body.note||"").toLowerCase().replace(/\s+/g, " ").trim().includes(String(rule.condition_value||"").toLowerCase().replace(/\s+/g, " ").trim());
           if(!matches)continue;
           if(rule.action_type==="set_category"&&rule.action_category_id){
             await supabase.from("transactions").update({category_id:rule.action_category_id}).eq("id",result.data.id).eq("household_id",householdId);
@@ -94,6 +156,12 @@ export async function POST(request: Request) {
             }
           }
         }
+      }
+      if (!result.error && result.data?.id && body.receiptAmount) {
+        await applyReceiptFee(supabase, householdId, String(result.data.id), {
+          amount: Number(body.amount), currency: String(body.currency || "UAH"), type: String(body.type),
+          receiptAmount: body.receiptAmount, receiptCurrency: body.receiptCurrency, bookedAt: body.bookedAt,
+        });
       }
       break;
       case "updateTransaction": {
@@ -117,6 +185,13 @@ export async function POST(request: Request) {
             result = await supabase.from("transactions").update({
               account_id:newAccountId,amount:newAmount,type:newType,category_id:body.categoryId||null,note:String(body.note||"").slice(0,500),booked_at:body.bookedAt||undefined,
             }).eq("id",body.id).eq("household_id",householdId).select().single();
+            if (!result.error && "receiptAmount" in body) {
+              const { data: accRow } = await supabase.from("accounts").select("currency").eq("id", newAccountId).eq("household_id", householdId).maybeSingle();
+              await applyReceiptFee(supabase, householdId, String(body.id), {
+                amount: newAmount, currency: String(accRow?.currency || "UAH"), type: newType,
+                receiptAmount: body.receiptAmount, receiptCurrency: body.receiptCurrency, bookedAt: body.bookedAt,
+              });
+            }
             // Якщо переказ — оновити другу ногу (to_transaction)
             if (!result.error && body.transferToAccountId) {
               const { data: transferRow } = await supabase.from("transfers")
@@ -138,38 +213,59 @@ export async function POST(request: Request) {
               }
             }
             // Auto-learn: save a note_contains rule when user sets a category
-            if (!result.error && body.categoryId) {
-              const txNote = String(body.note || "").trim();
+          function extractMerchantKeyword(note: string): string {
+              // Банки (накопичення) — одне правило на всі банки, а не на конкретну «назву»
+              const jar = note.match(/(зняття\s+(?:з\s+)?банки|виплата\s+банки|поповнення\s+банки)/i);
+              if (jar) return jar[1].toLowerCase().replace(/\s+/g, " ");
+              const cleaned = note
+                  .replace(/^(розстрочка|оплата частинами|купівля частинами|платіж|оплата послуг|оплата товарів|оплата в|оплата|переказ на|переказ|купівля|поповнення|сплата|списання|автосписання|комісія|зняття|видача|pos|p2p|tpp|qrc|nfc|apple pay|google pay|gpay)\s*:?\s*/gi, "")
+                  .trim();
+              return (cleaned.split(/[,;]|(?=\d{4,})/)[0] || cleaned).trim();
+          }
+          // Auto-learn: save a note_contains rule when user sets a category
+          if (!result.error && body.categoryId) {
+              const txNote = extractMerchantKeyword(String(body.note || "").replace(/\s+/g, " ").trim());
               if (txNote.length >= 3) {
-                const { data: existingRule } = await supabase
-                    .from("transaction_rules")
-                    .select("id,action_category_id")
-                    .eq("household_id", householdId)
-                    .eq("condition_type", "note_contains")
-                    .ilike("condition_value", txNote)
-                    .maybeSingle();
-                if (!existingRule) {
-                  await supabase.from("transaction_rules").insert({
-                    household_id: householdId,
-                    name: `Авто: ${txNote.slice(0, 50)}`,
-                    condition_type: "note_contains",
-                    condition_value: txNote,
-                    action_type: "set_category",
-                    action_category_id: body.categoryId,
-                    active: true,
-                    created_by: user.id,
-                  });
-                } else if (existingRule.action_category_id !== body.categoryId) {
-                  await supabase.from("transaction_rules")
-                      .update({ action_category_id: body.categoryId })
-                      .eq("id", existingRule.id);
-                }
+                  const { data: existingRule } = await supabase
+                      .from("transaction_rules")
+                      .select("id,action_category_id")
+                      .eq("household_id", householdId)
+                      .eq("condition_type", "note_contains")
+                      .ilike("condition_value", txNote)
+                      .maybeSingle();
+                  if (!existingRule) {
+                      await supabase.from("transaction_rules").insert({
+                          household_id: householdId,
+                          name: `Авто: ${txNote.slice(0, 50)}`,
+                          condition_type: "note_contains",
+                          condition_value: txNote,
+                          action_type: "set_category",
+                          action_category_id: body.categoryId,
+                          active: true,
+                          created_by: user.id,
+                      });
+                  } else if (existingRule.action_category_id !== body.categoryId) {
+                      await supabase.from("transaction_rules")
+                          .update({ action_category_id: body.categoryId })
+                          .eq("id", existingRule.id);
+                  }
+                  // Одразу застосовуємо до всіх схожих операцій того ж типу
+                  const pattern = `%${txNote.replace(/[%_\\]/g, (m) => "\\" + m).trim().split(/\s+/).join("%")}%`;
+                  await supabase.from("transactions")
+                      .update({ category_id: body.categoryId })
+                      .eq("household_id", householdId)
+                      .eq("type", newType)
+                      .ilike("note", pattern)
+                      .neq("id", body.id);
               }
-            }
+          }
             break;
           }
-    case "deleteTransaction": {
-      const [fromMatch, toMatch, txRow] = await Promise.all([
+      case "deleteTransaction": {
+          if (String(body.id || "").startsWith("limit-")) {
+              return NextResponse.json({ error: "Цей запис — довідкова подія (зміна кредитного ліміту), її не можна видалити окремо" }, { status: 400 });
+          }
+          const [fromMatch, toMatch, txRow] = await Promise.all([
         supabase.from("transfers").select("id").eq("from_transaction_id", body.id).maybeSingle(),
         supabase.from("transfers").select("id").eq("to_transaction_id", body.id).maybeSingle(),
         supabase.from("transactions").select("amount,debt_id").eq("id", body.id).eq("household_id", householdId).maybeSingle(),
@@ -199,6 +295,25 @@ export async function POST(request: Request) {
         p_booked_at: body.bookedAt || new Date().toISOString(),
         p_credit_limit_delta: Number(body.creditLimitDelta) || 0,
       });
+      if (!result.error && result.data) {
+        const { data: accRows } = await supabase.from("accounts").select("id,currency").in("id", [body.fromAccountId, body.toAccountId]).eq("household_id", householdId);
+        const fromCur = accRows?.find((a) => String(a.id) === String(body.fromAccountId))?.currency;
+        const toCur = accRows?.find((a) => String(a.id) === String(body.toAccountId))?.currency;
+        if (fromCur && toCur && fromCur !== toCur) {
+          const transferId = typeof result.data === "object" ? (result.data as { id?: string }).id : result.data;
+          const { data: tr } = await supabase.from("transfers").select("from_transaction_id").eq("id", String(transferId)).maybeSingle();
+          const fee = await fxFeeUah({
+            sentAmount: Number(body.sentAmount), sentCurrency: fromCur,
+            receivedAmount: Number(body.receivedAmount), receivedCurrency: toCur,
+            date: body.bookedAt || new Date().toISOString(),
+          });
+          if (tr?.from_transaction_id && fee != null) {
+            await supabase.from("transactions")
+              .update({ fee_amount: fee, original_amount: Number(body.receivedAmount), original_currency: toCur })
+              .eq("id", tr.from_transaction_id).eq("household_id", householdId);
+          }
+        }
+      }
       break;
     case "createBudget":
       result = await supabase.from("budgets").upsert({
@@ -309,6 +424,7 @@ export async function POST(request: Request) {
               color:String(body.color||"#6558E8").slice(0,20),kind:body.kind==="income"?"income":"expense",created_by:user.id,
               budget_group:["needs","wants","savings"].includes(String(body.budgetGroup))?body.budgetGroup:null,
           }).select().single();
+          if(!result.error&&result.data&&typeof body.payerSources==="string"){const syncError=await syncPayerSources(supabase,householdId,user.id,result.data,body.payerSources);if(syncError){console.error(syncError);return NextResponse.json({error:syncError},{status:500});}}
           break;
       case "updateCategory":
           result = await supabase.from("categories").update({
@@ -316,6 +432,7 @@ export async function POST(request: Request) {
               color:String(body.color||"#6558E8").slice(0,20),
               budget_group:["needs","wants","savings"].includes(String(body.budgetGroup))?body.budgetGroup:null,
           }).eq("id",body.id).eq("household_id",householdId).select().single();
+          if(!result.error&&result.data&&typeof body.payerSources==="string"){const syncError=await syncPayerSources(supabase,householdId,user.id,result.data,body.payerSources);if(syncError){console.error(syncError);return NextResponse.json({error:syncError},{status:500});}}
           break;
     case "createCustomRate":
       result=await supabase.from("exchange_rates").upsert({
@@ -325,7 +442,7 @@ export async function POST(request: Request) {
       break;
       case "deleteCategory": {
           const { data: catRow } = await supabase.from("categories").select("name,is_default").eq("id",body.id).eq("household_id",householdId).single();
-          if(catRow?.name==="Відсотки / Комісія"||catRow?.name==="Борги"){result={error:{message:"Цю системну категорію не можна видалити"}};break;}
+          if(catRow?.name==="Відсотки / Комісія"||catRow?.name==="Борги"||catRow?.name==="Переказ"){result={error:{message:"Цю системну категорію не можна видалити"}};break;}
           result = await supabase.from("categories").delete().eq("id",body.id).eq("household_id",householdId);
           break;
         }
@@ -341,6 +458,11 @@ export async function POST(request: Request) {
       case "deleteRecurring":
           result = await supabase.from("recurring_rules").delete().eq("id",body.id).eq("household_id",householdId);
           break;
+    case "updateBudget":
+      result = await supabase.from("budgets").update({
+        limit_amount: Number(body.limitAmount), alert_80_sent: false, alert_100_sent: false,
+      }).eq("id", body.id).eq("household_id", householdId).select().single();
+      break;
     case "deleteBudget":
       result = await supabase.from("budgets").delete().eq("id",body.id).eq("household_id",householdId);
       break;

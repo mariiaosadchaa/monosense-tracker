@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.git/
+dist/
+build/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ico
+*.webp
+*.log

@@ -22,9 +22,13 @@ export type Transaction = {
     currency?: string;
     baseAmount?: number;
     impulse?: boolean;
+    type?: "income" | "expense" | "transfer";
     kind?: string;
     categoryId?: string;
     transferToAccount?: string;
+    feeAmount?: number;          // комісія в UAH
+    originalAmount?: number;     // сума з чека
+    originalCurrency?: string;   // валюта чека
 };
 
 export type Account = {
@@ -40,6 +44,7 @@ export type Account = {
     graceEnd?: string;
     graceBalance?: number;
     cardImage?: string;
+    cardLast4?: string;
 };
 
 export type GoalItem = {
@@ -82,6 +87,8 @@ export type RecurringItem = {
     next: string;
     auto: boolean;
     kind: "expense" | "income";
+    accountId?: string;
+    categoryId?: string;
 };
 
 export type CategoryItem = {

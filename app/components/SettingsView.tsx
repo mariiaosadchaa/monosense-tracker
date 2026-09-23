@@ -1,9 +1,11 @@
 "use client";
 import type { CategoryItem, AuditItem, GoalItem, BudgetItem, DebtItem, Transaction, RuleItem } from "../types";
-import { ProfileSettings, AchievementsPanel, RulesPanel } from "../rivna-app";
+import { ProfileSettings, MembersPanel, RecategorizePanel, GuideFeedback } from "./SettingsPanels";
+import { AchievementsPanel, RulesPanel } from "./SettingsPanels2";
 import {ArrowRight, Bell, Download, Goal, Plus, Settings, Trash2, Upload} from "lucide-react";
+import { translateEntity, translateAction } from "./translate";
 
-function SettingsView({
+export function SettingsView({
                           dark,
                           setDark,
                           skin,

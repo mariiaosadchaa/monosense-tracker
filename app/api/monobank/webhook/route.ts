@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { categorizeMonobankItems } from "@/lib/monobank/categorize";
+import { mccCategoryCandidates } from "@/lib/monobank/mcc";
+import { monoItemFee } from "@/lib/monobank/fee";
 
 export async function POST(request: Request) {
-  let payload: { type?: string; data?: { account?: string; statementItem?: { id: string; time: number; description?: string; amount: number } } };
+  let payload: { type?: string; data?: { account?: string; statementItem?: { id: string; time: number; description?: string; amount: number; mcc?: number; operationAmount?: number; currencyCode?: number; commissionRate?: number } } };
   try {
     payload = await request.json();
   } catch {
@@ -18,8 +20,11 @@ export async function POST(request: Request) {
   const item = payload.data.statementItem;
   const monoAccountId = payload.data.account;
 
-  const { data: alreadySynced } = await admin.from("monobank_synced_items").select("statement_item_id").eq("statement_item_id", item.id).maybeSingle();
-  if (alreadySynced) return NextResponse.json({ ok: true });
+// було: SELECT-перевірка, потім пізніше insert
+  const { error: lockError } = await admin
+      .from("monobank_synced_items")
+      .insert({ statement_item_id: item.id, transaction_id: null });
+  if (lockError) return NextResponse.json({ ok: true }); // вже обробляється/оброблено
 
   const { data: link } = await admin
       .from("monobank_account_links")
@@ -54,22 +59,40 @@ export async function POST(request: Request) {
       .eq("condition_type", "note_contains")
       .eq("active", true);
 
-  const learnedCategoryId = (learnedRules || []).find(
-      (r) => (item.description || "").toLowerCase().includes(String(r.condition_value || "").toLowerCase())
+  const salaryCategoryId = type === "income" && /універсал\s*банк|universal\s*bank|universalbank/i.test(item.description || "")
+      ? ((categories || []).find((c) => c.name === "Зарплата" && c.kind === "income")
+          || (categories || []).find((c) => c.kind === "income" && /^зарплата/i.test(c.name)))?.id || null
+      : null;
+
+  const jarCategoryId = /(зняття\s+(з\s+)?банки|виплата\s+банки|поповнення\s+банки|на\s+банку|з\s+банки)/i.test(item.description || "")
+      ? (categories || []).find((c) => c.name === "Переказ" && c.kind === type)?.id
+        || (categories || []).find((c) => c.name === "Переказ")?.id || null
+      : null;
+
+  const learnedCategoryId = salaryCategoryId || jarCategoryId || (learnedRules || []).find(
+      (r) => (item.description || "").toLowerCase().replace(/\s+/g, " ").trim().includes(String(r.condition_value || "").toLowerCase().replace(/\s+/g, " ").trim())
   )?.action_category_id || null;
 
-  const categoryNameByItemId = learnedCategoryId
+  const mccCategoryId = !learnedCategoryId
+      ? (categories || []).find(
+      (c) => c.kind === type && mccCategoryCandidates(item.mcc).some((n) => c.name.toLowerCase() === n.toLowerCase())
+  )?.id || null
+      : null;
+
+  const categoryNameByItemId = (learnedCategoryId || mccCategoryId)
       ? {}
       : await categorizeMonobankItems(
           [{ id: item.id, description: item.description || "", type }],
           categories || []
-        );
+      );
   const categoryName = categoryNameByItemId[item.id];
   const category = learnedCategoryId
       ? { id: learnedCategoryId }
-      : (categories || []).find(
-          (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
-        );
+      : mccCategoryId
+          ? { id: mccCategoryId }
+          : (categories || []).find(
+              (c) => c.kind === type && c.name.toLowerCase() === (categoryName || "").toLowerCase()
+          );
 
   const { data: transaction } = await admin.rpc("create_finance_transaction_admin", {
     p_user_id: connection.connected_by,
@@ -85,8 +108,19 @@ export async function POST(request: Request) {
     p_personal_share: null,
   });
 
-  await admin.from("monobank_synced_items").insert({ statement_item_id: item.id, transaction_id: transaction?.id || null });
+  const feeInfo = await monoItemFee(item, account.currency);
+  if (feeInfo && transaction?.id) {
+    await admin.from("transactions").update({
+      fee_amount: feeInfo.feeUah,
+      original_amount: feeInfo.originalAmount,
+      original_currency: feeInfo.originalCurrency,
+    }).eq("id", transaction.id);
+  }
 
+  await admin
+      .from("monobank_synced_items")
+      .update({ transaction_id: transaction?.id || null })
+      .eq("statement_item_id", item.id);
   await admin
       .from("monobank_connections")
       .update({ last_synced_at: new Date().toISOString() })

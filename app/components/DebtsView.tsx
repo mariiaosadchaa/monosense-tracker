@@ -3,7 +3,7 @@ import type { DebtItem } from "../types";
 import { formatMoney, currencySymbol } from "../lib/format";
 import {ArrowDownLeft, ArrowUpRight, HandCoins, Plus, Trash2} from "lucide-react";
 
-function DebtsView({
+export function DebtsView({
                        debts,
                        add,
                        settle,

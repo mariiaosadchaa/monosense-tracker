@@ -29,8 +29,8 @@ export async function categorizeMonobankItems(
 - Якщо в описі є ім'я людини (українське чи іноземне: ім'я + прізвище, або у форматі "Від Іван Петренко", "Іваненко О.", тощо) — це завжди Переказ якщо є така категорія. Це стосується і доходів, і витрат.
 - Операції що містять "Payoneer", "PayPal", "Wise", "SWIFT" в описі → категорія Переказ.
 - Якщо назва не впізнається напряму, орієнтуйся на загальний сенс опису.
-- Обирай категорію, тільки якщо впевненість достатня. Не вигадуй категорію, якої немає у списку.
-- Повертай null лише якщо справді жодна категорія не підходить — уникай null, якщо є хоч трохи підходяща категорія.
+- Обов'язково обирай категорію СУВОРО зі списку вище для КОЖНОЇ операції, орієнтуючись на тип бізнесу компанії з опису. Наприклад: ігрові платформи (Steam, PlayStation, Xbox, Epic Games) → категорія розваг/ігор, якщо є; маркетплейси (Temu, AliExpress, Amazon, Rozetka, Shein) → категорія покупок/шопінгу, якщо є; платіжні сервіси (Portmone, LiqPay, Easypay) → категорія комунальних платежів або найближча за змістом.
+- НІКОЛИ не повертай null, якщо у списку вище є хоча б одна категорія відповідного типу (дохід/витрата) — завжди обирай НАЙБЛИЖЧУ за змістом наявну категорію, навіть якщо збіг не ідеальний.
 
 Для кожної операції нижче (формат: ID | тип | опис) визнач найбільш підходящу категорію СУВОРО зі списку відповідного типу вище, або null.
 Операції:
@@ -39,17 +39,20 @@ ${lines}
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: { temperature: 0, responseMimeType: "application/json" },
                 }),
             }
         );
-        if (!response.ok) return {};
+        if (!response.ok) {
+            console.error("Gemini categorize error:", response.status, await response.text());
+            return {};
+        }
         const data = await response.json();
         const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         const cleaned = text.replace(/```json|```/g, "").trim();

@@ -1,10 +1,11 @@
 "use client";
 import type { GoalItem, RecurringItem } from "../types";
 import { formatMoney, currencySymbol } from "../lib/format";
+import { ASSET_TYPE_ICONS, ASSET_TYPE_LABELS } from "./AccountsView";
 import {ArrowUpRight, BarChart3, PiggyBank, Plus, Settings, Trash2} from "lucide-react";
 
 
-function GoalsView({
+export function GoalsView({
                        goals,
                        authenticated,
                        add,

@@ -3,21 +3,19 @@
 import { useMemo, useState } from "react";
 import type { Page, Account, Transaction, GoalItem, RecurringItem } from "../types";
 import { formatMoney, currencySymbol } from "../lib/format";
-
-import type {Account, GoalItem, Page, RecurringItem, Transaction} from "@/app/types";
-import {useMemo, useState} from "react";
+import { isLight } from "../lib/transfers";
 import {
     ArrowDownLeft,
     ArrowRight,
-    ArrowUpRight,
     ChevronDown,
-    MoreHorizontal,
     PiggyBank,
     Plus, Repeat2,
-    Sparkles, Trash2
+    Trash2
 } from "lucide-react";
+import { GracePeriodAlert } from "./Analytics";
+import { TransactionList } from "./AccountCard";
 
-function Dashboard({
+export function Dashboard({
                        balance,
                        baseCurrency,
                        accounts,
@@ -27,7 +25,7 @@ function Dashboard({
                        openPage,
                        addAccount,
                        changeCurrency,
-                       monthlyFees,
+                       feesByMonth,
                        plannedIncome,
                        recurring,
                        addRecurring,
@@ -43,7 +41,7 @@ function Dashboard({
     openPage: (p: Page) => void;
     addAccount: () => void;
     changeCurrency: (c: string) => void;
-    monthlyFees: number;
+    feesByMonth: Record<string, number>;
     plannedIncome: number;
     recurring: RecurringItem[];
     addRecurring: () => void;
@@ -102,7 +100,8 @@ function Dashboard({
             : 0;
     const daysInMonth = new Date(year, month + 1, 0).getDate(),
         forecast = Math.round((expense / Math.max(1, now.getDate())) * daysInMonth),
-        projectedBalance = balance - Math.max(0, forecast - expense),
+        remainingIncome = Math.max(0, plannedIncome - income),
+        projectedBalance = balance - Math.max(0, forecast - expense) + remainingIncome,
         monthLabel = new Intl.DateTimeFormat("uk-UA", { month: "long" }).format(now);
     const avgMonthlyExpense = useMemo(() => {
         const cutoff = new Date();
@@ -137,9 +136,8 @@ function Dashboard({
                 new Date(r.next).getDate() >= now.getDate(),
         )
         .reduce((sum, r) => sum + r.amount, 0);
-    const goalReserve = goals.reduce((sum, g) => sum + (g.current > 0 ? 0 : 0), 0);
     const daysLeft = Math.max(1, daysInMonth - now.getDate() + 1);
-    const safeToSpend = Math.max(0, (balance - upcomingObligations - expense) / daysLeft);
+    const safeToSpend = Math.max(0, (balance - upcomingObligations) / daysLeft);
     const primaryGoal =
             goals[0] ||
             (authenticated
@@ -156,25 +154,27 @@ function Dashboard({
             ? Math.min(100, Math.round((primaryGoal.current / Math.max(1, primaryGoal.target)) * 100))
             : 0;
     const symbol = currencySymbol(baseCurrency);
+    const money = (v: number) => `${v < 0 ? "−" : ""}${symbol} ${formatMoney(v)}`;
+    const monthGen = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long" }).format(now).replace(/^\d+\s*/, "");
+    const currentMonthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const topCategories = Object.entries(
+        currentTransactions
+            .filter((t) => t.amount < 0 && t.kind !== "transfer" && t.kind !== "exchange")
+            .reduce<Record<string, number>>((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + Math.abs(t.baseAmount ?? t.amount);
+                return acc;
+            }, {}),
+    )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4);
+    const upcoming = [...recurring].sort((a, b) => new Date(a.next).getTime() - new Date(b.next).getTime());
     return (
         <>
             <GracePeriodAlert accounts={accounts} />
-            {savingsBalance > 0 && (
-                <div className="safe-to-spend-row">
-                    <div
-                        className={
-                            runwayMonths < 3 ? "safe-to-spend runway-widget low" : "safe-to-spend runway-widget"
-                        }
-                    >
-                        <small>Подушка безпеки</small>
-                        <strong>{Math.round(runwayMonths * 10) / 10} міс.</strong>
-                    </div>
-                </div>
-            )}
-            <div className="summary-grid">
-                <article className="balance-card">
-                    <div className="card-top">
-                        <span>Загальний баланс</span>
+            <div className="dc-tiles">
+                <article className="dc-tile dark">
+                    <div className="dc-tile-head">
+                        <small>Баланс</small>
                         <details className="currency-select">
                             <summary>
                                 {baseCurrency} <ChevronDown />
@@ -188,9 +188,7 @@ function Dashboard({
                                         onClick={(e) => {
                                             e.preventDefault();
                                             changeCurrency(c);
-                                            (
-                                                e.currentTarget.closest("details") as HTMLDetailsElement | null
-                                            )?.removeAttribute("open");
+                                            (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
                                         }}
                                     >
                                         {c}
@@ -199,78 +197,46 @@ function Dashboard({
                             </div>
                         </details>
                     </div>
-                    <h2>
-                        {symbol} {formatMoney(balance)}
-                        <small>.00</small>
-                    </h2>
-                    <div className="balance-meta">
-            <span>
-              <ArrowUpRight /> +{symbol} {formatMoney(income)} <small>доходи</small>
-            </span>
-                        <span>
-              <ArrowDownLeft /> −{symbol} {formatMoney(expense)} <small>витрати</small>
-            </span>
-                    </div>
-                    <div className="balance-footer">
-                        <span>За {monthLabel}</span>
-                        <span className={difference > 0 ? "negative" : "positive"}>
-              {previousExpense
-                  ? `${difference > 0 ? "+" : ""}${difference}% до минулого місяця`
-                  : "Перший період"}
-            </span>
-                    </div>
+                    <b>{money(balance)}</b>
+                    <em>
+                        {accounts.length} {accounts.length === 1 ? "рахунок" : accounts.length < 5 ? "рахунки" : "рахунків"}
+                    </em>
                 </article>
-                <article className="forecast-card">
-                    <div className="card-heading">
-                        <div>
-                            <span>Прогноз на кінець місяця</span>
-                            <h3>
-                                {symbol} {formatMoney(projectedBalance)}
-                            </h3>
-                        </div>
-                        <span className="forecast-icon">
-              <Sparkles />
-            </span>
-                    </div>
-                    <div className="forecast-line">
-                        <i style={{ width: `${Math.min(100, (now.getDate() / daysInMonth) * 100)}%` }} />
-                        <b />
-                    </div>
-                    <p>
-                        За поточного темпу витрат · прогноз витрат {symbol} {formatMoney(forecast)}
-                    </p>
-                    {plannedIncome > 0 && (
-                        <p className="fee-note">
-                            Запланований дохід цього місяця: {symbol} {formatMoney(plannedIncome)}
-                        </p>
-                    )}
-                    {monthlyFees > 0 && (
-                        <p className="fee-note">
-                            Комісії за перекази цього місяця: {symbol} {formatMoney(monthlyFees)}
-                        </p>
-                    )}
-                    <div className="insight">
-                        <Sparkles />{" "}
-                        {previousExpense
-                            ? `Темп витрат ${Math.abs(difference)}% ${difference <= 0 ? "нижчий" : "вищий"} за минулий місяць`
-                            : "Прогноз уточнюється з кожною операцією"}
-                    </div>
+                <article className="dc-tile">
+                    <small>Доходи · {monthLabel}</small>
+                    <b className="pos">+{symbol} {formatMoney(income)}</b>
+                    <em>{plannedIncome > 0 ? `з ${formatMoney(plannedIncome)} плану` : "за цей місяць"}</em>
+                </article>
+                <article className="dc-tile">
+                    <small>Витрати · {monthLabel}</small>
+                    <b>−{symbol} {formatMoney(expense)}</b>
+                    <em className={difference > 0 ? "neg" : "pos"}>
+                        {previousExpense ? `${difference > 0 ? "+" : ""}${difference}% до минулого місяця` : "перший період"}
+                    </em>
+                </article>
+                <article className="dc-tile">
+                    <small>Прогноз на {daysInMonth} {monthGen}</small>
+                    <b className={projectedBalance < 0 ? "neg" : ""}>{money(projectedBalance)}</b>
+                    <em>
+                        {daysLeft} {daysLeft === 1 ? "день" : daysLeft < 5 ? "дні" : "днів"} лишилось
+                        {feesByMonth[currentMonthKey] ? ` · комісії ${symbol} ${formatMoney(feesByMonth[currentMonthKey])}` : ""}
+                    </em>
                 </article>
             </div>
-            <section className="accounts">
-                <div className="section-title">
-                    <div>
-                        <h2>Мої рахунки</h2>
-                        <p>Баланс усіх активів</p>
-                    </div>
-                    <button onClick={() => openPage("Рахунки")}>
-                        Усі рахунки <ArrowRight />
-                    </button>
-                </div>
-                <div className="account-row">
-                    {accounts.slice(0, 4).map((a) => (
-                        <div
+
+            <div className="dc-chips">
+                {accounts.map((a) => {
+                    const available = (a.balance || 0) + (a.creditLimit || 0);
+                    const logo = a.bank.toLowerCase().includes("mono")
+                        ? "mono"
+                        : a.bank.toLowerCase().includes("payoneer") || a.bank.toLowerCase().includes("пайонер")
+                            ? "P"
+                            : a.bank.slice(0, 2);
+                    return (
+                        <button
+                            type="button"
                             key={a.id}
+                            className="dc-chip"
                             draggable
                             onDragStart={(e) => e.dataTransfer.setData("text/plain", String(a.id))}
                             onDragOver={(e) => e.preventDefault()}
@@ -278,124 +244,129 @@ function Dashboard({
                                 e.preventDefault();
                                 reorderAccounts(e.dataTransfer.getData("text/plain"), String(a.id));
                             }}
+                            onClick={() => openPage("Рахунки")}
+                            title={`${a.name} · ${a.owner || ""}`}
                         >
-                            <AccountCard account={a} />
-                        </div>
-                    ))}
-                    <button className="new-account" onClick={addAccount}>
-            <span className="new-account-icon">
-              <Plus />
-            </span>
-                        <span>{accounts.length ? "Додати рахунок" : "Додай свій перший рахунок"}</span>
-                    </button>
-                </div>
-            </section>{" "}
-            <div className="dashboard-grid">
-                <section className="panel transactions">
-                    <div className="section-title">
-                        <div>
-                            <h2>Останні операції</h2>
-                            <p>Найновіші записи</p>
-                        </div>
+                            <i style={a.color ? { background: a.color, color: isLight(a.color) ? "#111" : "#fff" } : undefined}>{logo}</i>
+                            <span>
+                                {a.name}
+                                {a.owner && !/^мій$/i.test(a.owner) ? ` · ${a.owner}` : ""}
+                            </span>
+                            <b className={available < 0 ? "neg" : ""}>
+                                {available < 0 ? "−" : ""}
+                                {currencySymbol(a.currency)} {formatMoney(available)}
+                            </b>
+                        </button>
+                    );
+                })}
+                <button type="button" className="dc-chip add" onClick={addAccount}>
+                    <Plus size={14} /> {accounts.length ? "Рахунок" : "Додай перший рахунок"}
+                </button>
+            </div>
+
+            <div className="dc-grid">
+                <section className="panel dc-panel">
+                    <div className="dc-title">
+                        <h2>Останні операції</h2>
                         <button onClick={() => openPage("Операції")}>
-                            Усі операції <ArrowRight />
+                            Усі <ArrowRight size={14} />
                         </button>
                     </div>
-                    <TransactionList transactions={transactions.slice(0, 4)} />
+                    <TransactionList transactions={transactions.slice(0, 5)} />
                 </section>
-                <section className="panel budget-panel">
-                    <div className="section-title">
-                        <div>
-                            <h2>Бюджет: {monthLabel}</h2>
-                            <p>{daysInMonth - now.getDate()} днів до кінця місяця</p>
-                        </div>
-                        <div className="safe-to-spend-mini">
-                            <small>Можна сьогодні</small>
-                            <strong>
-                                {symbol} {formatMoney(safeToSpend)}
-                            </strong>
-                        </div>
+
+                <section className="panel dc-panel">
+                    <div className="dc-title">
+                        <h2>Бюджет · {monthLabel}</h2>
                         <button onClick={() => openPage("Бюджет")}>
-                            <MoreHorizontal />
+                            Ліміти <ArrowRight size={14} />
                         </button>
                     </div>
-                    <div className="budget-total">
-                        <div>
-                            <small>Витрачено цього місяця</small>
-                            <strong>
-                                {symbol} {formatMoney(expense)}
-                            </strong>
-                        </div>
-                        <b>{forecast ? Math.round((expense / forecast) * 100) : 0}% часу</b>
+                    <div className="dc-row">
+                        <span>Витрачено</span>
+                        <b>{symbol} {formatMoney(expense)}</b>
                     </div>
-                    <div className="main-progress">
+                    <div className="dc-bar">
                         <i style={{ width: `${Math.min(100, (now.getDate() / daysInMonth) * 100)}%` }} />
                     </div>
-                    <button className="budget-open" onClick={() => openPage("Бюджет")}>
-                        Переглянути ліміти категорій <ArrowRight />
-                    </button>
+                    <p className="dc-note">
+                        Минуло {Math.round((now.getDate() / daysInMonth) * 100)}% місяця · прогноз витрат {symbol} {formatMoney(forecast)}
+                    </p>
+                    <div className="dc-safe">
+                        <small>Можна витрачати на день</small>
+                        <b className={safeToSpend <= 0 ? "neg" : "pos"}>{symbol} {formatMoney(safeToSpend)}</b>
+                    </div>
+                    {topCategories.length > 0 && (
+                        <div className="dc-cats">
+                            {topCategories.map(([name, value]) => (
+                                <div key={name} className="dc-cat">
+                                    <span>{name}</span>
+                                    <b>{symbol} {formatMoney(value)}</b>
+                                    <i>
+                                        <em style={{ width: `${(value / topCategories[0][1]) * 100}%` }} />
+                                    </i>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {primaryGoal && (
+                        <button className="dc-goal" onClick={() => openPage("Накопичення")}>
+                            <PiggyBank size={16} />
+                            <span>
+                                {primaryGoal.name}
+                                <i><em style={{ width: `${goalProgress}%`, background: primaryGoal.color }} /></i>
+                            </span>
+                            <b>{goalProgress}%</b>
+                        </button>
+                    )}
+                    {savingsBalance > 0 && (
+                        <p className="dc-note">Подушка безпеки: {Math.round(runwayMonths * 10) / 10} міс. витрат</p>
+                    )}
+                </section>
+
+                <section className="panel dc-panel dc-wide">
+                    <div className="dc-title">
+                        <h2>Регулярні платежі та доходи</h2>
+                        <button onClick={addRecurring}>
+                            <Plus size={14} /> Додати
+                        </button>
+                    </div>
+                    {upcoming.length ? (
+                        <div className="dc-plans">
+                        {upcoming.map((r) => (
+                            <div key={r.id} className="dc-plan">
+                                <span className={r.kind === "income" ? "dc-plan-ic in" : "dc-plan-ic"}>
+                                    {r.kind === "income" ? <ArrowDownLeft size={14} /> : <Repeat2 size={14} />}
+                                </span>
+                                <span className="dc-plan-name">
+                                    {r.name}
+                                    <small>
+                                        {new Date(r.next).toLocaleDateString("uk-UA", { day: "numeric", month: "long" })}
+                                        {" · "}
+                                        {({ monthly: "щомісяця", weekly: "щотижня", yearly: "щороку" } as Record<string, string>)[r.frequency] || r.frequency}
+                                    </small>
+                                </span>
+                                <b className={r.kind === "income" ? "pos" : ""}>
+                                    {r.kind === "income" ? "+" : "−"}
+                                    {currencySymbol(r.currency)} {formatMoney(r.amount)}
+                                </b>
+                                <button
+                                    className="dc-del"
+                                    onClick={() => {
+                                        if (window.confirm(`Видалити «${r.name}»?`)) removeRecurring(r.id);
+                                    }}
+                                    aria-label="Видалити"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))}
+                        </div>
+                    ) : (
+                        <p className="empty-inline">Регулярних платежів чи доходів поки немає</p>
+                    )}
                 </section>
             </div>
-            {primaryGoal && (
-                <button className="panel dashboard-goal" onClick={() => openPage("Накопичення")}>
-          <span className="goal-icon">
-            <PiggyBank />
-          </span>
-                    <div>
-                        <small>Головна фінансова ціль</small>
-                        <strong>{primaryGoal.name}</strong>
-                        <span>
-              <i style={{ width: `${goalProgress}%`, background: primaryGoal.color }} />
-            </span>
-                        <p>
-                            {goalProgress}% · {primaryGoal.currency} {formatMoney(primaryGoal.current)} з{" "}
-                            {formatMoney(primaryGoal.target)}
-                        </p>
-                    </div>
-                    <ArrowRight />
-                </button>
-            )}
-            <section className="panel recurring-panel">
-                <div className="section-title">
-                    <div>
-                        <h2>Регулярні платежі</h2>
-                        <p>Підписки, оренда та комунальні</p>
-                    </div>
-                    <button className="small-primary" onClick={addRecurring}>
-                        <Plus /> Додати
-                    </button>
-                </div>
-                <div className="recurring-list">
-                    {recurring.filter((r) => r.kind === "expense").length ? (
-                        recurring
-                            .filter((r) => r.kind === "expense")
-                            .map((r) => (
-                                <div key={r.id}>
-                  <span className="recurring-icon">
-                    <Repeat2 />
-                  </span>
-                                    <strong>{r.name}</strong>
-                                    <small>
-                                        {r.frequency} · наступний {new Date(r.next).toLocaleDateString("uk-UA")}
-                                    </small>
-                                    <b>
-                                        {r.currency} {formatMoney(r.amount)}
-                                    </b>
-                                    <em>{r.auto ? "Автоматично" : "Нагадування"}</em>
-                                    <button
-                                        className="icon-button danger"
-                                        onClick={() => removeRecurring(r.id)}
-                                        aria-label="Видалити"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))
-                    ) : (
-                        <p className="empty-inline">Регулярних платежів поки немає</p>
-                    )}
-                </div>
-            </section>
         </>
     );
 }

@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import type { GoalItem, BudgetItem, DebtItem, Transaction, RuleItem, CategoryItem } from "../types";
 import { formatMoney, currencySymbol } from "../lib/format";
-import {Check, Sparkles, Trash2, WalletCards} from "lucide-react";
+import type { SettingsProfile } from "./Analytics";
+import {Check, Plus, Sparkles, Trash2, WalletCards} from "lucide-react";
 
-function ProfileSettings({
+export function ProfileSettings({
                              dark,
                              setDark,
                              skin,
@@ -289,7 +290,15 @@ type PendingInvite = {
     expires_at: string;
 };
 type FinanceSpace = { id: string; name: string; currency: string; role: string; active: boolean };
-function MembersPanel({ notify }: { notify: (message: string) => void }) {
+export function MembersPanel({
+    notify,
+    onInvite,
+    version = 0,
+}: {
+    notify: (message: string) => void;
+    onInvite?: () => void;
+    version?: number;
+}) {
     const [members, setMembers] = useState<SharedMember[]>([]),
         [invites, setInvites] = useState<PendingInvite[]>([]),
         [spaces, setSpaces] = useState<FinanceSpace[]>([]),
@@ -306,7 +315,7 @@ function MembersPanel({ notify }: { notify: (message: string) => void }) {
     useEffect(() => {
         const timer = window.setTimeout(() => void load(), 0);
         return () => window.clearTimeout(timer);
-    }, []);
+    }, [version]);
     async function action(payload: Record<string, unknown>) {
         const response = await fetch("/api/settings", {
             method: "POST",
@@ -333,10 +342,16 @@ function MembersPanel({ notify }: { notify: (message: string) => void }) {
         <section className="panel members-panel">
             <div className="section-title">
                 <div>
-                    <h2>Доступи до бюджету</h2>
-                    <p>Спільні простори, ролі та учасники</p>
+                    <h2>Спільний бюджет</h2>
+                    <p>Хто бачить і веде ваші фінанси разом з вами</p>
                 </div>
-                <span className="role-badge">{translateRole(myRole)}</span>
+                {canManage && onInvite ? (
+                    <button className="small-primary" onClick={onInvite}>
+                        <Plus /> Запросити
+                    </button>
+                ) : (
+                    <span className="role-badge">{translateRole(myRole)}</span>
+                )}
             </div>
             {spaces.length > 1 && (
                 <div className="space-switcher">
@@ -397,6 +412,12 @@ function MembersPanel({ notify }: { notify: (message: string) => void }) {
                     </div>
                 ))}
             </div>
+            {members.length <= 1 && invites.length === 0 && (
+                <p className="members-hint">
+                    Поки що тут лише ви. Запросіть партнера — він побачить спільні рахунки, ліміти та операції, а
+                    його картки додадуться до вашого бюджету.
+                </p>
+            )}
             {invites.length > 0 && (
                 <div className="pending-invites">
                     <strong>Очікують приєднання</strong>
@@ -419,7 +440,7 @@ function MembersPanel({ notify }: { notify: (message: string) => void }) {
         </section>
     );
 }
-function translateRole(role: string) {
+export function translateRole(role: string) {
     return role === "owner"
         ? "Власник"
         : role === "admin"
@@ -430,7 +451,7 @@ function translateRole(role: string) {
                     ? "Учасник"
                     : "—";
 }
-function RecategorizePanel({ notify }: { notify: (msg: string) => void }) {
+export function RecategorizePanel({ notify }: { notify: (msg: string) => void }) {
     const [busy, setBusy] = useState(false);
     async function run() {
         setBusy(true);
@@ -456,7 +477,7 @@ function RecategorizePanel({ notify }: { notify: (msg: string) => void }) {
     );
 }
 
-function GuideFeedback({
+export function GuideFeedback({
                            notify,
                            authenticated,
                        }: {

@@ -445,11 +445,9 @@ header {
     margin-bottom: 30px;
     position: sticky;
     top: 0;
-    z-index: 9;
+    z-index: 50;
     background: var(--bg);
-    padding-top: 16px;
-    padding-bottom: 16px;
-    margin-top: -16px
+    padding-bottom: 16px
 }
 
 .hello {
@@ -1911,7 +1909,7 @@ header h1 {
 .mono-instructions a{color:var(--purple);font-weight:700}
 .mono-note{color:var(--muted);font-size:10px;margin-top:8px}
 .mono-accounts-list{margin-top:14px;display:flex;flex-direction:column;gap:10px}
-.mono-account-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px}
+.mono-account-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px;position:relative;overflow:visible}
 .mono-account-row strong{font-size:12px}
 .mono-account-row small{color:var(--muted);font-size:10px;display:block;margin-top:2px}
 .mono-account-row select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:8px;font-size:11px;min-width:160px}
@@ -3949,7 +3947,7 @@ button:disabled {
     position: absolute;
     z-index: 40;
     left: 0;
-    right: 0;
+    min-width: 220px;
     top: calc(100% + 5px);
     max-height: 190px;
     overflow-y: auto;
@@ -3986,6 +3984,7 @@ button:disabled {
     justify-content: center;
     gap: 7px;
     font-size: 11px;
+    white-space: nowrap;
     cursor: pointer
 }
 
@@ -6052,3 +6051,159 @@ button:disabled {
     font-size: 13px;
     margin: 0 0 12px;
 }
+
+.tx-icon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Червоний фон з прозорістю та червона стрілка для списання */
+.bg-red-100 {
+    background-color: #fee2e2;
+}
+.text-red-500 {
+    color: #ef4444;
+}
+
+/* Зелений фон з прозорістю та зелена стрілка для нарахування */
+.bg-green-100 {
+    background-color: #dcfce7;
+}
+.text-green-500 {
+    color: #22c55e;
+}
+
+.logo-badge {
+    background-color: #f3f4f6;
+    overflow: hidden;
+}
+
+/* Змінні, які використовують модалки імпорту/комісій (раніше були не визначені → прозорий фон, «накладання») */
+:root {
+    --bg-secondary: color-mix(in srgb, var(--panel) 88%, var(--line));
+    --border: var(--line);
+    --text-secondary: var(--muted);
+    --red: #e5484d;
+}
+.import-preview-modal {
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    gap: 12px;
+}
+.import-preview-modal > * { flex-shrink: 0; }
+.import-stat {
+    background: var(--bg-secondary);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 10px;
+}
+
+/* Липка шапка сторінки: відступ зверху, на всю ширину контенту і плавний перехід знизу,
+   щоб контент не «обрізався» різко під нею */
+.content > header {
+    padding-top: 14px;
+    margin-top: -14px;
+    margin-left: -4vw;
+    margin-right: -4vw;
+    padding-left: 4vw;
+    padding-right: 4vw;
+}
+.content > header::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 18px;
+    background: linear-gradient(var(--bg), transparent);
+    pointer-events: none;
+}
+@media (max-width: 720px) {
+    .content > header {
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+/* Monobank: сітка міні-карток (варіант B) */
+.mono-sync { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.mono-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1f9d62; }
+.mono-period { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; background: var(--panel); color: var(--text); font: inherit; font-size: 13px; }
+.mono-menu-wrap { position: relative; }
+.mono-menu-btn { min-width: 40px; font-weight: 700; }
+.mono-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 190px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 6px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .12); display: flex; flex-direction: column;
+}
+.mono-menu button { text-align: left; background: transparent; border: 0; border-radius: 10px; padding: 9px 10px; font: inherit; color: var(--text); cursor: pointer; }
+.mono-menu button:hover { background: var(--bg-secondary); }
+.mono-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.mono-card-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mono-mini-card { border-radius: 16px; padding: 14px; min-height: 100px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.mono-mini-card.cur-UAH { background: linear-gradient(135deg, #e9eefc, #d9e1fb); color: #1f2a5c; }
+.mono-mini-card.cur-USD { background: linear-gradient(135deg, #e6f6ee, #cfeedd); color: #134a31; }
+.mono-mini-card.cur-EUR { background: linear-gradient(135deg, #fdf1e3, #f8e0c4); color: #5c3708; }
+.mono-mini-card.unlinked { background: var(--panel); border: 1.5px dashed var(--line); color: var(--text); }
+.mono-mini-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; opacity: .75; }
+.mono-mini-amount { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mono-mini-under { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: #1f9d62; }
+:root[data-theme="dark"] .mono-mini-card.cur-UAH { background: linear-gradient(135deg, #1e2542, #252f57); color: #dfe5ff; }
+:root[data-theme="dark"] .mono-mini-card.cur-USD { background: linear-gradient(135deg, #16301f, #1c3d29); color: #d6f5e3; }
+:root[data-theme="dark"] .mono-mini-card.cur-EUR { background: linear-gradient(135deg, #362614, #45301a); color: #fbe7cf; }
+@media (max-width: 720px) {
+    .mono-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ===== Ліміти (Monobank-стиль) ===== */
+.lim { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; width: 100%; }
+.lim-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lim-arrow { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--panel); color: inherit; display: grid; place-items: center; cursor: pointer; }
+.lim-period { border: 0; background: none; color: inherit; cursor: pointer; text-align: center; text-transform: capitalize; }
+.lim-period b { display: block; font-size: 16px; }
+.lim-period small { color: var(--muted, #80808c); font-size: 11px; text-transform: none; }
+.lim-seg { display: flex; background: var(--panel); border-radius: 12px; padding: 3px; }
+.lim-seg button { flex: 1; border: 0; background: none; color: var(--muted, #80808c); padding: 7px; border-radius: 9px; cursor: pointer; font: inherit; }
+.lim-seg button.on { background: var(--purple); color: #fff; }
+.lim-card { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 20px; padding: 16px; }
+.lim-hero { display: flex; flex-direction: column; align-items: center; }
+.lim-ring { position: relative; width: 170px; height: 170px; }
+.lim-ring svg { transform: rotate(-90deg); }
+.lim-track, .lim-fill { fill: none; stroke-width: 14; }
+.lim-track { stroke: var(--line); }
+.lim-fill { stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.lim-ring-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.lim-ring-c small { color: var(--muted, #80808c); font-size: 12px; }
+.lim-ring-c strong { font-size: 24px; }
+.lim-ring-c em { font-style: normal; font-size: 12px; color: #2fb67c; }
+.lim .bad { color: #e05252; }
+.lim .ok { color: #2fb67c; }
+.lim-sub { margin: 10px 0 0; font-size: 12px; color: var(--muted, #80808c); text-align: center; }
+.lim-list { padding: 4px 16px; }
+.lim-row { width: 100%; display: grid; grid-template-columns: 36px 1fr auto; gap: 4px 10px; align-items: center; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.lim-row:last-child { border-bottom: 0; }
+.lim-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; grid-row: span 3; }
+.lim-left { font-size: 13px; text-align: right; }
+.lim-bar { grid-column: 2 / 4; height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.lim-bar i { display: block; height: 100%; border-radius: 6px; }
+.lim-meta { grid-column: 2 / 4; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted, #80808c); }
+.lim-add { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 1.5px dashed var(--purple); border-radius: 14px; background: none; color: var(--purple); font: inherit; font-weight: 600; cursor: pointer; }
+.lim-nolim small { color: var(--muted, #80808c); }
+.lim-nolim div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.lim-nolim button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: var(--panel); color: inherit; border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.lim-nolim b { font-weight: 600; }
+.lim-edit-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.lim-edit-head .lim-ic { grid-row: auto; }
+.lim-edit-head b { flex: 1; font-size: 16px; }
+.lim-x { border: 0; background: none; color: inherit; cursor: pointer; }
+.lim-note { display: block; color: var(--muted, #80808c); font-size: 12px; margin-top: 6px; }
+.lim-edit-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+.lim-del { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: #e05252; font: inherit; cursor: pointer; }
+

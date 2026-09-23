@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
+import { nbuRate } from "@/lib/nbu";
 
 type NbuRate = { r030: number; txt: string; rate: number; cc: string; exchangedate: string; special?: string };
 const supported = new Set(["USD", "EUR", "PLN", "GBP", "CHF", "CAD"]);
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Історичний курс: /api/exchange-rates?date=2026-06-24&currency=USD
+  const url = new URL(request.url);
+  const date = url.searchParams.get("date");
+  if (date) {
+    const currencies = (url.searchParams.get("currency") || "USD").split(",").map((c) => c.trim().toUpperCase()).filter(Boolean);
+    const result: Record<string, number | null> = {};
+    for (const cc of currencies) result[cc] = await nbuRate(cc, `${date}T12:00:00+03:00`);
+    return NextResponse.json({ base: "UAH", source: "NBU", date, rates: result });
+  }
   try {
     const response = await fetch("https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json", {
       next: { revalidate: 60 * 60 * 6 },
