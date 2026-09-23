@@ -259,54 +259,61 @@ export function AccountsView({
                         )}
                     </div>
                 </div>
-                {monoAccounts.length === 0 && (
-                    <p className="mono-note" style={{ padding: "0 0 12px" }}>
-                        Спочатку підключи токен нижче — після цього зʼявиться кнопка оновлення виписки.
-                    </p>
-                )}
                 {monoOpen && (
                     <>
                         {monoAccounts.length === 0 && (
-                            <>
-                                <ol className="mono-instructions">
+                            <div className="mc-connect">
+                                <ol className="mc-steps">
                                     <li>
-                                        Відкрий{" "}
-                                        <a href="https://api.monobank.ua/" target="_blank" rel="noreferrer">
-                                            api.monobank.ua
-                                        </a>{" "}
-                                        у браузері
+                                        <span>1</span>
+                                        <div>
+                                            Відкрий{" "}
+                                            <a href="https://api.monobank.ua/" target="_blank" rel="noreferrer">
+                                                api.monobank.ua ↗
+                                            </a>{" "}
+                                            і натисни <b>«Отримати токен»</b>
+                                        </div>
                                     </li>
                                     <li>
-                                        Натисни <b>«Отримати токен»</b>
+                                        <span>2</span>
+                                        <div>
+                                            Відскануй QR-код у застосунку Monobank:{" "}
+                                            <b>Ще → Розробникам API</b>
+                                        </div>
                                     </li>
                                     <li>
-                                        Відскануй QR-код у застосунку Monobank: <b>Ще → Розробникам API</b>
+                                        <span>3</span>
+                                        <div>Скопіюй токен (довгий рядок літер і цифр) і встав нижче</div>
                                     </li>
-                                    <li>Скопіюй токен (довгий рядок літер і цифр) і встав нижче</li>
                                 </ol>
-                                <div className="form-two">
-                                    <label>
-                                        Особистий токен
+                                <form
+                                    className="mc-form"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (monoToken.trim() && !monoConnecting) connectMonobank();
+                                    }}
+                                >
+                                    <label htmlFor="mono-token">Особистий токен</label>
+                                    <div className="mc-row">
                                         <input
+                                            id="mono-token"
                                             type="password"
+                                            autoComplete="off"
                                             value={monoToken}
                                             onChange={(e) => setMonoToken(e.target.value)}
                                             placeholder="Встав токен сюди"
                                         />
-                                    </label>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="small-primary"
-                                    onClick={connectMonobank}
-                                    disabled={monoConnecting}
-                                >
-                                    {monoConnecting ? "Підключаю…" : "Підключити"}
-                                </button>
-                                <p className="mono-note">
-                                    Токен дає доступ лише на читання виписки. Нікому його не показуй.
-                                </p>
-                            </>
+                                        <button
+                                            type="submit"
+                                            className="small-primary"
+                                            disabled={monoConnecting || !monoToken.trim()}
+                                        >
+                                            {monoConnecting ? "Підключаю…" : "Підключити"}
+                                        </button>
+                                    </div>
+                                    <small>🔒 Токен дає доступ лише на читання виписки. Нікому його не показуй.</small>
+                                </form>
+                            </div>
                         )}
                         {monoAccounts.length > 0 && (
                             <div className="mono-card-grid">
