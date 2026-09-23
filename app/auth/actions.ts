@@ -39,23 +39,46 @@ export async function signOut() {
   redirect("/auth");
 }
 
+function resetErrorText(message: string) {
+  const wait = /after (\d+) seconds?/i.exec(message)?.[1];
+  if (wait) return `Код уже надіслано щойно — перевір пошту, зокрема «Спам». Новий код можна запросити через ${wait} с.`;
+  if (/rate limit/i.test(message)) return "Забагато запитів. Перевір пошту (і «Спам») — код міг уже прийти. Спробуй знову приблизно через годину.";
+  if (/expired|invalid/i.test(message)) return "Код невірний або застарів. Запроси новий — діє лише останній надісланий код.";
+  if (/password/i.test(message) && /(short|characters|weak)/i.test(message)) return "Пароль закороткий або надто простий — мінімум 8 символів.";
+  if (/same/i.test(message)) return "Новий пароль має відрізнятися від старого.";
+  return message;
+}
+
+// Крок 1: надсилаємо 6-значний код на пошту
 export async function requestPasswordReset(formData: FormData) {
   const supabase = await createClient();
-  const email = String(formData.get("email") || "");
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
-  });
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const q = `email=${encodeURIComponent(email)}`;
   if (error) {
-    const wait = /after (\d+) seconds?/i.exec(error.message)?.[1];
-    const msg = wait
-      ? `Лист уже надіслано щойно — перевір пошту, зокрема папку «Спам». Надіслати ще раз можна через ${wait} с.`
-      : /rate limit/i.test(error.message)
-        ? "Забагато запитів на відновлення. Перевір пошту (і «Спам») — лист міг уже прийти. Спробуй знову приблизно через годину."
-        : error.message;
-    redirect(`/auth/forgot-password?error=${encodeURIComponent(msg)}`);
+    const text = resetErrorText(error.message);
+    // Якщо код уже надіслано — все одно пускаємо на крок введення коду
+    if (/after \d+ seconds?/i.test(error.message)) redirect(`/auth/forgot-password?step=code&${q}&message=${encodeURIComponent(text)}`);
+    redirect(`/auth/forgot-password?${q}&error=${encodeURIComponent(text)}`);
   }
-  redirect(`/auth/forgot-password?message=${encodeURIComponent("Якщо такий email зареєстровано, ми надіслали лист із посиланням для відновлення пароля")}`);
+  redirect(`/auth/forgot-password?step=code&${q}&message=${encodeURIComponent("Ми надіслали код на пошту. Введи його нижче разом із новим паролем.")}`);
+}
+
+// Крок 2: перевіряємо код і одразу ставимо новий пароль
+export async function resetPasswordWithCode(formData: FormData) {
+  const supabase = await createClient();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const token = String(formData.get("code") || "").replace(/\D/g, "");
+  const password = String(formData.get("password") || "");
+  const back = (msg: string) =>
+    redirect(`/auth/forgot-password?step=code&email=${encodeURIComponent(email)}&error=${encodeURIComponent(msg)}`);
+  if (token.length < 6) back("Введи код із листа повністю.");
+  if (password.length < 8) back("Пароль має бути щонайменше 8 символів.");
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "recovery" });
+  if (error) back(resetErrorText(error.message));
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if (updateError) back(resetErrorText(updateError.message));
+  redirect("/");
 }
 
 export async function updatePassword(formData: FormData) {
