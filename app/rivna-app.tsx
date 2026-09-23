@@ -2358,21 +2358,34 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       setMonoConnecting(false);
     }
   }
+  const [monoLinking, setMonoLinking] = useState<string | null>(null);
+  // Спільна логіка прив'язки: індикатор, захист від повторного кліку, оновлення стану
+  async function postMonoLink(monoAccountId: string, body: Record<string, unknown>, okText: (imported: number) => string) {
+    if (monoLinking) return;
+    setMonoLinking(monoAccountId);
+    try {
+      const response = await fetch("/api/monobank/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monoAccountId, ...body }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return notify(result.error || "Не вдалося прив'язати картку. Спробуй ще раз");
+      if (result.appAccountId) setMonoLinks((links) => ({ ...links, [monoAccountId]: String(result.appAccountId) }));
+      notify(okText(Number(result.imported) || 0));
+      await refreshFinance();
+    } catch {
+      notify("Помилка мережі — перевір, чи рахунок не створився, перш ніж пробувати знову");
+      await refreshFinance();
+    } finally {
+      setMonoLinking(null);
+    }
+  }
   async function linkMonobankAccount(monoAccountId: string, appAccountId: string) {
     if (!appAccountId) return;
-    const response = await fetch("/api/monobank/link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ monoAccountId, appAccountId }),
-    });
-    const result = await response.json();
-    if (!response.ok) return notify(result.error || "Не вдалося прив'язати");
-    notify(
-        result.imported
-            ? `Прив'язано і завантажено ${result.imported} операцій за 31 день`
-            : "Картку прив'язано — операції прилітатимуть автоматично",
+    await postMonoLink(monoAccountId, { appAccountId }, (n) =>
+        n ? `Прив'язано і завантажено ${n} операцій за 31 день` : "Картку прив'язано — операції прилітатимуть автоматично",
     );
-    await refreshFinance();
   }
   async function unlinkMonobankAccount(monoAccountId: string) {
     if (!window.confirm("Відв'язати цю картку? Уже додані операції залишаться, нові перестануть прилітати."))
@@ -2399,26 +2412,14 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     creditLimit: number;
     maskedPan: string;
   }) {
-    const response = await fetch("/api/monobank/link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        monoAccountId: ma.id,
-        createNew: true,
-        name: `Monobank ${ma.maskedPan || ma.type}`,
-        currency: ma.currency,
-        balance: ma.balance,
-        creditLimit: ma.creditLimit,
-      }),
-    });
-    const result = await response.json();
-    if (!response.ok) return notify(result.error || "Не вдалося створити рахунок");
-    notify(
-        result.imported
-            ? `Рахунок створено і завантажено ${result.imported} операцій за 31 день`
-            : "Рахунок створено і прив'язано",
+    const last4 = String(ma.maskedPan || "").replace(/\D/g, "").slice(-4);
+    const kind = ma.type === "fop" ? "ФОП" : ma.type === "jar" ? "Банка" : ma.type === "white" ? "Біла" : ma.type === "platinum" ? "Platinum" : ma.type === "black" ? "Чорна" : "";
+    const name = [kind || "Mono", ma.currency !== "UAH" ? ma.currency : "", last4 ? `•${last4}` : ""].filter(Boolean).join(" ");
+    await postMonoLink(
+        ma.id,
+        { createNew: true, name, currency: ma.currency, balance: ma.balance, creditLimit: ma.creditLimit },
+        (n) => (n ? `Рахунок «${name}» створено, завантажено ${n} операцій` : `Рахунок «${name}» створено і прив'язано`),
     );
-    await refreshFinance();
   }
   const [monoResyncing, setMonoResyncing] = useState(false);
   const [monoResyncDebug, setMonoResyncDebug] = useState<{ monoAccountId: string; status?: number; error?: string; itemsFound?: number }[] | null>(null);
@@ -2857,6 +2858,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   linkMonobankAccount={linkMonobankAccount}
                   unlinkMonobankAccount={unlinkMonobankAccount}
                   createAndLinkMonobankAccount={createAndLinkMonobankAccount}
+                  monoLinking={monoLinking}
                   resyncMonobank={resyncMonobank}
                   monoLinks={monoLinks}
                   monoResyncing={monoResyncing}

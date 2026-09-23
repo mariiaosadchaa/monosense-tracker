@@ -28,6 +28,7 @@ export function AccountsView({
                           linkMonobankAccount,
                           unlinkMonobankAccount,
                           createAndLinkMonobankAccount,
+                          monoLinking = null,
                           resyncMonobank,
                           monoLinks,
                           monoResyncing,
@@ -69,6 +70,7 @@ export function AccountsView({
     monoLinks: Record<string, string>;
     monoResyncing: boolean;
     unlinkMonobankAccount: (monoAccountId: string) => void;
+    monoLinking?: string | null;
     monoLastSyncedAt?: string | null;
     monoResyncingCard?: string | null;
 }) {
@@ -335,8 +337,14 @@ export function AccountsView({
                                                     <div className="mono-mini-amount">
                                                         {currencySymbol(ma.currency)}{formatMoney(ma.balance)}
                                                     </div>
+                                                ) : monoLinking === ma.id ? (
+                                                    <div className="mono-linking">
+                                                        <span className="btn-spinner" />
+                                                        Прив'язую і завантажую виписку…
+                                                    </div>
                                                 ) : (
                                                     <WheelField
+                                                        key={`w-${ma.id}-${monoLinking ?? ""}`}
                                                         name={`mono-link-${ma.id}`}
                                                         label="Прив'язати"
                                                         options={[
