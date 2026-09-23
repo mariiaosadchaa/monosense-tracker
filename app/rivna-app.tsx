@@ -257,9 +257,16 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [milestoneCelebration, setMilestoneCelebration] = useState<{ goalName: string; percent: number } | null>(null);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [showPassword, setShowPassword] = useState(false);
-  const [page, setPage] = useState<Page>(() =>
-      typeof window !== "undefined" ? (localStorage.getItem("rivna-last-page") as Page) || "Головна" : "Головна",
-  );
+  // Нове відкриття застосунку / вхід → завжди «Головна»; при оновленні сторінки лишаємось де були
+  const [page, setPage] = useState<Page>(() => {
+    if (typeof window === "undefined") return "Головна";
+    try {
+      localStorage.removeItem("rivna-last-page");
+      return (sessionStorage.getItem("rivna-last-page") as Page) || "Головна";
+    } catch {
+      return "Головна";
+    }
+  });
   const [dark, setDark] = useState(
       () => typeof window !== "undefined" && localStorage.getItem("rivna-theme") === "dark",
   );
@@ -718,7 +725,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     localStorage.setItem("rivna-theme", dark ? "dark" : "light");
   }, [dark]);
   useEffect(() => {
-    localStorage.setItem("rivna-last-page", page);
+    try {
+      sessionStorage.setItem("rivna-last-page", page);
+    } catch {}
   }, [page]);
 
   useEffect(() => {
