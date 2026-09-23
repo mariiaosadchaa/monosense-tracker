@@ -379,6 +379,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   } | null>(null);
   const [transferPresetTo, setTransferPresetTo] = useState<string | undefined>(undefined);
   const [topProfile, setTopProfile] = useState<{ name: string; email: string } | null>(null);
+  const [householdMembers, setHouseholdMembers] = useState<{ userId: string; name: string; isMe: boolean }[]>([]);
 
   useEffect(() => {
     if (!initialLoggedIn) return;
@@ -386,8 +387,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         .then((r) => (r.ok ? r.json() : null))
         .then(
             (data) =>
-                data?.profile &&
-                setTopProfile({ name: data.profile.name, email: data.profile.email || "" }),
+                data?.profile && (
+                    setTopProfile({ name: data.profile.name, email: data.profile.email || "" }),
+                    setHouseholdMembers(data.members || [])
+                ),
         )
         .catch(() => {});
   }, [initialLoggedIn]);
@@ -497,6 +500,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             name: String(item.name),
             bank: String(item.bank || "Інший"),
             owner: String(item.owner_label || "Мій"),
+            createdBy: item.created_by ? String(item.created_by) : undefined,
             currency: String(item.currency),
             balance: Number(item.balance),
             style: bankStyle(String(item.bank || ""), index),
@@ -751,13 +755,28 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         .catch(() => {});
   }, []);
 
+  // Власник картки — відносно того, хто дивиться: «Мій» для своїх, ім'я партнера для його, «Спільний» для спільних
+  const viewAccounts = useMemo(() => {
+    const me = householdMembers.find((m) => m.isMe);
+    const myName = (topProfile?.name || me?.name || "").trim().toLowerCase();
+    const nameOf = (id?: string) => householdMembers.find((m) => m.userId === id)?.name;
+    return accounts.map((a) => {
+      const raw = (a.owner || "").trim();
+      let owner = raw;
+      if (/^спільн/i.test(raw)) owner = "Спільний";
+      else if (!raw || /^(мій|моя|я)$/i.test(raw))
+        owner = !a.createdBy || !me || a.createdBy === me.userId ? "Мій" : nameOf(a.createdBy) || "Партнер";
+      else if (myName && raw.toLowerCase() === myName) owner = "Мій";
+      return owner === a.owner ? a : { ...a, owner };
+    });
+  }, [accounts, householdMembers, topProfile]);
   const orderedAccounts = useMemo(() => {
-    if (!accountOrder.length) return accounts;
-    const byId = new NativeMap(accounts.map((a) => [String(a.id), a]));
+    if (!accountOrder.length) return viewAccounts;
+    const byId = new NativeMap(viewAccounts.map((a) => [String(a.id), a]));
     const ordered = accountOrder.map((id) => byId.get(id)).filter(Boolean) as Account[];
-    const rest = accounts.filter((a) => !accountOrder.includes(String(a.id)));
+    const rest = viewAccounts.filter((a) => !accountOrder.includes(String(a.id)));
     return [...ordered, ...rest];
-  }, [accounts, accountOrder]);
+  }, [viewAccounts, accountOrder]);
 
   function reorderAccounts(draggedId: string, targetId: string) {
     const ids = orderedAccounts.map((a) => String(a.id));
@@ -852,8 +871,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           (transaction.amount * conversionRate(transaction.currency || "UAH", rates, customRates)) /
           conversionRate(baseCurrency, rates, customRates),
     }));
-    return markInternalTransfers(withBase, accounts);
-  }, [transactions, rates, customRates, baseCurrency, accounts]);
+    const ownerByAccount = new NativeMap(viewAccounts.map((a) => [a.name.trim(), a.owner]));
+    const relabeled = withBase.map((t) => {
+      const o = t.account ? ownerByAccount.get(t.account.trim()) : undefined;
+      return o && o !== t.owner ? { ...t, owner: o } : t;
+    });
+    return markInternalTransfers(relabeled, viewAccounts);
+  }, [transactions, rates, customRates, baseCurrency, viewAccounts]);
   const [seenAlerts, setSeenAlerts] = useState<string[]>(() =>
       typeof window !== "undefined"
           ? JSON.parse(localStorage.getItem("rivna-seen-alerts") || "[]")

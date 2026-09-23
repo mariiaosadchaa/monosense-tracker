@@ -36,6 +36,7 @@ export type Account = {
     name: string;
     bank: string;
     owner: string;
+    createdBy?: string;
     currency: string;
     balance: number;
     style: string;
