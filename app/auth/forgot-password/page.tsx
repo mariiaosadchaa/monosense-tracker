@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requestPasswordReset, resetPasswordWithCode } from "@/app/auth/actions";
 import { AuthBackdrop } from "@/app/components/auth-backdrop";
 import { SubmitButton } from "../submit-button";
+import { OtpInput } from "../otp-input";
 
 export const dynamic = "force-dynamic";
 
@@ -42,20 +43,10 @@ export default async function ForgotPasswordPage({
           <>
             <form action={resetPasswordWithCode} className="auth-v3-form">
               <input type="hidden" name="email" value={email} />
-              <label>
-                Код із листа
-                <input
-                  name="code"
-                  className="otp-input"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9 ]{6,10}"
-                  maxLength={10}
-                  required
-                  autoFocus
-                  placeholder="000000"
-                />
-              </label>
+              <div className="auth-field">
+                <span>Код із листа</span>
+                <OtpInput />
+              </div>
               <label>
                 Новий пароль
                 <input
@@ -69,13 +60,17 @@ export default async function ForgotPasswordPage({
               </label>
               <SubmitButton pendingText="Перевіряю…">Змінити пароль і увійти</SubmitButton>
             </form>
-            <form action={requestPasswordReset} className="auth-v3-resend">
-              <input type="hidden" name="email" value={email} />
-              <span>Не прийшов код? Перевір «Спам» або</span>
-              <button type="submit">надіслати ще раз</button>
-            </form>
+            <div className="auth-v3-foot">
+              <form action={requestPasswordReset}>
+                <input type="hidden" name="email" value={email} />
+                <button type="submit" className="auth-v3-link">Надіслати код ще раз</button>
+              </form>
+              <span className="auth-v3-dot">·</span>
+              <a className="auth-v3-link" href="/auth/forgot-password">Інший email</a>
+            </div>
+            <p className="auth-v3-hint">Не бачиш листа? Перевір папку «Спам» або «Промоакції».</p>
             <p className="auth-v3-switch">
-              <a href="/auth/forgot-password">Інший email</a> · <a href="/auth">Повернутись до входу</a>
+              <a href="/auth">Повернутись до входу</a>
             </p>
           </>
         ) : (
