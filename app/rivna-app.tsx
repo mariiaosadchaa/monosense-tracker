@@ -1771,7 +1771,36 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     )
       setModal(null);
   }
-  const [inviteResult, setInviteResult] = useState<{ url: string; emailed: boolean; copied: boolean; to: string } | null>(null);
+  const [inviteResult, setInviteResult] = useState<{ url: string; emailed: boolean; copied: boolean; to: string; existing?: boolean } | null>(null);
+  // Вхідні запрошення (якщо мене запросили в чужий бюджет)
+  const [incomingInvites, setIncomingInvites] = useState<{ id: string; household: string; from: string; role: string }[]>([]);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  useEffect(() => {
+    if (!initialLoggedIn) return;
+    fetch("/api/household/incoming", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d?.invites && setIncomingInvites(d.invites))
+        .catch(() => {});
+  }, [initialLoggedIn]);
+  async function answerInvite(id: string, action: "accept" | "decline") {
+    if (inviteBusy) return;
+    setInviteBusy(true);
+    try {
+      const r = await fetch("/api/household/incoming", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return notify(d.error || "Не вдалося");
+      if (action === "accept") {
+        notify("Ви приєдналися до спільного бюджету");
+        window.location.reload();
+      } else setIncomingInvites((list) => list.filter((i) => i.id !== id));
+    } finally {
+      setInviteBusy(false);
+    }
+  }
   const [membersVersion, setMembersVersion] = useState(0);
   const [prevPage, setPrevPage] = useState<Page>("Головна");
   const [settingsTab, setSettingsTab] = useState<SettingsTabKey>("profile");
@@ -1805,7 +1834,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         await navigator.clipboard.writeText(result.url);
         copied = true;
       } catch {}
-      setInviteResult({ url: result.url, emailed: Boolean(result.emailed), copied, to: String(f.get("identifier") || "") });
+      setInviteResult({ url: result.url, emailed: Boolean(result.emailed), copied, to: String(f.get("identifier") || ""), existing: Boolean(result.existing) });
       setMembersVersion((v) => v + 1);
     } finally {
       setBusy(false);
@@ -2744,6 +2773,21 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               </button>
             </div>
           </header>
+          {incomingInvites.map((inv) => (
+              <div key={inv.id} className="incoming-invite">
+                <span className="incoming-invite-ic">👋</span>
+                <div>
+                  <strong>
+                    {inv.from ? `${inv.from} запрошує вас` : "Вас запрошують"} до бюджету «{inv.household}»
+                  </strong>
+                  <small>Ви бачитимете спільні рахунки, ліміти та операції. Свій бюджет ви не втратите — між ними можна перемикатися.</small>
+                </div>
+                <div className="incoming-invite-actions">
+                  <button className="secondary" disabled={inviteBusy} onClick={() => answerInvite(inv.id, "decline")}>Відхилити</button>
+                  <button className="small-primary" disabled={inviteBusy} onClick={() => answerInvite(inv.id, "accept")}>Прийняти</button>
+                </div>
+              </div>
+          ))}
           {page === "Головна" && (
               <Dashboard
                   balance={balance}

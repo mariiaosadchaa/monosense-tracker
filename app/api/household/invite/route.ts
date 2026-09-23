@@ -21,5 +21,9 @@ export async function POST(request:Request){
     const {error:mailError}=await admin.auth.admin.inviteUserByEmail(normalized,{redirectTo:inviteUrl,data:{household_invite_url:inviteUrl}});
     emailed=!mailError;
   }
-  return NextResponse.json({url:inviteUrl,emailed});
+  // Чи вже є такий користувач — тоді запрошення з'явиться в нього в застосунку
+  let existing=false;
+  if(username){const {data:p}=await admin.from("profiles").select("id").ilike("username",username).maybeSingle();existing=!!p}
+  else if(normalized){const {data:list}=await admin.auth.admin.listUsers({page:1,perPage:1000});existing=!!list?.users?.some(u=>u.email?.toLowerCase()===normalized)}
+  return NextResponse.json({url:inviteUrl,emailed,existing});
 }

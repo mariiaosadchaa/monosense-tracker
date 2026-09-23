@@ -2638,7 +2638,7 @@ export function InviteModal({
                      }: {
     submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
     close: () => void;
-    result?: { url: string; emailed: boolean; copied: boolean; to: string } | null;
+    result?: { url: string; emailed: boolean; copied: boolean; to: string; existing?: boolean } | null;
     again?: () => void;
 }) {
     const [copied, setCopied] = useState(false);
@@ -2647,8 +2647,14 @@ export function InviteModal({
             <div className="modal-backdrop" onMouseDown={close}>
                 <div className="expense-modal invite-done" onMouseDown={(e) => e.stopPropagation()}>
                     <ModalHead label="Спільний бюджет" title="Запрошення готове" close={close} />
+                    {result.existing ? (
+                        <div className="invite-existing">
+                            ✓ <b>{result.to}</b> вже має акаунт у Rivna. Запрошення з'явиться в нього одразу на
+                            головній — достатньо натиснути <b>«Прийняти»</b>. Посилання нижче — запасний варіант.
+                        </div>
+                    ) : null}
                     <p className="invite-text">
-                        {result.emailed
+                        {result.existing ? "Або надішли посилання:" : result.emailed
                             ? `Лист із запрошенням надіслано на ${result.to}. Або просто надішли посилання в месенджер:`
                             : "Надішли це посилання партнеру в Telegram чи Viber:"}
                     </p>
@@ -2667,11 +2673,11 @@ export function InviteModal({
                             {copied || result.copied ? "Скопійовано ✓" : "Копіювати"}
                         </button>
                     </div>
-                    <ol className="invite-steps">
+                    {!result.existing && <ol className="invite-steps">
                         <li>Партнер відкриває посилання і входить або реєструється.</li>
                         <li>Після входу він одразу потрапляє у ваш спільний бюджет.</li>
                         <li>Його картки Monobank він підключає сам у «Рахунках».</li>
-                    </ol>
+                    </ol>}
                     <p className="invite-note">Посилання одноразове й діє 7 днів.</p>
                     <div className="invite-actions">
                         <button type="button" className="secondary" onClick={again}>
