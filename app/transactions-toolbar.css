@@ -378,3 +378,8 @@ html body .dc-tile b { font-size: 22px; line-height: 30px; height: 30px; margin-
 
 /* Кнопки входу: стан «надсилаю» */
 .auth-v3-primary:disabled { opacity: .65; cursor: wait; }
+.auth-v3-primary { transition: opacity .2s, transform .15s; }
+.auth-v3-primary:active:not(:disabled) { transform: scale(.98); }
+.auth-v3-primary.is-pending { display: inline-flex; align-items: center; justify-content: center; gap: 10px; opacity: .8; cursor: wait; }
+.btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: btnSpin .7s linear infinite; flex: none; }
+@keyframes btnSpin { to { transform: rotate(360deg); } }
