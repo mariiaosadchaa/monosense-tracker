@@ -28,19 +28,8 @@ export function ProfileSettings({
     setBudgetRollover: (value: boolean) => void;
     notify: (message: string) => void;
 }) {
-    const [profile, setProfile] = useState<SettingsProfile | null>({
-        name: "Марія",
-        email: "",
-        baseCurrency: "UAH",
-        planningPeriod: "month",
-        householdName: "Мої фінанси",
-        telegramChatId: "",
-        recurringReminders: true,
-        budget80: true,
-        budget100: true,
-        role: "owner",
-        digestEmailEnabled: false,
-    });
+    // Без «дефолтного» імені: поки профіль не завантажився, зберегти не можна (інакше затирали справжнє ім'я)
+    const [profile, setProfile] = useState<SettingsProfile | null>(null);
     useEffect(() => {
         fetch("/api/settings", { cache: "no-store" })
             .then((r) => (r.ok ? r.json() : null))

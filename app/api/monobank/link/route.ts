@@ -14,6 +14,19 @@ export async function POST(request: Request) {
   let appAccountId = String(body.appAccountId || "").trim();
 
   if (body.createNew) {
+    // Захист від дублів: якщо ця картка вже прив'язана — не створюємо ще один рахунок
+    const { data: existingLink } = await admin
+        .from("monobank_account_links")
+        .select("app_account_id")
+        .eq("household_id", context.householdId)
+        .eq("mono_account_id", monoAccountId)
+        .maybeSingle();
+    if (existingLink?.app_account_id) {
+      const { data: stillThere } = await admin.from("accounts").select("id").eq("id", existingLink.app_account_id).maybeSingle();
+      if (stillThere) return NextResponse.json({ ok: true, appAccountId: existingLink.app_account_id, imported: 0 });
+    }
+  }
+  if (body.createNew) {
     const { data: newAccount, error: createError } = await admin
         .from("accounts")
         .insert({
