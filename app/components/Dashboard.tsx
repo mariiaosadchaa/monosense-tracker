@@ -206,6 +206,32 @@ export function Dashboard({
     )
         .sort((a, b) => b[1] - a[1])
         .slice(0, 4);
+    // Рахунки: мої — першим рядком, спільні та партнера — другим; неактивні > 30 днів ховаємо
+    const [showIdle, setShowIdle] = useState(false);
+    const lastUsed = useMemo(() => {
+        const map: Record<string, number> = {};
+        transactions.forEach((t) => {
+            if (!t.account || !t.bookedAt) return;
+            const ts = Date.parse(t.bookedAt);
+            const k = t.account.trim();
+            if (!map[k] || ts > map[k]) map[k] = ts;
+        });
+        return map;
+    }, [transactions]);
+    const monthAgo = renderedAt - 31 * 86400000;
+    const isIdle = (a: Account) => (lastUsed[a.name.trim()] || 0) < monthAgo;
+    const hiddenAccounts = accounts.filter(isIdle);
+    const visibleAccounts = showIdle ? accounts : accounts.filter((a) => !isIdle(a));
+    const isMine = (a: Account) => {
+        const o = (a.owner || "").trim().toLowerCase();
+        return !o || o === "мій" || o === "моя" || o === "я";
+    };
+    const accountGroups = [
+        { label: "Мої", items: visibleAccounts.filter(isMine), add: false },
+        { label: "Спільні", items: visibleAccounts.filter((a) => !isMine(a)), add: false },
+    ];
+    (accountGroups[1].items.length ? accountGroups[1] : accountGroups[0]).add = true;
+    if (!visibleAccounts.length) accountGroups[0].add = true;
     const upcoming = [...recurring].sort((a, b) => new Date(a.next).getTime() - new Date(b.next).getTime());
     return (
         <>
@@ -264,8 +290,13 @@ export function Dashboard({
                 </article>
             </div>
 
-            <div className="dc-chips" style={{ "--i": 4 } as React.CSSProperties}>
-                {accounts.map((a) => {
+            <div className="dc-accounts" style={{ "--i": 4 } as React.CSSProperties}>
+                {accountGroups.map((group) =>
+                    group.items.length ? (
+                        <div key={group.label} className="dc-acc-row">
+                            <span className="dc-acc-label">{group.label}</span>
+                            <div className="dc-chips">
+                                {group.items.map((a) => {
                     const available = (a.balance || 0) + (a.creditLimit || 0);
                     const logo = a.bank.toLowerCase().includes("mono")
                         ? "mono"
@@ -298,10 +329,23 @@ export function Dashboard({
                             </b>
                         </button>
                     );
-                })}
-                <button type="button" className="dc-chip add" onClick={addAccount}>
-                    <Plus size={14} /> {accounts.length ? "Рахунок" : "Додай перший рахунок"}
-                </button>
+                                })}
+                                {group.add && (
+                                    <button type="button" className="dc-chip add" onClick={addAccount}>
+                                        <Plus size={14} /> {accounts.length ? "Рахунок" : "Додай перший рахунок"}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ) : null,
+                )}
+                {hiddenAccounts.length > 0 && (
+                    <button type="button" className="dc-acc-more" onClick={() => setShowIdle((v) => !v)}>
+                        {showIdle
+                            ? "Сховати неактивні"
+                            : `+ ${hiddenAccounts.length} неактивн${hiddenAccounts.length === 1 ? "ий" : "і"} (без операцій понад місяць)`}
+                    </button>
+                )}
             </div>
 
             <div className="dc-grid">

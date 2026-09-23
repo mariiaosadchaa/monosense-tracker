@@ -3,6 +3,7 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { requestPasswordReset } from "@/app/auth/actions";
 import { AuthBackdrop } from "@/app/components/auth-backdrop";
+import { SubmitButton } from "../submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
 
         <form action={requestPasswordReset} className="auth-v3-form">
           <label>Email<input name="email" type="email" required autoComplete="email" placeholder="you@example.com" /></label>
-          <button className="auth-v3-primary" type="submit">Надіслати посилання</button>
+          <SubmitButton pendingText="Надсилаю…">Надіслати посилання</SubmitButton>
         </form>
 
         <p className="auth-v3-switch"><a href="/auth">Повернутись до входу</a></p>

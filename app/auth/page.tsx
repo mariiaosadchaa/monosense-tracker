@@ -5,6 +5,7 @@ import { signIn, signUp } from "./actions";
 import { PasskeySection } from "@/app/components/passkey-section";
 import { AuthBackdrop } from "@/app/components/auth-backdrop";
 import { AuthThemeToggle } from "@/app/components/auth-theme-toggle";
+import { SubmitButton } from "./submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           <label>Пароль<input name="password" type="password" minLength={8} required autoComplete={register ? "new-password" : "current-password"} placeholder="Щонайменше 8 символів" /></label>
           {!register && <a className="auth-v3-forgot" href="/auth/forgot-password">Забули пароль?</a>}
 
-          <button className="auth-v3-primary" type="submit">{register ? "Зареєструватися" : "Увійти"}</button>
+          <SubmitButton pendingText={register ? "Реєструю…" : "Входжу…"}>{register ? "Зареєструватися" : "Увійти"}</SubmitButton>
 
           {!register && <PasskeySection redirectTo={next} />}
         </form>
