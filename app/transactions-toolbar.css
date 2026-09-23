@@ -426,3 +426,15 @@ html body .dc-tile b { font-size: 22px; line-height: 30px; height: 30px; margin-
 .incoming-invite-actions { display: flex; gap: 8px; flex: none; }
 .invite-existing { padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--green) 10%, transparent); color: var(--text); font-size: 14px; line-height: 1.45; margin-bottom: 14px; }
 @media (max-width: 720px) { .incoming-invite { flex-wrap: wrap; } .incoming-invite-actions { width: 100%; } .incoming-invite-actions button { flex: 1; } }
+
+/* Вибір часу */
+.tf { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); flex-wrap: wrap; }
+.tf-part { display: flex; flex-direction: column; align-items: center; }
+.tf-part button { border: 0; background: none; color: var(--muted); font-size: 10px; line-height: 1; padding: 4px 10px; cursor: pointer; border-radius: 6px; }
+.tf-part button:hover { background: var(--bg); color: var(--text); }
+.tf-part input { width: 52px; height: 40px; text-align: center; font-size: 22px !important; font-weight: 700; font-variant-numeric: tabular-nums; border: 0 !important; background: var(--bg) !important; border-radius: 10px !important; color: var(--text); padding: 0 !important; margin: 0 !important; }
+.tf-part input:focus { outline: 2px solid color-mix(in srgb, var(--purple) 40%, transparent); }
+.tf-colon { font-size: 22px; font-weight: 700; color: var(--muted); }
+.tf-quick { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.tf-quick button { border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.tf-quick button:hover { border-color: var(--purple); }

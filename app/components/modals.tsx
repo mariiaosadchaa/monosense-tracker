@@ -677,19 +677,10 @@ export function DateTimeField({
                     </div>
                 </details>
             </div>
-            <label className="picker-label" style={{ marginTop: 8 }}>
+            <div className="picker-label" style={{ marginTop: 8 }}>
                 Час
-                <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => onTimeChange(e.target.value)}
-                    style={{
-                        marginTop: 6, width: "100%", border: "1px solid var(--line)", borderRadius: 12,
-                        padding: "12px", fontSize: 13, background: "var(--panel)", color: "var(--text)",
-                        boxSizing: "border-box",
-                    }}
-                />
-            </label>
+                <TimeField value={time} onChange={onTimeChange} />
+            </div>
             <input type="hidden" name={name} value={`${date}T${time}`} />
         </div>
     );
@@ -2823,6 +2814,61 @@ export function CustomRateModal({
                 </label>
                 <button className="primary">Зберегти власний курс</button>
             </form>
+        </div>
+    );
+}
+
+/** Вибір часу: години й хвилини кнопками, без системного пікера браузера. */
+export function TimeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const [hh = "00", mm = "00"] = (value || "00:00").split(":");
+    const h = Number(hh) || 0,
+        m = Number(mm) || 0;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const set = (nh: number, nm: number) => onChange(`${pad((nh + 24) % 24)}:${pad((nm + 60) % 60)}`);
+    const now = () => {
+        const d = new Date();
+        set(d.getHours(), d.getMinutes());
+    };
+    const Part = ({ v, max, onSet, step }: { v: number; max: number; onSet: (n: number) => void; step: number }) => (
+        <div className="tf-part">
+            <button type="button" aria-label="Більше" onClick={() => onSet(v + step)}>
+                ▲
+            </button>
+            <input
+                inputMode="numeric"
+                value={pad(v)}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => {
+                    const n = Number(e.target.value.replace(/\D/g, "").slice(-2));
+                    if (!Number.isNaN(n) && n <= max) onSet(n);
+                }}
+                onWheel={(e) => {
+                    e.currentTarget.blur();
+                    onSet(v + (e.deltaY < 0 ? step : -step));
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === "ArrowUp") (e.preventDefault(), onSet(v + step));
+                    if (e.key === "ArrowDown") (e.preventDefault(), onSet(v - step));
+                }}
+            />
+            <button type="button" aria-label="Менше" onClick={() => onSet(v - step)}>
+                ▼
+            </button>
+        </div>
+    );
+    return (
+        <div className="tf">
+            <Part v={h} max={23} step={1} onSet={(n) => set(n, m)} />
+            <span className="tf-colon">:</span>
+            <Part v={m} max={59} step={1} onSet={(n) => set(h, n)} />
+            <div className="tf-quick">
+                <button type="button" onClick={now}>Зараз</button>
+                {[9, 13, 19].map((q) => (
+                    <button type="button" key={q} onClick={() => set(q, 0)}>
+                        {pad(q)}:00
+                    </button>
+                ))}
+            </div>
         </div>
     );
 }
