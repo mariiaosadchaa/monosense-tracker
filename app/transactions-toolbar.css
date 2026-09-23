@@ -366,10 +366,10 @@ html body .dc-tile b { font-size: 22px; line-height: 30px; height: 30px; margin-
 
 /* Рахунки на головній: два рядки */
 .dc-accounts { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
-.dc-acc-row { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: 10px; }
+.dc-acc-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 10px; }
 .dc-acc-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .dc-accounts .dc-chips { margin: 0; }
-.dc-acc-more { align-self: flex-start; margin-left: 80px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; text-decoration: underline; text-underline-offset: 3px; }
+.dc-acc-more { align-self: flex-start; margin-left: 94px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; text-decoration: underline; text-underline-offset: 3px; }
 .dc-acc-more:hover { color: var(--text); }
 @media (max-width: 720px) {
   .dc-acc-row { grid-template-columns: 1fr; gap: 4px; }

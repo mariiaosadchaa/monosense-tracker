@@ -219,19 +219,29 @@ export function Dashboard({
         return map;
     }, [transactions]);
     const monthAgo = renderedAt - 31 * 86400000;
-    const isIdle = (a: Account) => (lastUsed[a.name.trim()] || 0) < monthAgo;
+    // Ховаємо лише «порожні» неактивні картки: без операцій > місяць І без грошей/боргу на них
+    const isIdle = (a: Account) =>
+        (lastUsed[a.name.trim()] || 0) < monthAgo && Math.abs(a.balance || 0) < 1;
     const hiddenAccounts = accounts.filter(isIdle);
     const visibleAccounts = showIdle ? accounts : accounts.filter((a) => !isIdle(a));
-    const isMine = (a: Account) => {
-        const o = (a.owner || "").trim().toLowerCase();
-        return !o || o === "мій" || o === "моя" || o === "я";
+    const ownerKey = (a: Account) => {
+        const o = (a.owner || "").trim();
+        return !o || /^(мій|моя|я)$/i.test(o) ? "__me__" : o;
     };
-    const accountGroups = [
-        { label: "Мої", items: visibleAccounts.filter(isMine), add: false },
-        { label: "Спільні", items: visibleAccounts.filter((a) => !isMine(a)), add: false },
-    ];
-    (accountGroups[1].items.length ? accountGroups[1] : accountGroups[0]).add = true;
-    if (!visibleAccounts.length) accountGroups[0].add = true;
+    // Рядки: «Мої» → окремий рядок для кожного іншого власника (Діма…) → «Спільні» останніми
+    const owners = Array.from(new Set(visibleAccounts.map(ownerKey)));
+    const isShared = (k: string) => /^спільн/i.test(k);
+    owners.sort((a, b) => {
+        const rank = (k: string) => (k === "__me__" ? 0 : isShared(k) ? 2 : 1);
+        return rank(a) - rank(b) || a.localeCompare(b, "uk");
+    });
+    const accountGroups = (owners.length ? owners : ["__me__"]).map((k) => ({
+        label: k === "__me__" ? "Мої" : isShared(k) ? "Спільні" : k,
+        items: visibleAccounts.filter((a) => ownerKey(a) === k),
+        add: false,
+        owner: k,
+    }));
+    accountGroups[accountGroups.length - 1].add = true;
     const upcoming = [...recurring].sort((a, b) => new Date(a.next).getTime() - new Date(b.next).getTime());
     return (
         <>
@@ -321,7 +331,7 @@ export function Dashboard({
                             <i style={a.color ? { background: a.color, color: isLight(a.color) ? "#111" : "#fff" } : undefined}>{logo}</i>
                             <span>
                                 {a.name}
-                                {a.owner && !/^мій$/i.test(a.owner) ? ` · ${a.owner}` : ""}
+
                             </span>
                             <b className={available < 0 ? "neg" : ""}>
                                 {available < 0 ? "−" : ""}
@@ -343,7 +353,7 @@ export function Dashboard({
                     <button type="button" className="dc-acc-more" onClick={() => setShowIdle((v) => !v)}>
                         {showIdle
                             ? "Сховати неактивні"
-                            : `+ ${hiddenAccounts.length} неактивн${hiddenAccounts.length === 1 ? "ий" : "і"} (без операцій понад місяць)`}
+                            : `+ ${hiddenAccounts.length} порожн${hiddenAccounts.length === 1 ? "ій" : "і"} без руху понад місяць`}
                     </button>
                 )}
             </div>
