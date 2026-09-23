@@ -30,6 +30,21 @@ export function AnalyticsView({
     const [openIncome, setOpenIncome] = useState<string | null>(null);
     const FREQ: Record<string, string> = { monthly: "щомісяця", weekly: "щотижня", yearly: "щороку" };
     // Скільки вже надійшло цього місяця: доходи на рахунок правила (і в його категорію, якщо задана)
+    // Чи належить надходження саме цьому правилу (а не іншій зарплаті)
+    const norm = (v: string) => v.trim().toLowerCase();
+    const incomeRuleNames = new Set(plannedIncomeItems.map((x) => norm(x.name)));
+    const matchesRule = (t: Transaction, r: RecurringItem) => {
+        if (r.categoryId) return t.categoryId === r.categoryId;
+        const cat = norm(t.category || "");
+        // Є категорія з такою ж назвою, як правило → лише вона
+        if (categories.some((c) => norm(c.name) === norm(r.name))) return cat === norm(r.name);
+        // Категорія названа на честь ІНШОГО правила → не наше
+        if (incomeRuleNames.has(cat) && cat !== norm(r.name)) return false;
+        return (
+            /зарплат|з\/п|\bзп\b|salary|payroll|аванс|payoneer/i.test(`${t.category} ${t.title}`) ||
+            norm(t.title) === norm(r.name)
+        );
+    };
     const receivedThisMonth = (r: RecurringItem) => {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -50,10 +65,7 @@ export function AnalyticsView({
                 new Date(t.bookedAt) >= monthStart &&
                 (!accountName || (t.account || "").trim() === accountName.trim()) &&
                 // Лише зарплатні надходження: категорія правила, або категорія/назва схожа на зарплату
-                (r.categoryId
-                    ? t.categoryId === r.categoryId
-                    : /зарплат|з\/п|\bзп\b|salary|payroll|аванс|payoneer/i.test(`${t.category} ${t.title}`) ||
-                      t.title.trim().toLowerCase() === r.name.trim().toLowerCase()),
+                matchesRule(t, r),
         );
         return { sum: items.reduce((acc, t) => acc + toRule(t), 0), count: items.length, items, toRule };
     };

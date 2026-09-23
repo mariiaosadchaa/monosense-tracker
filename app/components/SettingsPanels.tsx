@@ -15,7 +15,9 @@ export function ProfileSettings({
                              budgetRollover,
                              setBudgetRollover,
                              notify,
+                             section = "profile",
                          }: {
+    section?: "profile" | "look" | "notify" | "budget";
     dark: boolean;
     setDark: (value: boolean) => void;
     skin: string;
@@ -57,227 +59,215 @@ export function ProfileSettings({
         notify(response.ok ? "Налаштування збережено" : result.error || "Не вдалося зберегти");
         if (response.ok) window.setTimeout(() => window.location.reload(), 500);
     }
-    return (
-        <form className="panel settings-card" onSubmit={save}>
-            <h2>Загальні</h2>
-            <label>
-                Ваше ім’я
-                <input
-                    value={profile?.name || ""}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, name: e.target.value } : p))}
-                    placeholder="Ваше ім’я"
+    const Toggle = ({
+        title,
+        hint,
+        checked,
+        onChange,
+    }: {
+        title: string;
+        hint: string;
+        checked: boolean;
+        onChange: (v: boolean) => void;
+    }) => (
+        <label className="st-toggle">
+            <span>
+                <strong>{title}</strong>
+                <small>{hint}</small>
+            </span>
+            <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+        </label>
+    );
+    const set = (patch: Partial<SettingsProfile>) => setProfile((p) => (p ? { ...p, ...patch } : p));
+    const Swatches = ({
+        value,
+        onChange,
+        items,
+    }: {
+        value: string;
+        onChange: (v: string) => void;
+        items: [string, string, string][];
+    }) => (
+        <div className="skin-picker">
+            {items.map(([key, bg, label]) => (
+                <button
+                    key={key}
+                    type="button"
+                    className={`skin-swatch${value === key ? " active" : ""}`}
+                    onClick={() => onChange(key)}
+                >
+                    <i style={{ background: bg }} />
+                    <small>{label}</small>
+                </button>
+            ))}
+        </div>
+    );
+    const saveBtn = (
+        <div className="st-save">
+            <button className="primary" disabled={!profile}>
+                Зберегти зміни
+            </button>
+        </div>
+    );
+
+    if (section === "look")
+        return (
+            <div className="st-card">
+                <h3>Вигляд</h3>
+                <Toggle title="Темна тема" hint="Застосовується одразу" checked={dark} onChange={setDark} />
+                <div className="st-field">
+                    <span>Кольорова тема</span>
+                    <Swatches
+                        value={skin}
+                        onChange={setSkin}
+                        items={[
+                            ["default", "#171a18", "Графіт"],
+                            ["mulberry-mint", "#6B2D42", "Mulberry mint"],
+                            ["espresso-cream", "#8A6A4A", "Espresso cream"],
+                        ]}
+                    />
+                </div>
+                <div className="st-field">
+                    <span>Картка балансу</span>
+                    <Swatches
+                        value={cardStyle}
+                        onChange={setCardStyle}
+                        items={[
+                            ["default", "linear-gradient(120deg,#12151a,#242832)", "Класична"],
+                            ["aurora", "linear-gradient(135deg,#1b1233,#3a2a63)", "Аврора"],
+                            ["mesh", "radial-gradient(circle at 30% 30%,#2c2450,#1a3a3a)", "Меш"],
+                            ["minimal", "#171a18", "Мінімал"],
+                        ]}
+                    />
+                </div>
+            </div>
+        );
+
+    if (section === "budget")
+        return (
+            <div className="st-card">
+                <h3>Планування</h3>
+                <Toggle
+                    title="Переносити залишок ліміту"
+                    hint="Невитрачене (або перевитрачене) переходить на наступний місяць"
+                    checked={budgetRollover}
+                    onChange={setBudgetRollover}
                 />
+            </div>
+        );
+
+    if (section === "notify")
+        return (
+            <form className="st-card" onSubmit={save}>
+                <h3>Сповіщення</h3>
+                <Toggle
+                    title="Ліміт вичерпано"
+                    hint="Повідомлення, коли категорія досягла 100%"
+                    checked={profile?.budget100 ?? true}
+                    onChange={(v) => set({ budget100: v })}
+                />
+                <Toggle
+                    title="Нагадування про платежі"
+                    hint="Для регулярних платежів, які не списуються автоматично"
+                    checked={profile?.recurringReminders ?? true}
+                    onChange={(v) => set({ recurringReminders: v })}
+                />
+                <h3 className="st-sub">Звіти</h3>
+                <Toggle
+                    title="Звіт у Telegram"
+                    hint="Підсумок витрат, лімітів і накопичень"
+                    checked={profile?.digestEnabled ?? false}
+                    onChange={(v) => set({ digestEnabled: v })}
+                />
+                <Toggle
+                    title="Звіт на email"
+                    hint={profile?.email || "Пошта акаунта"}
+                    checked={profile?.digestEmailEnabled ?? false}
+                    onChange={(v) => set({ digestEmailEnabled: v })}
+                />
+                {(profile?.digestEnabled || profile?.digestEmailEnabled) && (
+                    <label className="st-field">
+                        <span>Як часто</span>
+                        <select
+                            value={profile?.digestFrequency || "weekly"}
+                            onChange={(e) => set({ digestFrequency: e.target.value as "weekly" | "monthly" })}
+                        >
+                            <option value="weekly">Щотижня</option>
+                            <option value="monthly">Щомісяця</option>
+                        </select>
+                    </label>
+                )}
+                <h3 className="st-sub">Telegram</h3>
+                <div className="st-tg">
+                    <p>
+                        {profile?.telegramChatId
+                            ? "Telegram підключено ✓ — можна додавати витрати повідомленням, напр. «300 кава #робота»."
+                            : "Підключи бота, щоб отримувати сповіщення й додавати витрати повідомленням."}
+                    </p>
+                    <button
+                        type="button"
+                        className="secondary"
+                        onClick={async () => {
+                            const response = await fetch("/api/telegram/link", { method: "POST" });
+                            const result = await response.json();
+                            if (!response.ok) return notify(result.error || "Не вдалося створити посилання");
+                            window.open(result.url, "_blank");
+                        }}
+                    >
+                        {profile?.telegramChatId ? "Перепідключити" : "Підключити Telegram"}
+                    </button>
+                </div>
+                <details className="st-adv">
+                    <summary>Ввести chat ID вручну</summary>
+                    <input
+                        value={profile?.telegramChatId || ""}
+                        onChange={(e) => set({ telegramChatId: e.target.value })}
+                        placeholder="Надішліть боту /start"
+                    />
+                </details>
+                {saveBtn}
+            </form>
+        );
+
+    return (
+        <form className="st-card" onSubmit={save}>
+            <h3>Профіль</h3>
+            <label className="st-field">
+                <span>Ваше ім’я</span>
+                <input value={profile?.name || ""} onChange={(e) => set({ name: e.target.value })} placeholder="Ваше ім’я" />
             </label>
-            <label>
-                Базова валюта
+            {profile?.email && (
+                <div className="st-field">
+                    <span>Email</span>
+                    <input value={profile.email} disabled />
+                </div>
+            )}
+            <label className="st-field">
+                <span>Основна валюта</span>
                 <select
                     value={profile?.baseCurrency || "UAH"}
                     disabled={!["owner", "admin"].includes(profile?.role || "")}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, baseCurrency: e.target.value } : p))}
+                    onChange={(e) => set({ baseCurrency: e.target.value })}
                 >
-                    <option>UAH</option>
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>GBP</option>
-                    <option>PLN</option>
+                    <option value="UAH">₴ Гривня</option>
+                    <option value="USD">$ Долар</option>
+                    <option value="EUR">€ Євро</option>
+                    <option value="GBP">£ Фунт</option>
+                    <option value="PLN">zł Злотий</option>
                 </select>
+                <small>У ній рахуються баланс, ліміти й аналітика</small>
             </label>
-            <label>
-                Період планування
+            <label className="st-field">
+                <span>Планую бюджет на</span>
                 <select
                     value={profile?.planningPeriod || "month"}
-                    onChange={(e) =>
-                        setProfile((p) =>
-                            p ? { ...p, planningPeriod: e.target.value === "week" ? "week" : "month" } : p,
-                        )
-                    }
+                    onChange={(e) => set({ planningPeriod: e.target.value === "week" ? "week" : "month" })}
                 >
                     <option value="month">Місяць</option>
                     <option value="week">Тиждень</option>
                 </select>
             </label>
-            <label>
-                Telegram chat ID
-                <input
-                    value={profile?.telegramChatId || ""}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, telegramChatId: e.target.value } : p))}
-                    placeholder="Надішліть боту /start"
-                />
-            </label>
-            <button
-                type="button"
-                className="secondary"
-                onClick={async () => {
-                    const response = await fetch("/api/telegram/link", { method: "POST" });
-                    const result = await response.json();
-                    if (!response.ok) return notify(result.error || "Не вдалося створити посилання");
-                    window.open(result.url, "_blank");
-                }}
-            >
-                Прив'язати Telegram в один клік
-            </button>
-            <label className="setting-toggle">
-        <span>
-          <strong>Темна тема</strong>
-          <small>Змінити вигляд застосунку</small>
-        </span>
-                <input type="checkbox" checked={dark} onChange={(e) => setDark(e.target.checked)} />
-            </label>
-            <label className="setting-toggle">
-        <span>
-          <strong>Переносити залишок бюджету</strong>
-          <small>Невитрачене (або перевитрачене) переходить на наступний місяць для всіх категорій</small>
-        </span>
-                <input
-                    type="checkbox"
-                    checked={budgetRollover}
-                    onChange={(e) => setBudgetRollover(e.target.checked)}
-                />
-            </label>
-            <label className="setting-toggle">
-        <span>
-          <strong>Алерт на 100%</strong>
-          <small>Повідомлення про вичерпаний ліміт</small>
-        </span>
-                <input
-                    type="checkbox"
-                    checked={profile?.budget100 ?? true}
-                    onChange={(e) =>
-                        setProfile((prevProfile) =>
-                            prevProfile ? { ...prevProfile, budget100: e.target.checked } : prevProfile,
-                        )
-                    }
-                />
-            </label>
-            <label className="setting-toggle">
-        <span>
-          <strong>Нагадування про платежі</strong>
-          <small>Для неавтоматичних правил</small>
-        </span>
-                <input
-                    type="checkbox"
-                    checked={profile?.recurringReminders ?? true}
-                    onChange={(e) =>
-                        setProfile((p) => (p ? { ...p, recurringReminders: e.target.checked } : p))
-                    }
-                />
-            </label>
-            <label className="setting-toggle">
-        <span>
-          <strong>Тижневий/місячний звіт у Telegram</strong>
-          <small>Дайджест витрат, бюджету та накопичень</small>
-        </span>
-                <input
-                    type="checkbox"
-                    checked={profile?.digestEnabled ?? false}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, digestEnabled: e.target.checked } : p))}
-                />
-            </label>
-            {profile?.digestEnabled && (
-                <label>
-                    Частота звіту
-                    <select
-                        value={profile?.digestFrequency || "weekly"}
-                        onChange={(e) =>
-                            setProfile((p) =>
-                                p ? { ...p, digestFrequency: e.target.value as "weekly" | "monthly" } : p,
-                            )
-                        }
-                    >
-                        <option value="weekly">Щотижня</option>
-                        <option value="monthly">Щомісяця</option>
-                    </select>
-                </label>
-            )}
-            <label className="setting-toggle">
-        <span>
-          <strong>Той самий звіт на Email</strong>
-          <small>{profile?.email || "Пошта акаунта"}</small>
-        </span>
-                <input
-                    type="checkbox"
-                    checked={profile?.digestEmailEnabled ?? false}
-                    onChange={(e) =>
-                        setProfile((p) => (p ? { ...p, digestEmailEnabled: e.target.checked } : p))
-                    }
-                />
-            </label>{" "}
-            <label className="setting-toggle">
-        <span>
-          <strong>Темна тема</strong>
-          <small>Змінити вигляд застосунку</small>
-        </span>
-                <input type="checkbox" checked={dark} onChange={(e) => setDark(e.target.checked)} />
-            </label>
-            <label>
-                Кольорова тема
-                <div className="skin-picker">
-                    <button
-                        type="button"
-                        className={`skin-swatch${skin === "default" ? " active" : ""}`}
-                        onClick={() => setSkin("default")}
-                    >
-                        <i style={{ background: "#171a18" }} />
-                        <small>Поточна</small>
-                    </button>
-                    <button
-                        type="button"
-                        className={`skin-swatch${skin === "mulberry-mint" ? " active" : ""}`}
-                        onClick={() => setSkin("mulberry-mint")}
-                    >
-                        <i style={{ background: "#6B2D42" }} />
-                        <small>Mulberry mint</small>
-                    </button>
-                    <button
-                        type="button"
-                        className={`skin-swatch${skin === "espresso-cream" ? " active" : ""}`}
-                        onClick={() => setSkin("espresso-cream")}
-                    >
-                        <i style={{ background: "#8A6A4A" }} />
-                        <small>Espresso cream</small>
-                    </button>
-                </div>
-            </label>
-            <label>
-                Дизайн картки балансу
-                <div className="skin-picker">
-                    <button
-                        type="button"
-                        className={`skin-swatch${cardStyle === "default" ? " active" : ""}`}
-                        onClick={() => setCardStyle("default")}
-                    >
-                        <i style={{ background: "linear-gradient(120deg,#12151a,#242832)" }} />
-                        <small>Класична</small>
-                    </button>
-                    <button
-                        type="button"
-                        className={`skin-swatch${cardStyle === "aurora" ? " active" : ""}`}
-                        onClick={() => setCardStyle("aurora")}
-                    >
-                        <i style={{ background: "linear-gradient(135deg,#1b1233,#3a2a63)" }} />
-                        <small>Аврора</small>
-                    </button>
-                    <button
-                        type="button"
-                        className={`skin-swatch${cardStyle === "mesh" ? " active" : ""}`}
-                        onClick={() => setCardStyle("mesh")}
-                    >
-                        <i style={{ background: "radial-gradient(circle at 30% 30%,#2c2450,#1a3a3a)" }} />
-                        <small>Меш</small>
-                    </button>
-                    <button
-                        type="button"
-                        className={`skin-swatch${cardStyle === "minimal" ? " active" : ""}`}
-                        onClick={() => setCardStyle("minimal")}
-                    >
-                        <i style={{ background: "#171a18" }} />
-                        <small>Мінімал</small>
-                    </button>
-                </div>
-            </label>
-            <button className="primary" disabled={!profile}>
-                Зберегти
-            </button>
+            {saveBtn}
         </form>
     );
 }

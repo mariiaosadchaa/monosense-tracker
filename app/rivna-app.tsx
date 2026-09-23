@@ -2907,27 +2907,28 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                     } else setLoggedIn(false);
                   }}
                   notify={notify}
+                  security={
+                    initialLoggedIn ? (
+                        <div className="st-card st-row">
+                          <span>
+                            <strong>Швидкий вхід</strong>
+                            <small>Face ID, Touch ID, Windows Hello або PIN цього пристрою</small>
+                          </span>
+                          <PasskeyButton mode="register" className="small-primary" onMessage={notify} />
+                        </div>
+                    ) : undefined
+                  }
+                  members={
+                    initialLoggedIn ? (
+                        <MembersPanel notify={notify} onInvite={() => { setInviteResult(null); setModal("invite"); }} version={membersVersion} />
+                    ) : undefined
+                  }
+                  recategorize={initialLoggedIn ? <RecategorizePanel notify={notify} /> : undefined}
+                  feedback={<GuideFeedback notify={notify} authenticated={initialLoggedIn} />}
               />
           )}
 
-          {page === "Налаштування" && initialLoggedIn && (
-              <>
-                <section className="panel passkey-panel">
-                  <div>
-                    <strong>Швидкий вхід на цьому пристрої</strong>
-                    <small>Face ID, Touch ID, Windows Hello або PIN пристрою</small>
-                  </div>
-                  <PasskeyButton mode="register" className="small-primary" onMessage={notify} />
-                </section>
 
-                <MembersPanel notify={notify} onInvite={() => { setInviteResult(null); setModal("invite"); }} version={membersVersion} />
-                <RecategorizePanel notify={notify} />
-              </>
-          )}
-
-          {page === "Налаштування" && (
-              <GuideFeedback notify={notify} authenticated={initialLoggedIn} />
-          )}
 
           <button
               className="mobile-quick-add"
