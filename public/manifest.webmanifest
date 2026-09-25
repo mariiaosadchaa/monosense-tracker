@@ -4,16 +4,63 @@
   "description": "Рахунки, бюджети та фінансові цілі",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "uk",
-  "categories": ["finance", "productivity"],
-  "background_color": "#f7f8fc",
-  "theme_color": "#6c5ce7",
-  "icons": [{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
+  "background_color": "#0e0d0b",
+  "theme_color": "#0e0d0b",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
   "shortcuts": [
-    {"name":"Додати витрату","short_name":"Витрата","url":"/?action=expense","icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml"}]},
-    {"name":"Переглянути бюджет","short_name":"Бюджет","url":"/?section=budget","icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml"}]}
+    {
+      "name": "Додати витрату",
+      "short_name": "Витрата",
+      "url": "/?action=expense",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Переглянути бюджет",
+      "short_name": "Бюджет",
+      "url": "/?section=budget",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

@@ -1,39 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
-const THEMES = [
-  { id: "mulberry-mint", label: "Mulberry mint", logo: "/logo-rivna-mulberry.webp" },
-  { id: "espresso-cream", label: "Espresso cream", logo: "/logo-rivna-cream.webp" },
-];
-
+/** Перемикач світла/темна тема на сторінках входу (той самий ключ, що й у застосунку). Скіни вимкнено. */
 export function AuthThemeToggle() {
-  const [theme, setTheme] = useState("mulberry-mint");
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("rivna-skin") : null;
-    if (saved && THEMES.some((item) => item.id === saved)) setTheme(saved);
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem("rivna-theme");
+      localStorage.removeItem("rivna-skin");
+    } catch {}
+    delete document.documentElement.dataset.skin;
+    setDark(saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
   }, []);
 
   useEffect(() => {
-    document.documentElement.dataset.skin = theme;
-    localStorage.setItem("rivna-skin", theme);
-  }, [theme]);
-
-  const current = THEMES.find((item) => item.id === theme) || THEMES[0];
-  const next = THEMES.find((item) => item.id !== theme) || THEMES[1];
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    try { localStorage.setItem("rivna-theme", dark ? "dark" : "light"); } catch {}
+  }, [dark]);
 
   return (
     <>
       <button
         type="button"
         className="auth-v3-theme-btn"
-        onClick={() => setTheme(next.id)}
-        aria-label={`Перемкнути на тему ${next.label}`}
-        title={next.label}
+        onClick={() => setDark(!dark)}
+        aria-label={dark ? "Світла тема" : "Темна тема"}
+        title={dark ? "Світла тема" : "Темна тема"}
       >
-        <span className="auth-v3-theme-dot" />
+        {dark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
-      <img src={current.logo} alt="rivna" className="auth-v3-logo" width={270} height={149} fetchPriority="high" />
+      <span className="auth-v3-logo auth-lux-logo" role="img" aria-label="Rivna" />
     </>
   );
 }

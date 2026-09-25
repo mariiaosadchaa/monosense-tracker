@@ -811,3 +811,168 @@ html.is-native .sidebar { padding-top: calc(env(safe-area-inset-top) + 20px) !im
 html.is-native .modal-backdrop { padding-top: env(safe-area-inset-top); }
 html.is-native .toast { bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
 html.is-native .install-banner, html.is-native .pwa-install { display: none !important; }
+
+/* ============================================================
+   17. LUXE — сторінки входу / реєстрації (.auth-v3)
+   ============================================================ */
+.auth-v3 {
+    min-height: 100vh;
+    background:
+        radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 70%),
+        radial-gradient(40% 40% at 100% 100%, color-mix(in srgb, var(--gold) 8%, transparent), transparent 70%),
+        var(--bg) !important;
+    color: var(--text) !important;
+}
+.auth-v3-card {
+    background: color-mix(in srgb, var(--panel) 88%, transparent) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 0 !important;
+    border-radius: 30px !important;
+    box-shadow: 0 0 0 1px var(--hairline) inset, 0 1px 0 rgba(255,255,255,.5) inset, var(--shadow-lg) !important;
+    padding: 44px 40px 34px !important;
+    width: min(440px, calc(100vw - 32px)) !important;
+    animation: modal-in .8s var(--ease-spring) backwards;
+}
+:root[data-theme="dark"] .auth-v3-card { box-shadow: 0 0 0 1px rgba(214,186,138,.16) inset, 0 40px 100px rgba(0,0,0,.7) !important; }
+.auth-lux-logo, .auth-v3-logo.auth-lux-logo {
+    display: block;
+    width: 170px !important;
+    height: 94px !important;
+    margin: 4px auto 6px !important;
+    background: linear-gradient(180deg, #e6cfa6 0%, #b3915b 55%, #8a6a3a 100%);
+    -webkit-mask: url('/logo-rivna-cream.webp') center / contain no-repeat;
+    mask: url('/logo-rivna-cream.webp') center / contain no-repeat;
+}
+.auth-v3-signature {
+    color: var(--gold-text) !important;
+    text-transform: uppercase;
+    letter-spacing: .18em !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    margin: 0 0 22px !important;
+    opacity: .9;
+}
+.auth-v3-card h1 {
+    font-family: var(--serif) !important;
+    font-weight: 400 !important;
+    font-size: 40px !important;
+    letter-spacing: -.01em !important;
+    color: var(--text) !important;
+    margin: 0 0 6px !important;
+}
+.auth-v3-card > p { color: var(--text-2) !important; font-size: 15px !important; margin-bottom: 26px !important; }
+.auth-v3-form { gap: 14px !important; }
+.auth-v3-form label {
+    color: var(--text-2) !important;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    gap: 8px !important;
+}
+.auth-v3-form input {
+    height: 52px !important;
+    background: var(--fill-2) !important;
+    border: 1px solid transparent !important;
+    border-radius: 14px !important;
+    color: var(--text) !important;
+    font-size: 16px !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    padding: 0 16px !important;
+}
+.auth-v3-form input::placeholder { color: color-mix(in srgb, var(--text) 35%, transparent); }
+.auth-v3-form input:focus {
+    background: var(--panel) !important;
+    border-color: color-mix(in srgb, var(--gold) 60%, transparent) !important;
+    box-shadow: 0 0 0 4px var(--gold-soft) !important;
+}
+.auth-v3-forgot { color: var(--gold-text) !important; font-size: 13px !important; font-weight: 500; }
+.auth-v3-primary {
+    height: 54px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: var(--btn) !important;
+    color: var(--btn-text) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    letter-spacing: .01em;
+    margin-top: 6px;
+    box-shadow: 0 14px 30px -14px rgba(20, 14, 5, .6) !important;
+    transition: box-shadow .35s var(--ease-out), scale .15s var(--ease-out) !important;
+}
+.auth-v3-primary:hover { box-shadow: 0 0 0 1px var(--gold), 0 18px 40px -14px rgba(179,145,91,.7) !important; }
+.auth-v3-passkey {
+    height: 52px !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    border: 1px solid var(--hairline) !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+}
+.auth-v3-passkey:hover { border-color: var(--gold) !important; }
+.auth-v3-passkey svg { color: var(--gold) !important; }
+.auth-v3-switch { color: var(--text-2) !important; margin-top: 22px !important; font-size: 14px !important; }
+.auth-v3-switch a { color: var(--text) !important; font-weight: 600 !important; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
+.auth-v3-theme-btn {
+    width: 38px !important; height: 38px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: 0 0 0 1px var(--hairline) inset !important;
+    color: var(--text-2) !important;
+    display: grid !important; place-items: center;
+}
+.auth-v3-theme-btn:hover { color: var(--gold-text) !important; box-shadow: 0 0 0 1px var(--gold) inset !important; }
+/* плаваючі картки фону — скло із золотою окантовкою */
+.auth-v3-float-card {
+    background: color-mix(in srgb, var(--panel) 70%, transparent) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 0 !important;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 22%, transparent) inset, 0 18px 40px -18px rgba(40,30,15,.35) !important;
+    border-radius: 16px !important;
+    color: var(--text) !important;
+}
+.auth-v3-float-label { color: var(--text-2) !important; }
+.auth-v3-float-value { color: var(--text) !important; font-variant-numeric: tabular-nums; }
+.auth-v3-float-value-positive { color: var(--pos) !important; }
+.auth-v3-float-value-danger { color: var(--neg) !important; }
+.auth-v3-float-icon { color: var(--gold) !important; }
+@media (max-width: 720px) {
+    .auth-v3-backdrop { display: none !important; }
+    .auth-v3-card { padding: 34px 24px 28px !important; border-radius: 26px !important; }
+    .auth-v3-card h1 { font-size: 34px !important; }
+}
+
+/* Операції на телефоні: іконка | назва | сума (іконку не ховаємо, назва не стискається) */
+@media (max-width: 720px) {
+    .data-row {
+        grid-template-columns: 40px minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        padding: 12px 10px !important;
+        min-height: 64px;
+    }
+    .data-row > .tx-category-icon { display: flex !important; }
+    .data-row > span:not(.tx-category-icon) { display: none !important; }
+    .data-row > strong {
+        min-width: 0;
+        display: block !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 15px !important;
+    }
+    .data-row > strong em, .data-row > strong .row-tags { display: none; }
+    .data-row > b { justify-self: end; text-align: right; white-space: nowrap; font-size: 15px !important; }
+    .data-row > b small { white-space: normal; max-width: 150px; margin-left: auto; }
+    .data-row > .row-menu-wrap { display: none; }
+    .data-row + .data-row::before { left: 62px !important; right: 10px !important; }
+}
+.auth-v3-card .auth-v3-signature { color: var(--gold) !important; letter-spacing: .16em !important; opacity: 1; }
+.auth-v3-float-card:nth-child(7) { display: none !important; }
+@media (max-width: 720px) {
+    .auth-v3 { padding: 16px !important; }
+    .auth-v3-card .auth-v3-signature { letter-spacing: .1em !important; font-size: 9px !important; }
+}
