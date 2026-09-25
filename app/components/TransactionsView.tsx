@@ -262,10 +262,23 @@ export function TransactionsView({
                 const dateCompare = (b.bookedAt || "").localeCompare(a.bookedAt || "");
                 if (dateCompare !== 0) return dateCompare;
                 if (a.kind === "transfer" && b.kind === "transfer") {
-                    return a.amount > 0 ? -1 : b.amount > 0 ? 1 : 0;
+                    // спершу списання (звідки), потім зарахування (куди)
+                    return a.amount < 0 ? -1 : b.amount < 0 ? 1 : 0;
                 }
                 return 0;
             });
+    // Дві ноги одного переказу — поруч: спершу «звідки» (−), одразу під ним «куди» (+)
+    if (!sortField && !(editMode && manualOrder.length)) {
+        const inByPair = new Map(shown.filter((t) => t.pairRole === "in" && t.pairId).map((t) => [t.pairId!, t]));
+        const outPairs = new Set(shown.filter((t) => t.pairRole === "out" && t.pairId).map((t) => t.pairId!));
+        const ordered: Transaction[] = [];
+        for (const t of shown) {
+            if (t.pairRole === "in" && t.pairId && outPairs.has(t.pairId)) continue;
+            ordered.push(t);
+            if (t.pairRole === "out" && t.pairId && inByPair.has(t.pairId)) ordered.push(inByPair.get(t.pairId)!);
+        }
+        shown.splice(0, shown.length, ...ordered);
+    }
 
     const filterKey = [search, account, category, owner, tag, from, to, minAmount, maxAmount, sortField, sortDir].join("|");
     useEffect(() => {
