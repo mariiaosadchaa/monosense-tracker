@@ -1,0 +1,227 @@
+/* ============================================================
+   Rivna Premium Layer — Apple-style motion & materials
+   Підключається ОСТАННІМ у layout.tsx. Кольори/скіни не чіпає.
+   ============================================================ */
+
+:root {
+    --ease-out: cubic-bezier(.22, 1, .36, 1);        /* плавне гальмування */
+    --ease-spring: cubic-bezier(.32, .72, 0, 1);     /* iOS sheet */
+    --ease-std: cubic-bezier(.25, .1, .25, 1);       /* Apple default */
+    --dur-fast: .18s;
+    --dur: .32s;
+    --dur-slow: .6s;
+    --hairline: color-mix(in srgb, var(--text) 8%, transparent);
+    --glass: color-mix(in srgb, var(--panel) 72%, transparent);
+    --shadow-sm: 0 1px 2px rgba(16, 18, 24, .04), 0 2px 8px rgba(16, 18, 24, .04);
+    --shadow-md: 0 1px 2px rgba(16, 18, 24, .04), 0 8px 24px rgba(16, 18, 24, .06), 0 24px 48px -12px rgba(16, 18, 24, .08);
+    --shadow-lg: 0 2px 4px rgba(16, 18, 24, .04), 0 16px 40px rgba(16, 18, 24, .10), 0 40px 80px -20px rgba(16, 18, 24, .18);
+}
+:root[data-theme="dark"] {
+    --hairline: rgba(255, 255, 255, .07);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .35);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, .35), 0 30px 70px rgba(0, 0, 0, .5);
+}
+
+/* ---------- Типографіка (SF Pro на Apple, Inter деінде) ---------- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -.011em;
+}
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3, header h1 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), system-ui, sans-serif;
+    letter-spacing: -.028em;
+}
+.balance-card h2, .metric strong, .card-balance, .goal-card-amount, [class*="amount"] {
+    font-variant-numeric: tabular-nums;
+}
+::selection { background: color-mix(in srgb, var(--purple) 22%, transparent); }
+
+/* ---------- Матеріали: скло ---------- */
+.sidebar {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    border-color: var(--hairline);
+    box-shadow: var(--shadow-md);
+}
+.content > header {
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+}
+.content > header::after { opacity: 0; }
+.notification-panel {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow-lg);
+    transform-origin: top right;
+    animation: pop-in var(--dur) var(--ease-spring) backwards;
+}
+@media (max-width: 720px) {
+    .mobile-nav {
+        background: var(--glass) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        backdrop-filter: blur(24px) saturate(180%);
+        border-top: 1px solid var(--hairline);
+    }
+}
+
+/* ---------- Картки: м'які шари тіней, hover-підйом ---------- */
+.panel, .st-card, .goal-card, .dc-tile, .rate-card, .milestone-card, .metric, .forecast-card, .mono-mini-card, .mono-card-cell {
+    border-color: var(--hairline);
+    box-shadow: var(--shadow-sm);
+    transition:
+        translate var(--dur) var(--ease-out),
+        box-shadow var(--dur) var(--ease-out),
+        background-color var(--dur) var(--ease-std),
+        border-color var(--dur) var(--ease-std);
+}
+@media (hover: hover) {
+    .st-card:hover, .goal-card:hover, .dc-tile:hover, .rate-card:hover, .milestone-card:hover, .metric:hover, .mono-mini-card:hover, .mono-card-cell:hover {
+        translate: 0 -3px;
+        box-shadow: var(--shadow-md);
+    }
+}
+.balance-card {
+    box-shadow: 0 1px 1px rgba(255,255,255,.06) inset, var(--shadow-lg);
+}
+.balance-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.09) 50%, transparent 65%);
+    background-size: 250% 100%;
+    background-position: 130% 0;
+    animation: sheen 1.6s var(--ease-out) .35s backwards;
+    z-index: 0;
+}
+
+/* ---------- Кнопки: тактильне натискання ---------- */
+button, .add-btn, a[role="button"] {
+    transition:
+        scale var(--dur-fast) var(--ease-out),
+        background-color var(--dur) var(--ease-std),
+        color var(--dur) var(--ease-std),
+        box-shadow var(--dur) var(--ease-out),
+        opacity var(--dur) var(--ease-std);
+    -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):active { scale: .96; transition-duration: .08s; }
+.add-btn, .small-primary {
+    box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 6px 16px -6px color-mix(in srgb, var(--ink) 60%, transparent);
+}
+.add-btn:hover, .small-primary:hover {
+    box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px -8px color-mix(in srgb, var(--purple) 70%, transparent);
+}
+.sidebar nav button svg, .mobile-nav button svg { transition: scale var(--dur) var(--ease-spring); }
+.sidebar nav button.active svg, .mobile-nav button.active svg { scale: 1.08; }
+:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--purple) 70%, transparent);
+    outline-offset: 2px;
+    border-radius: 10px;
+}
+input, select, textarea {
+    transition: border-color var(--dur) var(--ease-std), box-shadow var(--dur) var(--ease-std);
+}
+input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--purple) 16%, transparent);
+}
+
+/* ---------- Перехід між сторінками + каскадна поява ---------- */
+.page-stage > * {
+    animation: fade-in .45s var(--ease-std) backwards;
+}
+.page-stage > * > * {
+    animation: rise .7s var(--ease-out) backwards;
+}
+.page-stage > * > *:nth-child(1) { animation-delay: .02s; }
+.page-stage > * > *:nth-child(2) { animation-delay: .07s; }
+.page-stage > * > *:nth-child(3) { animation-delay: .12s; }
+.page-stage > * > *:nth-child(4) { animation-delay: .17s; }
+.page-stage > * > *:nth-child(5) { animation-delay: .22s; }
+.page-stage > * > *:nth-child(6) { animation-delay: .27s; }
+.page-stage > * > *:nth-child(n+7) { animation-delay: .32s; }
+
+/* Поява при скролі (Chrome/Edge/Safari 26+) */
+@supports (animation-timeline: view()) {
+    .page-stage .panel, .page-stage .st-card, .page-stage .goal-card, .page-stage .dc-tile {
+        animation: scroll-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+    }
+}
+
+/* ---------- Модалки: скло-бекдроп + spring ---------- */
+.modal-backdrop {
+    background: rgba(8, 10, 16, .38);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    animation: backdrop-in var(--dur) var(--ease-std) backwards;
+}
+.expense-modal {
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow-lg);
+    animation: modal-in .5s var(--ease-spring) backwards;
+}
+@media (max-width: 720px) {
+    .expense-modal { animation: sheet-in .55s var(--ease-spring) backwards; }
+    .expense-modal::before {
+        content: "";
+        display: block;
+        width: 38px; height: 5px;
+        border-radius: 3px;
+        margin: -12px auto 4px;
+        background: color-mix(in srgb, var(--text) 18%, transparent);
+    }
+}
+.toast {
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: var(--shadow-lg);
+    animation: toast-in .55s var(--ease-spring) backwards;
+}
+
+/* ---------- Скролбар у стилі macOS ---------- */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 18%, transparent) transparent; }
+html { scroll-behavior: smooth; }
+
+/* ---------- Keyframes ---------- */
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes rise {
+    from { opacity: 0; translate: 0 18px; filter: blur(6px); }
+}
+@keyframes scroll-reveal {
+    from { opacity: 0; translate: 0 28px; scale: .98; }
+}
+@keyframes pop-in {
+    from { opacity: 0; scale: .92; translate: 0 -6px; }
+}
+@keyframes backdrop-in { from { opacity: 0; } }
+@keyframes modal-in {
+    from { opacity: 0; scale: .94; translate: 0 16px; }
+}
+@keyframes sheet-in { from { translate: 0 100%; } }
+@keyframes toast-in {
+    from { opacity: 0; translate: 0 24px; scale: .9; }
+}
+@keyframes sheen { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+
+/* ---------- Доступність ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-delay: 0s !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

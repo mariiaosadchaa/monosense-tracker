@@ -27,7 +27,7 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
     const outs = transactions.filter((t) => eligible(t) && t.amount < 0);
 
     const used = new Set<string | number>();
-    const internal = new Set<string | number>();
+    const internal = new Map<string | number, string>(); // id → «A → B»
 
     for (const o of outs) {
         const oTime = Date.parse(o.bookedAt!);
@@ -45,9 +45,20 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
             const sameCurrency = (i.currency || "UAH") === oCur;
             const dt = Math.abs(time - oTime);
             let diff: number;
+            const iCur = i.currency || "UAH";
             if (sameCurrency) {
                 if (dt > 36 * HOUR) continue;
-                diff = Math.abs(Math.abs(o.amount) - i.amount);
+                // Списання може містити комісію (₴258,8 = ₴250 + ₴8,8 комісії)
+                const gross = Math.abs(o.amount);
+                const net = oCur === "UAH" && o.feeAmount ? gross - o.feeAmount : gross;
+                diff = Math.min(Math.abs(gross - i.amount), Math.abs(net - i.amount));
+                if (diff > 0.01) continue;
+            } else if (o.originalCurrency === iCur && o.originalAmount) {
+                // Банк уже вказав суму зарахування в чеку (-$6 → чек ₴267,3)
+                diff = Math.abs(o.originalAmount - i.amount) / Math.max(i.amount, 1);
+                if (diff > 0.01) continue;
+            } else if (i.originalCurrency === oCur && i.originalAmount) {
+                diff = Math.abs(i.originalAmount - Math.abs(o.amount)) / Math.max(Math.abs(o.amount), 1);
                 if (diff > 0.01) continue;
             } else {
                 const a = Math.abs(o.baseAmount ?? o.amount),
@@ -63,13 +74,14 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
         }
         if (best) {
             used.add(best.id);
-            internal.add(o.id);
-            internal.add(best.id);
+            const title = `${oAcc} → ${best.account!.trim()}`;
+            internal.set(o.id, title);
+            internal.set(best.id, title);
         }
     }
 
     if (!internal.size) return transactions;
     return transactions.map((t) =>
-        internal.has(t.id) ? { ...t, kind: "transfer", category: "Між своїми рахунками" } : t,
+        internal.has(t.id) ? { ...t, kind: "transfer", title: internal.get(t.id)!, category: "Між своїми рахунками" } : t,
     );
 }

@@ -827,21 +827,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     return result;
   }, [transfers, transactions, rates, customRates, baseCurrency]);
 
-  const filteredTransactions = useMemo(() => {
-    // Always return raw (both transfer legs present).
-    // TransactionsView handles merging when no account filter is active.
-    let list = transactions;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-          (t) =>
-              t.title.toLowerCase().includes(q) ||
-              t.category.toLowerCase().includes(q) ||
-              (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(q))),
-      );
-    }
-    return list;
-  }, [transactions, search]);
 
   const plannedMonthlyIncome = useMemo(
       () =>
@@ -878,6 +863,21 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     });
     return markInternalTransfers(relabeled, viewAccounts);
   }, [transactions, rates, customRates, baseCurrency, viewAccounts]);
+  const filteredTransactions = useMemo(() => {
+    // Always return raw (both transfer legs present).
+    // TransactionsView handles merging when no account filter is active.
+    let list = normalizedTransactions; // з позначеними переказами між своїми рахунками
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+          (t) =>
+              t.title.toLowerCase().includes(q) ||
+              t.category.toLowerCase().includes(q) ||
+              (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(q))),
+      );
+    }
+    return list;
+  }, [normalizedTransactions, search]);
   const [seenAlerts, setSeenAlerts] = useState<string[]>(() =>
       typeof window !== "undefined"
           ? JSON.parse(localStorage.getItem("rivna-seen-alerts") || "[]")
