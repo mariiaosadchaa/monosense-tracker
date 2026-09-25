@@ -558,7 +558,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         const myAccount = accountNameById[id] || "";
                         const counterpartId = transferCounterpartId[id];
                         const otherAccount = counterpartId ? accountNameById[counterpartId] || "" : "";
-                        return direction === "in" ? `${otherAccount} → ${myAccount}` : `${myAccount} → ${otherAccount}`;
+                        // Немає другої ноги (переказ людині / на картку поза застосунком) —
+                        // показуємо опис з банку замість обрізаного «Біла →»
+                        if (!otherAccount) return String(item.note || (direction === "in" ? "Надходження" : "Переказ"));
+                        return direction === "in" ? `${myAccount} ← ${otherAccount}` : `${myAccount} → ${otherAccount}`;
                       })()
                       : String(item.note || (item.type === "income" ? "Дохід" : "Витрата")),
                   category: isTransferLeg

@@ -12,9 +12,9 @@ const HOUR = 3600 * 1000;
  */
 export function markInternalTransfers<T extends Transaction>(transactions: T[], accounts: AccountLike[]): T[] {
     const ownerOf = new Map(accounts.map((a) => [a.name.trim(), (a.owner || "").trim().toLowerCase()]));
+    // Беремо і операції, які банк/імпорт уже позначив як переказ ("transfer"/"exchange"):
+    // інакше пари між своїми картками лишались з категорією «Переказ» і двома рядками.
     const eligible = (t: T) =>
-        t.kind !== "transfer" &&
-        t.kind !== "exchange" &&
         t.kind !== "credit_limit_change" &&
         !!t.bookedAt &&
         !!t.account &&
