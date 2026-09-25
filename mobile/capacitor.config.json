@@ -1,0 +1,36 @@
+{
+  "appId": "ua.rivna.app",
+  "appName": "Rivna",
+  "webDir": "www",
+  "server": {
+    "url": "https://YOUR-RIVNA-DOMAIN.vercel.app",
+    "cleartext": false,
+    "errorPath": "offline.html",
+    "allowNavigation": ["*.supabase.co", "*.vercel.app"]
+  },
+  "ios": {
+    "scheme": "Rivna",
+    "contentInset": "never",
+    "backgroundColor": "#0e0d0b",
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "launchShowDuration": 3000,
+      "backgroundColor": "#0e0d0b",
+      "showSpinner": false,
+      "iosSpinnerStyle": "small"
+    },
+    "StatusBar": {
+      "overlaysWebView": true
+    },
+    "Keyboard": {
+      "resize": "native",
+      "resizeOnFullScreen": true
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

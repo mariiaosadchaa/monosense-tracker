@@ -799,3 +799,15 @@ html body .dc-tile b { height: auto !important; line-height: 1.12 !important; ma
 .dc-plan-ic.in { color: var(--pos) !important; background: color-mix(in srgb, var(--pos) 12%, transparent) !important; }
 .dc-plan b { font-weight: 600 !important; font-variant-numeric: tabular-nums; }
 .data-row strong em.dup-badge { background: color-mix(in srgb, var(--neg) 12%, transparent) !important; color: var(--neg) !important; }
+
+/* ============================================================
+   16. iOS-застосунок (Capacitor): html.is-native
+   ============================================================ */
+html.is-native, html.is-native body { overscroll-behavior-y: none; background: var(--bg); }
+html.is-native body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html.is-native input, html.is-native textarea, html.is-native [contenteditable] { -webkit-user-select: text; user-select: text; }
+html.is-native .content > header { padding-top: calc(env(safe-area-inset-top) + 10px) !important; }
+html.is-native .sidebar { padding-top: calc(env(safe-area-inset-top) + 20px) !important; }
+html.is-native .modal-backdrop { padding-top: env(safe-area-inset-top); }
+html.is-native .toast { bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
+html.is-native .install-banner, html.is-native .pwa-install { display: none !important; }

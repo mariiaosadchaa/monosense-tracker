@@ -1,0 +1,26 @@
+{
+  "name": "rivna-ios",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Нативна iOS-оболонка Rivna (Capacitor). Веб-частина живе на Vercel.",
+  "scripts": {
+    "sync": "cap sync ios",
+    "assets": "capacitor-assets generate --ios --iconBackgroundColor '#0e0d0b' --splashBackgroundColor '#0e0d0b' --splashBackgroundColorDark '#080807'",
+    "open": "cap open ios",
+    "set-url": "node scripts/set-url.mjs"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2"
+  }
+}

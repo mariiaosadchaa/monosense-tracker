@@ -728,6 +728,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     return () => window.clearTimeout(timer);
   }, [initialLoggedIn]);
 
+  // iOS-застосунок: оновлюємо дані, коли користувач повертається в застосунок
+  useEffect(() => {
+    const onResume = () => void refreshFinance(true);
+    window.addEventListener("rivna:resume", onResume);
+    return () => window.removeEventListener("rivna:resume", onResume);
+  }, [initialLoggedIn]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     localStorage.setItem("rivna-theme", dark ? "dark" : "light");

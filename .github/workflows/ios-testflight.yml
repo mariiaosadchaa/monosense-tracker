@@ -1,0 +1,84 @@
+# Збірка iOS-застосунку Rivna в хмарі (Mac від GitHub) і відправка в TestFlight.
+# Запуск: GitHub → Actions → «iOS → TestFlight» → Run workflow.
+#
+# Потрібно один раз додати в GitHub → Settings → Secrets and variables → Actions:
+#   Variables:  RIVNA_URL        — адреса сайту, напр. https://rivna.vercel.app
+#   Secrets:    APPLE_TEAM_ID    — Team ID (developer.apple.com → Membership)
+#               ASC_KEY_ID       — Key ID ключа App Store Connect API
+#               ASC_ISSUER_ID    — Issuer ID
+#               ASC_KEY_P8       — вміст файлу AuthKey_XXXX.p8 (весь текст)
+name: iOS → TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["ios-v*"]
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -viE 'beta|release_candidate' | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Залежності
+        run: npm ci
+
+      - name: Адреса сайту
+        env:
+          RIVNA_URL: ${{ vars.RIVNA_URL }}
+        run: node scripts/set-url.mjs "$RIVNA_URL"
+
+      - name: Capacitor sync
+        run: npx cap sync ios
+
+      - name: Ключ App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+
+      - name: Archive
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Rivna.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            archive | xcbeautify || exit ${PIPESTATUS[0]}
+
+      - name: Upload у TestFlight
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM" ios/ExportOptions.plist
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Rivna.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"
+          echo "✅ Збірка ${{ github.run_number }} відправлена в TestFlight. Через 5–20 хв вона з'явиться в App Store Connect."
