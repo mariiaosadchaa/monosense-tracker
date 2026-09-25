@@ -29,6 +29,9 @@ export type Transaction = {
     feeAmount?: number;          // комісія в UAH
     originalAmount?: number;     // сума з чека
     originalCurrency?: string;   // валюта чека
+    pairId?: string;             // спільний id двох ніг переказу між своїми рахунками
+    pairRole?: "out" | "in";
+    collapsedPair?: boolean;     // показано одним рядком «A → B» у списку операцій
 };
 
 export type Account = {

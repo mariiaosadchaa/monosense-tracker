@@ -7,6 +7,7 @@ import { formatMoney, currencySymbol, toDateKey } from "../lib/format";
 import { mergeTransferPairs } from "../lib/transfers";
 import {
     ArrowDownLeft,
+    ArrowLeftRight,
     ArrowUpRight,
     Camera,
     ChevronDown,
@@ -18,6 +19,42 @@ import {
     User,
     X
 } from "lucide-react";
+
+/**
+ * Без фільтра по рахунку переказ між своїми рахунками показуємо ОДНИМ рядком «A → B»
+ * (лишаємо ногу списання, ногу зарахування ховаємо). З фільтром по рахунку — видно ногу цього рахунку.
+ */
+function collapsePairs(
+    list: Transaction[],
+    transfers: { fromTransactionId: string | null; toTransactionId: string | null }[],
+): Transaction[] {
+    const ids = new Set(list.map((t) => String(t.id)));
+    const outPairs = new Set(list.filter((t) => t.pairRole === "out" && t.pairId).map((t) => t.pairId!));
+    const inToOut = new Map(
+        transfers
+            .filter((tr) => tr.fromTransactionId && tr.toTransactionId)
+            .map((tr) => [String(tr.toTransactionId), String(tr.fromTransactionId)]),
+    );
+    const byId = new Map(list.map((t) => [String(t.id), t]));
+    const outToIn = new Map([...inToOut.entries()].map(([i, o]) => [o, i]));
+    const hidden = new Set<string>();
+    for (const t of list) {
+        if (t.pairRole === "in" && t.pairId && outPairs.has(t.pairId)) hidden.add(String(t.id));
+        const outId = inToOut.get(String(t.id));
+        if (outId && ids.has(outId)) hidden.add(String(t.id));
+    }
+    return list
+        .filter((t) => !hidden.has(String(t.id)))
+        .map((t) => {
+            const inId = outToIn.get(String(t.id));
+            const inLeg = inId ? byId.get(inId) : undefined;
+            if (t.pairRole === "out" || (inLeg && hidden.has(String(inLeg.id)))) {
+                const title = inLeg ? `${t.account} → ${inLeg.account}` : t.title;
+                return { ...t, title, pairRole: "out", kind: "transfer", collapsedPair: true };
+            }
+            return t;
+        });
+}
 
 const PRESETS = [
     ["all", "Весь час"],
@@ -193,7 +230,7 @@ export function TransactionsView({
                     return t;
                 });
         })()
-        : transactions;
+        : collapsePairs(transactions, transfers);
 
     const filtered = base.filter(
         (t) =>
@@ -261,13 +298,16 @@ export function TransactionsView({
                                     className="tx-category-icon"
                                     style={
                                         isTransferDisplay
-                                            ? (t.amount > 0
+                                            ? (t.collapsedPair
+                                                ? { background: "#6558e822", color: "#6558e8" }
+                                                : t.amount > 0
                                                 ? { background: "#28a87922", color: "#28a879" }
                                                 : { background: "#e0527d22", color: "#e0527d" })
                                             : { background: `${catColor}22`, color: catColor }
                                     }
                                 >
             {isTransferDisplay ? (
+                t.collapsedPair ? <ArrowLeftRight size={size} /> :
                 t.amount > 0 ? <ArrowDownLeft size={size} /> : <ArrowUpRight size={size} />
             ) : isPerson ? (
                 <User size={size} />
@@ -590,8 +630,8 @@ export function TransactionsView({
     </small>
 </span>
                         <span>{t.date}</span>
-                        <b className={t.amount > 0 ? "income-amount" : ""}>
-                            {t.amount > 0 ? "+" : "−"} {currencySymbol(t.currency || "UAH")}{" "}
+                        <b className={t.collapsedPair ? "transfer-amount" : t.amount > 0 ? "income-amount" : ""}>
+                            {t.collapsedPair ? "" : t.amount > 0 ? "+" : "−"} {currencySymbol(t.currency || "UAH")}{" "}
                             {formatMoney(Math.abs(t.amount))}
                             {(t.originalAmount && t.originalCurrency && t.originalCurrency !== (t.currency || "UAH")) || (t.feeAmount && t.feeAmount > 0) ? (
                                 <small style={{ display: "block", fontWeight: 400, fontSize: 11, color: "var(--text-secondary)" }}>

@@ -782,3 +782,19 @@ input:focus, select:focus, textarea:focus {
 .card-balance { font-weight: 400 !important; }
 @media (max-width: 720px) { .dc-tile.dark b { font-size: 42px !important; } }
 html body .dc-tile b { height: auto !important; line-height: 1.12 !important; margin: 6px 0 4px !important; padding-bottom: 2px; }
+.data-row > b.transfer-amount { color: var(--text-2) !important; font-weight: 500 !important; }
+
+/* Регулярні платежі — окремі картки з відступами (не зливаються) */
+.dc-plans { gap: 10px !important; column-gap: 10px !important; margin-top: 6px; }
+.dc-plans .dc-plan, .dc-plan {
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: var(--panel-2) !important;
+    box-shadow: 0 0 0 1px var(--hairline) inset !important;
+    grid-template-columns: 36px minmax(0, 1fr) auto auto !important;
+}
+.dc-plan-ic { border-radius: 50% !important; background: var(--gold-soft) !important; color: var(--gold-text) !important; }
+.dc-plan-ic.in { color: var(--pos) !important; background: color-mix(in srgb, var(--pos) 12%, transparent) !important; }
+.dc-plan b { font-weight: 600 !important; font-variant-numeric: tabular-nums; }

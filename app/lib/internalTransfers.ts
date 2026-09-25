@@ -27,7 +27,7 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
     const outs = transactions.filter((t) => eligible(t) && t.amount < 0);
 
     const used = new Set<string | number>();
-    const internal = new Map<string | number, string>(); // id → «A → B»
+    const internal = new Map<string | number, { title: string; pairId: string; pairRole: "out" | "in" }>();
 
     for (const o of outs) {
         const oTime = Date.parse(o.bookedAt!);
@@ -75,13 +75,14 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
         if (best) {
             used.add(best.id);
             const title = `${oAcc} → ${best.account!.trim()}`;
-            internal.set(o.id, title);
-            internal.set(best.id, title);
+            const pairId = `${o.id}~${best.id}`;
+            internal.set(o.id, { title, pairId, pairRole: "out" });
+            internal.set(best.id, { title, pairId, pairRole: "in" });
         }
     }
 
     if (!internal.size) return transactions;
     return transactions.map((t) =>
-        internal.has(t.id) ? { ...t, kind: "transfer", title: internal.get(t.id)!, category: "Між своїми рахунками" } : t,
+        internal.has(t.id) ? { ...t, kind: "transfer", category: "Між своїми рахунками", ...internal.get(t.id)! } : t,
     );
 }
