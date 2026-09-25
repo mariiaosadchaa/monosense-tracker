@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./transactions-toolbar.css";
 import "./premium.css";
+import "./redesign.css";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter", display: "swap" });

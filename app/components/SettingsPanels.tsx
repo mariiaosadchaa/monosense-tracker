@@ -105,18 +105,6 @@ export function ProfileSettings({
                 <h3>Вигляд</h3>
                 <Toggle title="Темна тема" hint="Застосовується одразу" checked={dark} onChange={setDark} />
                 <div className="st-field">
-                    <span>Кольорова тема</span>
-                    <Swatches
-                        value={skin}
-                        onChange={setSkin}
-                        items={[
-                            ["default", "#171a18", "Графіт"],
-                            ["mulberry-mint", "#6B2D42", "Mulberry mint"],
-                            ["espresso-cream", "#8A6A4A", "Espresso cream"],
-                        ]}
-                    />
-                </div>
-                <div className="st-field">
                     <span>Картка балансу</span>
                     <Swatches
                         value={cardStyle}

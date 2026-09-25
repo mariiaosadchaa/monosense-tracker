@@ -1,0 +1,573 @@
+/* ============================================================
+   Rivna Redesign — Apple Wallet / iOS
+   Підключається ПІСЛЯ premium.css. Скіни вимкнено.
+   ============================================================ */
+
+/* ---------- 1. Токени ---------- */
+:root, :root[data-skin] {
+    --bg: #f2f2f7;                 /* systemGroupedBackground */
+    --panel: #ffffff;
+    --panel-2: #f7f7fa;
+    --fill: rgba(118, 118, 128, .12);   /* tertiarySystemFill */
+    --fill-2: rgba(118, 118, 128, .08);
+    --text: #000000;
+    --text-2: rgba(60, 60, 67, .6);
+    --muted: rgba(60, 60, 67, .6);
+    --line: rgba(60, 60, 67, .13);
+    --hairline: rgba(60, 60, 67, .13);
+    --accent: #5e5ce6;              /* systemIndigo */
+    --accent-2: #4b49d6;
+    --purple: var(--accent);
+    --purple-dark: var(--accent-2);
+    --ink: #000000;
+    --soft: rgba(94, 92, 230, .1);
+    --highlight: rgba(94, 92, 230, .12);
+    --green: #248a3d;
+    --pos: #248a3d;
+    --neg: #d70015;
+    --orange: #c93400;
+    --r-xl: 22px;
+    --r-lg: 16px;
+    --r-md: 12px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.04);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.04);
+    --shadow-md: 0 2px 6px rgba(0,0,0,.05), 0 14px 36px rgba(0,0,0,.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.06), 0 30px 70px rgba(0,0,0,.16);
+    --glass: rgba(249, 249, 251, .78);
+    --wallet: linear-gradient(145deg, #2b2a3f 0%, #17161f 55%, #0c0c10 100%);
+    color-scheme: light;
+}
+:root[data-theme="dark"], :root[data-skin][data-theme="dark"] {
+    --bg: #000000;
+    --panel: #1c1c1e;
+    --panel-2: #2c2c2e;
+    --fill: rgba(118, 118, 128, .24);
+    --fill-2: rgba(118, 118, 128, .16);
+    --text: #ffffff;
+    --text-2: rgba(235, 235, 245, .6);
+    --muted: rgba(235, 235, 245, .6);
+    --line: rgba(84, 84, 88, .55);
+    --hairline: rgba(84, 84, 88, .55);
+    --accent: #7d7aff;
+    --accent-2: #6b68f5;
+    --ink: #ffffff;
+    --soft: rgba(125, 122, 255, .16);
+    --highlight: rgba(125, 122, 255, .2);
+    --green: #30d158;
+    --pos: #30d158;
+    --neg: #ff453a;
+    --orange: #ff9f0a;
+    --shadow: none;
+    --shadow-sm: none;
+    --shadow-md: 0 14px 36px rgba(0,0,0,.5);
+    --shadow-lg: 0 30px 80px rgba(0,0,0,.7);
+    --glass: rgba(28, 28, 30, .72);
+    --wallet: linear-gradient(145deg, #34334a 0%, #1d1c26 55%, #111116 100%);
+    color-scheme: dark;
+}
+
+/* ---------- 2. Основа ---------- */
+html, body { background: var(--bg); }
+body { color: var(--text); font-size: 15px; }
+.app-shell { zoom: 1; }
+.positive, .pos { color: var(--pos) !important; }
+.negative, .neg { color: var(--neg) !important; }
+
+h1, h2, h3 { color: var(--text); }
+.content > header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -.022em;
+    line-height: 1.1;
+}
+.content > header .hello {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 4px;
+}
+.content > header .hello span { display: none; }
+.panel h2, .dc-title h2, .section-title h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+}
+.section-title p, .dc-note, .empty-inline { color: var(--text-2); }
+
+/* ---------- 3. Кнопки ---------- */
+.add-btn, .small-primary, button.primary, .primary {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    box-shadow: none !important;
+}
+.add-btn:hover, .small-primary:hover, button.primary:hover { background: var(--accent-2) !important; }
+.add-btn { height: 40px; padding: 0 18px; font-size: 15px; }
+.secondary, button.secondary, .tx-btn {
+    background: var(--fill) !important;
+    color: var(--accent) !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+.secondary:hover, .tx-btn:hover { background: color-mix(in srgb, var(--accent) 14%, transparent) !important; }
+.theme-btn {
+    width: 40px; height: 40px;
+    border-radius: 50% !important;
+    background: var(--fill) !important;
+    border: 0 !important;
+    color: var(--accent) !important;
+    box-shadow: none !important;
+}
+.theme-btn svg { width: 19px; height: 19px; }
+.dc-title button, .section-title a, .title-actions > button:not(.small-primary):not(.secondary) {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* ---------- 4. Поля вводу (iOS) ---------- */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea {
+    background: var(--fill-2);
+    border: 1px solid transparent !important;
+    border-radius: var(--r-md);
+    color: var(--text);
+}
+input:focus, select:focus, textarea:focus {
+    background: var(--panel);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
+    outline: none;
+}
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+/* ---------- 5. Сайдбар (macOS sidebar) ---------- */
+.sidebar {
+    inset: 0 auto 0 0 !important;
+    width: 250px !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    border-right: 1px solid var(--hairline) !important;
+    background: var(--glass) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    backdrop-filter: blur(30px) saturate(190%);
+    box-shadow: none !important;
+    padding: 26px 14px 18px !important;
+}
+.sidebar .brand { padding: 0 12px; margin-bottom: 26px; }
+.sidebar nav { gap: 2px !important; }
+.sidebar nav button, .side-bottom > button {
+    height: 38px;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    font-size: 15px;
+    font-weight: 500 !important;
+    color: var(--text) !important;
+    background: transparent;
+    gap: 11px !important;
+}
+.sidebar nav button svg, .side-bottom > button svg {
+    color: var(--accent);
+    width: 19px !important; height: 19px !important;
+}
+.sidebar nav button:hover, .side-bottom > button:hover { background: var(--fill-2) !important; }
+.sidebar nav button.active, .side-bottom > button.active {
+    background: var(--accent) !important;
+    color: #fff !important;
+}
+.sidebar nav button.active svg, .side-bottom > button.active svg { color: #fff; }
+.sidebar .profile { height: auto !important; padding: 10px 12px !important; }
+.sidebar .profile > span {
+    background: linear-gradient(145deg, #a5a3ff, var(--accent)) !important;
+    color: #fff !important;
+    border-radius: 50% !important;
+    font-weight: 600;
+}
+.sidebar .profile strong { color: var(--text); }
+.sidebar .profile small { color: var(--text-2); }
+
+.content {
+    margin-left: 250px !important;
+    padding: 28px clamp(20px, 4vw, 56px) 60px !important;
+    max-width: 1500px !important;
+}
+.content > header {
+    background: var(--bg) !important;
+    margin-bottom: 22px !important;
+    margin-left: calc(-1 * clamp(20px, 4vw, 56px)) !important;
+    margin-right: calc(-1 * clamp(20px, 4vw, 56px)) !important;
+    padding-left: clamp(20px, 4vw, 56px) !important;
+    padding-right: clamp(20px, 4vw, 56px) !important;
+}
+.content > header::after { background: linear-gradient(var(--bg), transparent) !important; opacity: 1 !important; }
+.header-actions { gap: 10px !important; }
+
+/* ---------- 6. Картки / панелі (inset grouped) ---------- */
+.panel, .st-card, .goal-card, .rate-card, .milestone-card, .forecast-card, .metric, .dc-tile, .mono-panel {
+    background: var(--panel) !important;
+    border: 0 !important;
+    border-radius: var(--r-xl) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+.panel .panel, .panel .rate-card, .panel .mono-panel {
+    background: var(--panel-2) !important;
+    box-shadow: none !important;
+}
+
+/* ---------- 7. Головна ---------- */
+.dc-root { gap: 22px !important; }
+.dc-tiles { gap: 14px !important; }
+.dc-tile { padding: 20px 22px !important; min-height: 128px; }
+.dc-tile small { color: var(--text-2) !important; font-size: 13px; font-weight: 500; }
+.dc-tile b {
+    font-size: 30px !important;
+    font-weight: 700 !important;
+    letter-spacing: -.03em !important;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.dc-tile em { color: var(--text-2) !important; font-style: normal; font-size: 13px; }
+.dc-tile.dark {
+    background: var(--wallet) !important;
+    color: #fff !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 18px 40px -14px rgba(20, 18, 60, .55) !important;
+    position: relative;
+    overflow: hidden;
+}
+.dc-tile.dark::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(120% 80% at 100% 0%, rgba(125,122,255,.35), transparent 55%),
+        radial-gradient(80% 60% at 0% 100%, rgba(255,255,255,.06), transparent 60%);
+    pointer-events: none;
+}
+.dc-tile.dark > * { position: relative; }
+.dc-tile.dark small, .dc-tile.dark em { color: rgba(255,255,255,.62) !important; }
+.dc-tile.dark b { color: #fff; font-size: 34px !important; }
+.dc-tile.dark .currency-select summary {
+    background: rgba(255,255,255,.14) !important;
+    border: 0 !important;
+    color: #fff !important;
+    border-radius: 999px !important;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.dc-acc-label {
+    color: var(--text-2) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.dc-chip {
+    background: var(--panel) !important;
+    border: 0 !important;
+    box-shadow: var(--shadow-sm) !important;
+    border-radius: 999px !important;
+    height: 44px;
+    padding: 0 16px 0 6px !important;
+}
+.dc-chip span { color: var(--text-2) !important; }
+.dc-chip b { color: var(--text) !important; font-weight: 600 !important; }
+.dc-chip i { border-radius: 50% !important; }
+.dc-chip.add {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, transparent) !important;
+    color: var(--accent) !important;
+    padding: 0 16px !important;
+}
+.dc-grid { gap: 18px !important; }
+.dc-panel { padding: 22px 22px 14px !important; }
+.dc-title { margin-bottom: 8px !important; }
+
+/* списки операцій (як у Wallet) */
+.tx-list { gap: 0 !important; }
+.tx {
+    padding: 11px 0 !important;
+    border: 0 !important;
+    position: relative;
+    gap: 13px !important;
+}
+.tx + .tx::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    left: 53px;
+    height: 1px;
+    background: var(--hairline);
+}
+.tx-icon, .tx-category-icon {
+    width: 40px !important; height: 40px !important;
+    border-radius: 50% !important;
+    flex: 0 0 40px;
+}
+.tx-info strong { font-size: 15px; font-weight: 600 !important; color: var(--text); }
+.tx-info small { font-size: 13px; color: var(--text-2) !important; }
+.tx > strong { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* бюджет/прогрес */
+.dc-bar, .dc-goal i, .dc-cat i { background: var(--fill) !important; border-radius: 999px !important; }
+.dc-bar i, .dc-cat i em, .dc-goal i em { background: var(--accent) !important; border-radius: 999px !important; }
+.dc-plan, .dc-goal {
+    background: var(--panel-2) !important;
+    border: 0 !important;
+    border-radius: var(--r-lg) !important;
+}
+
+/* ---------- 8. Операції ---------- */
+.full-view { padding: 22px !important; }
+.tx-search {
+    background: var(--fill) !important;
+    border: 0 !important;
+    border-radius: var(--r-md) !important;
+}
+.tx-search input { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+.tx-btn { height: 38px; }
+.tx-btn.icon { width: 38px; padding: 0 !important; justify-content: center; }
+
+/* пресети = segmented control */
+.tx-presets {
+    display: inline-flex !important;
+    gap: 2px !important;
+    background: var(--fill);
+    border-radius: 10px;
+    padding: 2px;
+    flex-wrap: wrap;
+    width: auto;
+}
+.tx-presets button {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+    height: 30px;
+    padding: 0 14px !important;
+    box-shadow: none !important;
+    transition: background-color .25s var(--ease-std), box-shadow .25s var(--ease-std);
+}
+.tx-presets button.on {
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04) !important;
+}
+:root[data-theme="dark"] .tx-presets button.on { background: #636366 !important; }
+
+.data-head {
+    border: 0 !important;
+    color: var(--text-2) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: .03em !important;
+}
+.data-row {
+    border: 0 !important;
+    border-radius: var(--r-md);
+    position: relative;
+    min-height: 62px;
+    transition: background-color .2s var(--ease-std);
+}
+.data-row + .data-row::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 12px;
+    left: 68px;
+    height: 1px;
+    background: var(--hairline);
+}
+@media (hover: hover) { .data-row:hover { background: var(--fill-2); } }
+.data-row strong { font-weight: 600 !important; color: var(--text); }
+.data-row > span small { color: var(--text-2) !important; }
+.data-row > b { font-weight: 600 !important; font-variant-numeric: tabular-nums; }
+
+/* ---------- 9. Рахунки (Wallet-картки) ---------- */
+.accounts-grid { gap: 18px !important; }
+.account-wrap .account, .account {
+    border-radius: 18px !important;
+    aspect-ratio: 1.586;
+    min-height: 0 !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 20px 40px -18px rgba(0,0,0,.45) !important;
+    position: relative;
+    overflow: hidden;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: translate .45s var(--ease-out), box-shadow .45s var(--ease-out), rotate .45s var(--ease-out);
+}
+.account::after {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+        linear-gradient(115deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 38%),
+        radial-gradient(90% 70% at 100% 100%, rgba(0,0,0,.25), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+.account > * { position: relative; z-index: 1; }
+@media (hover: hover) {
+    .account:hover {
+        translate: 0 -6px;
+        box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 30px 50px -18px rgba(0,0,0,.5) !important;
+    }
+}
+.card-balance { font-size: 26px !important; font-weight: 700 !important; letter-spacing: -.03em; }
+.account-actions { justify-content: center; }
+.remove-account { color: var(--text-2) !important; background: transparent !important; }
+.rate-card { padding: 18px 20px !important; }
+
+/* ---------- 10. Модалки (iOS sheet) ---------- */
+.modal-backdrop { background: rgba(0, 0, 0, .32) !important; }
+.expense-modal {
+    background: var(--bg) !important;
+    border-radius: 24px !important;
+    border: 0 !important;
+    padding: 22px !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+.expense-modal h2, .expense-modal h3 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.expense-modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.expense-modal select, .expense-modal textarea {
+    background: var(--panel) !important;
+}
+.modal-head button, .expense-modal .close {
+    border-radius: 50% !important;
+    background: var(--fill) !important;
+    color: var(--text-2) !important;
+    border: 0 !important;
+}
+
+/* ---------- 11. Налаштування / інше ---------- */
+.st-card h3 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.notification-panel { border-radius: var(--r-lg) !important; }
+.toast {
+    background: rgba(30, 30, 32, .86) !important;
+    color: #fff !important;
+    border-radius: 999px !important;
+    border: 0 !important;
+}
+
+/* ---------- 12. Мобільна ---------- */
+@media (max-width: 720px) {
+    .content { margin-left: 0 !important; padding: 16px 16px 110px !important; }
+    .content > header { margin-left: -16px !important; margin-right: -16px !important; padding-left: 16px !important; padding-right: 16px !important; }
+    .content > header h1 { font-size: 30px; }
+    .add-btn { width: 40px; padding: 0 !important; justify-content: center; font-size: 0 !important; }
+    .add-btn svg { width: 20px; height: 20px; }
+    .mobile-nav {
+        background: var(--glass) !important;
+        border-top: 1px solid var(--hairline) !important;
+        box-shadow: none !important;
+    }
+    .mobile-nav button { color: var(--text-2) !important; }
+    .mobile-nav button.active { color: var(--accent) !important; background: transparent !important; }
+    .mobile-quick-add {
+        background: var(--accent) !important;
+        box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--accent) 80%, transparent) !important;
+    }
+    .dc-tile b { font-size: 24px !important; }
+    .dc-tile.dark b { font-size: 30px !important; }
+    .expense-modal { border-radius: 24px 24px 0 0 !important; }
+}
+
+/* ---------- 13. Уточнення після перегляду ---------- */
+@media (min-width: 1101px) {
+    .dc-tiles { grid-template-columns: 1.55fr repeat(3, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 720px) {
+    .dc-tiles { grid-template-columns: 1fr 1fr !important; }
+    .dc-tile.dark { grid-column: 1 / -1; min-height: 150px; padding: 22px !important; }
+    .dc-tile.dark b { font-size: 38px !important; }
+    .dc-tile { min-height: 108px; padding: 16px !important; border-radius: 20px !important; }
+}
+.data-row strong, .data-row > span, .data-row > b { font-size: 15px !important; }
+.data-row > span small { font-size: 12px !important; }
+.data-head span, .data-head { text-transform: none !important; font-size: 13px !important; letter-spacing: 0 !important; font-weight: 500 !important; }
+.dc-safe { background: var(--panel-2) !important; border-radius: var(--r-md) !important; }
+@media (max-width: 720px) { .dc-tiles > .dc-tile:nth-child(4) { grid-column: 1 / -1; } }
+
+/* ---------- 14. Решта сторінок ---------- */
+.metric::before, .metric:before { display: none !important; }
+.metric { padding: 20px 22px !important; }
+.metric small, .metric > span:first-child { color: var(--text-2) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 13px !important; font-weight: 500 !important; }
+.metric strong { font-size: 30px !important; font-weight: 700 !important; letter-spacing: -.03em !important; }
+.metric-grid { gap: 14px !important; }
+
+.budget-item, .goal-card, .panel .st-card {
+    background: var(--panel-2) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: var(--r-lg) !important;
+}
+.goal-icon { border-radius: 50% !important; }
+.goal-card-amount { font-size: 26px !important; font-weight: 700 !important; letter-spacing: -.03em; }
+.goal-card-bar { background: var(--fill) !important; border-radius: 999px !important; overflow: hidden; }
+.goal-action-btn {
+    background: var(--panel) !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    color: var(--accent) !important;
+}
+.goal-action-btn.danger, .icon-button.danger { color: var(--neg) !important; }
+
+/* сегмент Витрата / Дохід / Переказ */
+.operation-type {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2px !important;
+    padding: 2px !important;
+    border-radius: 10px !important;
+    background: var(--fill) !important;
+}
+.operation-type button {
+    border-radius: 8px !important;
+    padding: 7px 6px !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+    font-size: 14px;
+}
+.operation-type button.active {
+    background: var(--panel) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04) !important;
+}
+:root[data-theme="dark"] .operation-type button.active { background: #636366 !important; }
+
+.amount-field {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 8px 0 4px !important;
+}
+.amount-field span { font-size: 34px !important; color: var(--text-2) !important; font-weight: 600 !important; }
+.amount-field input {
+    width: 220px !important;
+    font-size: 48px !important;
+    font-weight: 700 !important;
+    letter-spacing: -.03em;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    font-variant-numeric: tabular-nums;
+}
+.category-grid button {
+    border: 0 !important;
+    background: var(--panel) !important;
+    border-radius: 14px !important;
+}
+.category-grid button.selected {
+    background: color-mix(in srgb, var(--accent) 12%, var(--panel)) !important;
+    box-shadow: 0 0 0 2px var(--accent) inset !important;
+}
+.category-grid-icon { border-radius: 50% !important; }
+.expense-modal label > span, .picker-label, .expense-modal > label { color: var(--text-2); font-weight: 500; font-size: 13px; }
+.expense-modal button.primary { height: 50px; font-size: 17px !important; width: 100%; }
+.expense-modal .amount-field input { background: transparent !important; box-shadow: none !important; }
+.budget-icon { border-radius: 12px !important; }

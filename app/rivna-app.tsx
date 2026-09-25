@@ -735,9 +735,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   }, [page]);
 
   useEffect(() => {
-    if (skin === "default") delete document.documentElement.dataset.skin;
-    else document.documentElement.dataset.skin = skin;
-    localStorage.setItem("rivna-skin", skin);
+    // Скіни вимкнено після редизайну (iOS): завжди базова палітра
+    delete document.documentElement.dataset.skin;
+    localStorage.removeItem("rivna-skin");
   }, [skin]);
 
   useEffect(() => {
