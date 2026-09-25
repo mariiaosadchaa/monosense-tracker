@@ -152,7 +152,7 @@ export function TransactionList({ transactions }: { transactions: Transaction[] 
                     <div className="tx" key={t.id}>
                         {(() => {
                             // Та сама логіка іконок, що й у повному списку операцій
-                            const isTransferDisplay = t.kind === "transfer" || t.kind === "exchange" || t.title.includes("→");
+                            const isTransferDisplay = t.kind === "transfer" || t.kind === "exchange" || t.title.includes("→") || t.title.includes("←");
                             const merchantTitle = extractMerchant(t.title);
                             const hasKnownLogo = !isTransferDisplay && !!findMerchantDomain(merchantTitle);
                             const isPerson = !isTransferDisplay && !hasKnownLogo && isPersonName(merchantTitle);

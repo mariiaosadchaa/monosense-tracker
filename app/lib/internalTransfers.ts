@@ -77,7 +77,8 @@ export function markInternalTransfers<T extends Transaction>(transactions: T[], 
             const title = `${oAcc} → ${best.account!.trim()}`;
             const pairId = `${o.id}~${best.id}`;
             internal.set(o.id, { title, pairId, pairRole: "out" });
-            internal.set(best.id, { title, pairId, pairRole: "in" });
+            // нога зарахування — з погляду рахунку, куди прийшли гроші: «Біла ← Platinum»
+            internal.set(best.id, { title: `${best.account!.trim()} ← ${oAcc}`, pairId, pairRole: "in" });
         }
     }
 

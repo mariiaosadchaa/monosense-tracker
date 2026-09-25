@@ -225,7 +225,7 @@ export function TransactionsView({
                     if (toTr) {
                         const fromLeg = toTr.fromTransactionId ? txById.get(String(toTr.fromTransactionId)) : undefined;
                         const src = fromLeg?.account || "Рахунок";
-                        return { ...t, title: `${src} → ${t.account}`, transferToAccount: src };
+                        return { ...t, title: `${t.account} ← ${src}`, transferToAccount: src };
                     }
                     return t;
                 });
@@ -302,7 +302,7 @@ export function TransactionsView({
         const rawIcon = t.categoryIcon || cat?.icon;
         const iconName = isJarTitle(t.title) ? "PiggyBank" : (rawIcon && rawIcon !== "CircleDollarSign") ? rawIcon : guessIconFromTitle(t.title);
         const catColor = cat?.color || "#6558e8";
-        const isTransferDisplay = t.kind === "transfer" || t.title.includes("→");
+        const isTransferDisplay = t.kind === "transfer" || t.title.includes("→") || t.title.includes("←");
                             const merchantTitle = extractMerchant(t.title);
                             const hasKnownLogo = !isTransferDisplay && !!findMerchantDomain(merchantTitle.toLowerCase());
                             const isPerson = !isTransferDisplay && !hasKnownLogo && isPersonName(merchantTitle);
