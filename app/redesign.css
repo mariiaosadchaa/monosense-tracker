@@ -571,3 +571,214 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 .expense-modal button.primary { height: 50px; font-size: 17px !important; width: 100%; }
 .expense-modal .amount-field input { background: transparent !important; box-shadow: none !important; }
 .budget-icon { border-radius: 12px !important; }
+
+/* ============================================================
+   15. LUXE — чорний + шампань, серифні цифри
+   ============================================================ */
+:root, :root[data-skin] {
+    --bg: #f4f1ec;                    /* слонова кістка */
+    --panel: #fffdfa;
+    --panel-2: #f7f4ef;
+    --fill: rgba(28, 24, 18, .06);
+    --fill-2: rgba(28, 24, 18, .04);
+    --text: #0e0d0b;
+    --text-2: rgba(28, 24, 18, .52);
+    --muted: rgba(28, 24, 18, .52);
+    --line: rgba(28, 24, 18, .09);
+    --hairline: rgba(28, 24, 18, .08);
+    --gold: #b3915b;
+    --gold-text: #8a6a3a;             /* для тексту на світлому (контраст) */
+    --gold-soft: rgba(179, 145, 91, .14);
+    --accent: var(--gold-text);
+    --accent-2: #6f5430;
+    --ink: #0e0d0b;
+    --btn: #0e0d0b;
+    --btn-text: #f6efe3;
+    --pos: #2f7a55;
+    --green: #2f7a55;
+    --neg: #a3402c;
+    --serif: var(--font-serif), "Playfair Display", Georgia, "Times New Roman", serif;
+    --shadow-sm: 0 1px 1px rgba(40, 30, 15, .03), 0 10px 30px -12px rgba(40, 30, 15, .10);
+    --shadow-md: 0 2px 4px rgba(40, 30, 15, .04), 0 24px 50px -20px rgba(40, 30, 15, .18);
+    --shadow-lg: 0 4px 10px rgba(40, 30, 15, .06), 0 40px 90px -30px rgba(40, 30, 15, .35);
+    --glass: rgba(244, 241, 236, .8);
+    --metal:
+        radial-gradient(120% 90% at 85% -10%, rgba(214, 186, 138, .28), transparent 50%),
+        repeating-linear-gradient(100deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px),
+        linear-gradient(150deg, #262420 0%, #121110 45%, #080807 100%);
+    --wallet: var(--metal);
+}
+:root[data-theme="dark"], :root[data-skin][data-theme="dark"] {
+    --bg: #080807;
+    --panel: #121110;
+    --panel-2: #1a1917;
+    --fill: rgba(246, 239, 227, .08);
+    --fill-2: rgba(246, 239, 227, .05);
+    --text: #f6efe3;
+    --text-2: rgba(246, 239, 227, .52);
+    --muted: rgba(246, 239, 227, .52);
+    --line: rgba(246, 239, 227, .09);
+    --hairline: rgba(246, 239, 227, .08);
+    --gold: #d6ba8a;
+    --gold-text: #d6ba8a;
+    --gold-soft: rgba(214, 186, 138, .14);
+    --accent: #d6ba8a;
+    --accent-2: #e6cfa6;
+    --ink: #f6efe3;
+    --btn: #d6ba8a;
+    --btn-text: #0e0d0b;
+    --pos: #86c7a0;
+    --green: #86c7a0;
+    --neg: #e38a73;
+    --shadow-sm: 0 0 0 1px rgba(246, 239, 227, .05);
+    --glass: rgba(18, 17, 16, .78);
+    --metal:
+        radial-gradient(120% 90% at 85% -10%, rgba(214, 186, 138, .30), transparent 50%),
+        repeating-linear-gradient(100deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px),
+        linear-gradient(150deg, #2c2925 0%, #161513 45%, #0b0b0a 100%);
+}
+
+/* Серифна типографіка для заголовків і великих сум */
+.content > header h1,
+.panel h2, .dc-title h2, .section-title h2, .st-card h3, .expense-modal h2,
+.dc-tile b, .metric strong, .card-balance, .goal-card-amount, .amount-field input, .amount-field span,
+.dc-row b {
+    font-family: var(--serif) !important;
+    font-weight: 500 !important;
+    letter-spacing: -.015em !important;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.content > header h1 { font-size: 42px !important; font-weight: 400 !important; line-height: 1 !important; }
+.panel h2, .dc-title h2, .section-title h2 { font-size: 24px !important; font-weight: 500 !important; }
+.dc-tile b, .metric strong { font-size: 32px !important; }
+.dc-tile.dark b { font-size: 42px !important; font-weight: 400 !important; }
+.card-balance { font-size: 30px !important; }
+.amount-field input { font-size: 56px !important; font-weight: 400 !important; }
+.expense-modal .amount-field input { background: transparent !important; }
+
+/* Мітки — розріджені капітелі */
+.content > header .hello,
+.dc-tile small, .metric small, .metric > span:first-child, .dc-acc-label,
+.data-head, .data-head span, .goal-card-label, .eyebrow {
+    text-transform: uppercase !important;
+    letter-spacing: .14em !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--text-2) !important;
+}
+.content > header .hello { color: var(--gold-text) !important; }
+
+/* Кнопки */
+.add-btn, .small-primary, button.primary, .primary {
+    background: var(--btn) !important;
+    color: var(--btn-text) !important;
+    letter-spacing: .01em;
+}
+.add-btn:hover, .small-primary:hover, button.primary:hover {
+    background: var(--btn) !important;
+    box-shadow: 0 0 0 1px var(--gold), 0 10px 30px -10px rgba(179,145,91,.6) !important;
+}
+.add-btn svg, .small-primary svg { color: var(--gold); }
+:root[data-theme="dark"] .add-btn svg, :root[data-theme="dark"] .small-primary svg { color: var(--btn-text); }
+.secondary, button.secondary, .tx-btn { background: var(--fill) !important; color: var(--text) !important; }
+.theme-btn { background: transparent !important; box-shadow: 0 0 0 1px var(--hairline) inset !important; color: var(--text) !important; }
+.theme-btn:hover { box-shadow: 0 0 0 1px var(--gold) inset !important; color: var(--gold-text) !important; }
+
+/* Сайдбар */
+.sidebar { background: var(--glass) !important; }
+.sidebar nav button, .side-bottom > button { color: var(--text-2) !important; font-weight: 500 !important; letter-spacing: .005em; }
+.sidebar nav button svg, .side-bottom > button svg { color: currentColor; stroke-width: 1.6; }
+.sidebar nav button:hover, .side-bottom > button:hover { color: var(--text) !important; background: var(--fill-2) !important; }
+.sidebar nav button.active, .side-bottom > button.active {
+    background: var(--ink) !important;
+    color: var(--bg) !important;
+}
+.sidebar nav button.active svg { color: var(--gold); }
+:root[data-theme="dark"] .sidebar nav button.active svg { color: #8a6a3a; }
+.sidebar .profile > span { background: var(--metal) !important; color: var(--gold) !important; box-shadow: 0 0 0 1px rgba(214,186,138,.4) inset; }
+:root:not([data-theme="dark"]) .brand-mark-logo { background-color: var(--text) !important; }
+
+/* Картки */
+.panel, .st-card, .goal-card, .rate-card, .milestone-card, .forecast-card, .metric, .dc-tile, .mono-panel {
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--hairline) inset !important;
+    border-radius: 24px !important;
+}
+.dc-tile.dark {
+    background: var(--metal) !important;
+    color: #f6efe3 !important;
+    box-shadow:
+        0 0 0 1px rgba(214, 186, 138, .28) inset,
+        0 1px 0 rgba(255, 255, 255, .08) inset,
+        0 30px 60px -24px rgba(20, 14, 5, .6) !important;
+}
+.dc-tile.dark::before {
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 210, .07) 45%, transparent 60%) !important;
+}
+.dc-tile.dark small { color: var(--gold) !important; }
+.dc-tile.dark b { color: #f6efe3 !important; }
+.dc-tile.dark em { color: rgba(246, 239, 227, .5) !important; }
+.dc-tile.dark .currency-select summary { background: rgba(214,186,138,.14) !important; color: #e6cfa6 !important; box-shadow: 0 0 0 1px rgba(214,186,138,.3) inset; }
+
+/* Рахунки-пігулки */
+.dc-chip { box-shadow: 0 0 0 1px var(--hairline) inset !important; }
+.dc-chip.add { border-color: color-mix(in srgb, var(--gold) 55%, transparent) !important; color: var(--gold-text) !important; }
+
+/* Іконки операцій — монохром із золотим гліфом */
+.tx-icon, .tx-category-icon, .budget-icon, .goal-icon, .category-grid-icon {
+    background: var(--gold-soft) !important;
+    color: var(--gold-text) !important;
+}
+.tx-icon svg, .tx-category-icon svg, .budget-icon svg, .goal-icon svg, .category-grid-icon svg { color: var(--gold-text) !important; stroke-width: 1.6; }
+
+/* Прогрес — тонке золото */
+.dc-bar, .dc-goal i, .dc-cat i, .goal-card-bar { height: 4px !important; background: var(--fill) !important; }
+.dc-bar i, .dc-cat i em, .dc-goal i em, .goal-card-bar > span:not(.goal-milestone-tick), .goal-card-bar > i {
+    background: linear-gradient(90deg, #8a6a3a, #d6ba8a) !important;
+}
+
+/* Сегменти */
+.tx-presets, .operation-type { background: var(--fill) !important; }
+.tx-presets button.on, .operation-type button.active {
+    background: var(--ink) !important;
+    color: var(--bg) !important;
+    box-shadow: none !important;
+}
+
+/* Wallet-картки рахунків — тонка золота окантовка */
+.account { box-shadow: 0 0 0 1px rgba(214,186,138,.22) inset, 0 1px 0 rgba(255,255,255,.14) inset, 0 26px 50px -22px rgba(20,14,5,.55) !important; }
+
+/* Модалка */
+.expense-modal { background: var(--bg) !important; box-shadow: 0 0 0 1px var(--hairline) inset, var(--shadow-lg) !important; }
+.category-grid button.selected { box-shadow: 0 0 0 1.5px var(--gold) inset !important; background: var(--gold-soft) !important; }
+input:focus, select:focus, textarea:focus {
+    border-color: color-mix(in srgb, var(--gold) 60%, transparent) !important;
+    box-shadow: 0 0 0 4px var(--gold-soft) !important;
+}
+:focus-visible { outline-color: var(--gold) !important; }
+::selection { background: var(--gold-soft); }
+
+/* Посилання-дії */
+.dc-title button, .section-title a { color: var(--gold-text) !important; letter-spacing: .02em; }
+
+@media (max-width: 720px) {
+    .content > header h1 { font-size: 32px !important; }
+    .dc-tile.dark b { font-size: 44px !important; }
+    .dc-tile b { font-size: 28px !important; }
+    .mobile-nav button.active { color: var(--gold-text) !important; }
+    .mobile-quick-add { background: var(--btn) !important; color: var(--btn-text) !important; box-shadow: 0 0 0 1px var(--gold), 0 14px 30px -10px rgba(20,14,5,.6) !important; }
+}
+
+/* Цифри — тонкий Inter (lining, tabular): серифні цифри старого стилю погано читаються */
+.dc-tile b, .metric strong, .card-balance, .goal-card-amount, .amount-field input, .amount-field span, .dc-row b {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), "Inter", system-ui, sans-serif !important;
+    font-weight: 300 !important;
+    letter-spacing: -.035em !important;
+    font-variant-numeric: lining-nums tabular-nums;
+    line-height: 1.15 !important;
+}
+.dc-tile.dark b { font-weight: 200 !important; font-size: 44px !important; }
+.amount-field input { font-weight: 200 !important; }
+.dc-row b { font-weight: 400 !important; }
+.card-balance { font-weight: 400 !important; }
+@media (max-width: 720px) { .dc-tile.dark b { font-size: 42px !important; } }
+html body .dc-tile b { height: auto !important; line-height: 1.12 !important; margin: 6px 0 4px !important; padding-bottom: 2px; }
