@@ -50,12 +50,7 @@ h1, h2, h3, header h1 {
     border-color: var(--hairline);
     box-shadow: var(--shadow-md);
 }
-.content > header {
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-}
-.content > header::after { opacity: 0; }
+/* Шапка лишається суцільною (var(--bg) + градієнт з globals.css): скло давало видимий прямокутник і край */
 .notification-panel {
     background: var(--glass);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
