@@ -2797,6 +2797,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               </button>
             </div>
           </header>
+          <div className="page-stage" key={inSettings ? `s-${settingsTab}` : page}>
           {incomingInvites.map((inv) => (
               <div key={inv.id} className="incoming-invite">
                 <span className="incoming-invite-ic">👋</span>
@@ -3061,6 +3062,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           )}
 
 
+
+          </div>
 
           <button
               className="mobile-quick-add"

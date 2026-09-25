@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./transactions-toolbar.css";
+import "./premium.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Rivna — особисті фінанси",
@@ -19,5 +23,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#6c5ce7", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="uk" suppressHydrationWarning><body>{children}</body></html>;
+  return <html lang="uk" className={inter.variable} suppressHydrationWarning><body>{children}</body></html>;
 }
