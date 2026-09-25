@@ -136,20 +136,20 @@ input:focus, select:focus, textarea:focus {
 .page-stage > * {
     animation: fade-in .45s var(--ease-std) backwards;
 }
-.page-stage > * > * {
+.page-stage > *:not(.dc-root) > * {
     animation: rise .7s var(--ease-out) backwards;
 }
-.page-stage > * > *:nth-child(1) { animation-delay: .02s; }
-.page-stage > * > *:nth-child(2) { animation-delay: .07s; }
-.page-stage > * > *:nth-child(3) { animation-delay: .12s; }
-.page-stage > * > *:nth-child(4) { animation-delay: .17s; }
-.page-stage > * > *:nth-child(5) { animation-delay: .22s; }
-.page-stage > * > *:nth-child(6) { animation-delay: .27s; }
-.page-stage > * > *:nth-child(n+7) { animation-delay: .32s; }
+.page-stage > *:not(.dc-root) > *:nth-child(1) { animation-delay: .02s; }
+.page-stage > *:not(.dc-root) > *:nth-child(2) { animation-delay: .07s; }
+.page-stage > *:not(.dc-root) > *:nth-child(3) { animation-delay: .12s; }
+.page-stage > *:not(.dc-root) > *:nth-child(4) { animation-delay: .17s; }
+.page-stage > *:not(.dc-root) > *:nth-child(5) { animation-delay: .22s; }
+.page-stage > *:not(.dc-root) > *:nth-child(6) { animation-delay: .27s; }
+.page-stage > *:not(.dc-root) > *:nth-child(n+7) { animation-delay: .32s; }
 
 /* Поява при скролі (Chrome/Edge/Safari 26+) */
 @supports (animation-timeline: view()) {
-    .page-stage .panel, .page-stage .st-card, .page-stage .goal-card, .page-stage .dc-tile {
+    .page-stage .panel, .page-stage .st-card, .page-stage .goal-card {
         animation: scroll-reveal linear both;
         animation-timeline: view();
         animation-range: entry 0% entry 40%;

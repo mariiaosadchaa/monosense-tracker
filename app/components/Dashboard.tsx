@@ -178,14 +178,12 @@ export function Dashboard({
             ? Math.min(100, Math.round((primaryGoal.current / Math.max(1, primaryGoal.target)) * 100))
             : 0;
     const symbol = currencySymbol(baseCurrency);
-    // Вступна анімація — один раз за сеанс (при відкритті застосунку)
+    // Вступна анімація — щоразу при заході на головну
     const [intro, setIntro] = useState(false);
     const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
     useIso(() => {
         try {
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-            if (sessionStorage.getItem("rivna-intro")) return;
-            sessionStorage.setItem("rivna-intro", "1");
             setIntro(true);
         } catch {}
     }, []);
