@@ -31,7 +31,9 @@ export type Transaction = {
     originalCurrency?: string;   // валюта чека
     pairId?: string;             // спільний id двох ніг переказу між своїми рахунками
     pairRole?: "out" | "in";
-    collapsedPair?: boolean;     // показано одним рядком «A → B» у списку операцій
+    collapsedPair?: boolean;
+    orphanTransfer?: boolean;    // переказ без другої ноги в застосунку (людині / на чужу картку)
+    duplicateOf?: string | number; // схоже на дубль іншої операції (та сама сума/рахунок/час)     // показано одним рядком «A → B» у списку операцій
 };
 
 export type Account = {

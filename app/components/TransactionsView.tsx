@@ -633,6 +633,7 @@ export function TransactionsView({
                         <strong>
                             {extractMerchant(t.title)}
                             {t.impulse && <em>Імпульсивна</em>}
+                            {t.duplicateOf != null && <em className="dup-badge" title="Є операція з тією ж сумою на цьому рахунку — схоже на дубль. Не враховується в статистиці.">Можливий дубль</em>}
                             <small className="row-tags">{t.tags?.map((x) => `#${x}`).join(" ")}</small>
                         </strong>
                         <span>

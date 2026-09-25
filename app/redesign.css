@@ -798,3 +798,4 @@ html body .dc-tile b { height: auto !important; line-height: 1.12 !important; ma
 .dc-plan-ic { border-radius: 50% !important; background: var(--gold-soft) !important; color: var(--gold-text) !important; }
 .dc-plan-ic.in { color: var(--pos) !important; background: color-mix(in srgb, var(--pos) 12%, transparent) !important; }
 .dc-plan b { font-weight: 600 !important; font-variant-numeric: tabular-nums; }
+.data-row strong em.dup-badge { background: color-mix(in srgb, var(--neg) 12%, transparent) !important; color: var(--neg) !important; }

@@ -4,7 +4,7 @@
 import { bankStyle, extractMerchant } from "./components/AccountCard";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useClickOutside } from "./lib/useClickOutside";
-import { markInternalTransfers } from "./lib/internalTransfers";
+import { markInternalTransfers, resolveOrphanTransfers } from "./lib/internalTransfers";
 import confetti from "canvas-confetti";
 import {
   ArrowDownLeft,
@@ -588,6 +588,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   originalAmount: item.original_amount != null ? Number(item.original_amount) : undefined,
                   originalCurrency: item.original_currency ? String(item.original_currency) : undefined,
                   kind: isTransferLeg ? (direction === "in" ? "transfer" : "transfer") : String(item.type || "expense"),
+                  orphanTransfer: isTransferLeg && !(transferCounterpartId[id] && accountNameById[transferCounterpartId[id]]) ? true : undefined,
                 };
               })
               .concat(limitEvents),
@@ -864,7 +865,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const o = t.account ? ownerByAccount.get(t.account.trim()) : undefined;
       return o && o !== t.owner ? { ...t, owner: o } : t;
     });
-    return markInternalTransfers(relabeled, viewAccounts);
+    return resolveOrphanTransfers(markInternalTransfers(relabeled, viewAccounts));
   }, [transactions, rates, customRates, baseCurrency, viewAccounts]);
   const filteredTransactions = useMemo(() => {
     // Always return raw (both transfer legs present).
@@ -3284,7 +3285,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         )}
         {editingTransaction && (
             <EditTransactionModal
-                transaction={editingTransaction}
+                transaction={transactions.find((x) => String(x.id) === String(editingTransaction.id)) || editingTransaction}
                 categories={categories}
                 accounts={accounts}
                 goals={goals}
