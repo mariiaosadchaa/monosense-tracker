@@ -2652,12 +2652,21 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     );
   if (!hasLoadedOnce)
     return (
-        <div className="app-loader">
-          <span className="app-loader-logo" />
-          <div className="app-loader-dots">
-            <span />
-            <span />
-            <span />
+        <div className="app-loader lux-loader" role="status" aria-label="Завантаження">
+          <div className="lux-loader-stage">
+            <svg className="lux-loader-orbit" viewBox="0 0 300 300" aria-hidden="true">
+              <defs>
+                <linearGradient id="luxGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#e6cfa6" />
+                  <stop offset="1" stopColor="#8a6a3a" />
+                </linearGradient>
+              </defs>
+              <circle className="faint" cx="150" cy="150" r="149" />
+              <circle cx="150" cy="150" r="149" />
+            </svg>
+            <span className="app-loader-logo lux-loader-logo" />
+            <span className="lux-loader-line"><i /></span>
+            <small className="lux-loader-tag">Особисті фінанси</small>
           </div>
         </div>
     );
