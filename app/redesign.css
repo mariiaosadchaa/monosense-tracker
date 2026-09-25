@@ -976,3 +976,23 @@ html.is-native .install-banner, html.is-native .pwa-install { display: none !imp
     .auth-v3 { padding: 16px !important; }
     .auth-v3-card .auth-v3-signature { letter-spacing: .1em !important; font-size: 9px !important; }
 }
+
+/* ============================================================
+   18. «На екран Додому» (PWA, статус-бар black-translucent) і iOS:
+   контент не заходить під годинник/батарею. env() = 0 у звичайному браузері.
+   ============================================================ */
+.content > header { padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important; }
+.sidebar { padding-top: calc(env(safe-area-inset-top, 0px) + 26px) !important; }
+.modal-backdrop { padding-top: max(20px, env(safe-area-inset-top, 0px)); }
+@media (max-width: 720px) {
+    .content { padding-top: 0 !important; }
+    .content > header { padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important; }
+}
+/* кнопка «Зберегти зміни» в налаштуваннях — нормальна висота */
+.st-save .primary, .st-save button {
+    min-height: 46px;
+    padding: 0 24px !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+}
+@media (max-width: 720px) { .st-save .primary, .st-save button { width: 100%; } }
