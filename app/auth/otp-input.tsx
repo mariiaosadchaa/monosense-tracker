@@ -1,8 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 
-/** Довжина коду = Supabase → Auth → Email OTP Length (за замовчуванням тут 8; змінюється через NEXT_PUBLIC_OTP_LENGTH). */
-const OTP_LENGTH = Number(process.env.NEXT_PUBLIC_OTP_LENGTH) || 8;
+/** Довжина коду = Supabase → Auth → Email OTP Length (за замовчуванням тут 6; змінюється через NEXT_PUBLIC_OTP_LENGTH). */
+const OTP_LENGTH = Number(process.env.NEXT_PUBLIC_OTP_LENGTH) || 6;
 
 /** Окремі клітинки для коду; значення йде у прихований input name="code". */
 export function OtpInput({ length = OTP_LENGTH }: { length?: number }) {
