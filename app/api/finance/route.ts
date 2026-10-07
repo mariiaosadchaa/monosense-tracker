@@ -255,6 +255,7 @@ export async function POST(request: Request) {
                       .update({ category_id: body.categoryId })
                       .eq("household_id", householdId)
                       .eq("type", newType)
+                      .is("category_id", null)
                       .ilike("note", pattern)
                       .neq("id", body.id);
               }
