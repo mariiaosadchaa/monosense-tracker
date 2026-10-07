@@ -2019,11 +2019,36 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     return "Інше";
   }
 
+  // Дата з виписки Monobank: ДД.ММ.РРРР [ГГ:ХХ[:СС]] за київським часом. Інакше null (а не "сьогодні").
+  function parseMonoDate(raw: string): string | null {
+    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(String(raw || "").replace(/['"]/g, "").trim());
+    if (!m) return null;
+    const [d, mo, y, h, mi, sec] = [Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0)];
+    if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(y, mo, 0)).getUTCDate() || h > 23 || mi > 59 || sec > 59) return null;
+    const guess = Date.UTC(y, mo - 1, d, h, mi, sec);
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Kyiv", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        .formatToParts(new Date(guess)).map((p) => [p.type, p.value]),
+    );
+    const asKyiv = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+    const dt = new Date(guess - (asKyiv - guess));
+    return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+  }
+  const monoNum = (v: string | undefined) => {
+    const t = String(v ?? "").replace(/\s/g, "").replace(",", ".");
+    if (!t || /^[—–-]$/.test(t)) return null;
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
+  };
+
   async function importCsv(file: File) {
     const excel = /\.xlsx?$/i.test(file.name);
     const defaultAccountId = String(accounts[0]?.id || "");
-    type RawRow = { title: string; amount: number; date: string; categoryName: string; currency?: string; isPayoneerTransfer?: boolean; rawNote?: string };
+    type RawRow = { title: string; amount: number; date: string; categoryName: string; currency?: string; isPayoneerTransfer?: boolean; rawNote?: string; skip?: boolean };
     let rawRows: RawRow[] = [];
+    // Виписка Monobank не містить номера картки: валюта рахунку лише в назві стовпця «Сума в валюті картки (UAH)»
+    let monoCardCurrency = null as string | null;
+    let monoLatestBalance = null as number | null;
     try {
       if (excel) {
         const XLSX = await import("xlsx");
@@ -2035,8 +2060,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const isMonoXlsx = header.some((h) => h.includes("mcc") || h.includes("валюта") || h.includes("виписка"));
         rawRows = (allRows.slice(1) as unknown[][]).map((row) => {
           if (isMonoXlsx) {
-            const rawDate = row[0] instanceof Date ? row[0] : new Date(String(row[0]));
+            const parsedStr = row[0] instanceof Date ? null : parseMonoDate(String(row[0]));
+            const rawDate = row[0] instanceof Date ? row[0] : new Date(parsedStr || String(row[0]));
             const amt = Number(String(row[3] ?? row[4] ?? "0").replace(/\s/g, "").replace(",", "."));
+            if (Number.isNaN(rawDate.getTime())) return { title: "", amount: NaN, date: "", categoryName: "" };
             return { title: String(row[2] || row[1] || "Monobank"), amount: amt, date: rawDate.toISOString(), categoryName: String(row[1] || "") };
           }
           const amt = Number(String(row[3] ?? "0").replace(/\s/g, "").replace(",", "."));
@@ -2064,6 +2091,18 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const iStatus = findCol("status");
         const iCurrency = findCol("currency");
         const isPayoneerCsv = iTxDate !== -1 && iCreditAmt !== -1 && iDebitAmt !== -1 && iDescription !== -1;
+        const monoCols = {
+          det: headerCells.findIndex((h) => h.startsWith("деталі") || h.startsWith("опис")),
+          card: headerCells.findIndex((h) => h.startsWith("сума в валюті картки")),
+          op: headerCells.findIndex((h) => h.startsWith("сума в валюті операції")),
+          cur: headerCells.indexOf("валюта"),
+          bal: headerCells.findIndex((h) => h.startsWith("залишок")),
+        };
+        let monoLatestDate = "";
+        if (isMonoCsv) {
+          const cm = /\(([a-z]{3})\)/i.exec(headerCells[monoCols.card] || "");
+          monoCardCurrency = cm ? cm[1].toUpperCase() : "UAH";
+        }
         if (isPayoneerCsv) {
           // Payoneer report CSV — columns resolved above by header name.
           rawRows = lines3.slice(1).flatMap((csvLine) => {
@@ -2090,9 +2129,20 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           rawRows = lines3.slice(1).map((csvLine) => {
             const cells = parseCsvLine(csvLine).map((v) => v.replace(/^"+|"+$/g, "").trim());
             if (isMonoCsv) {
-              const amt = Number((cells[3] || cells[4] || "0").replace(/\s/g, "").replace(",", "."));
-              const d = new Date(cells[0] || "");
-              return { title: cells[1] || cells[2] || "Monobank", amount: amt, date: Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(), categoryName: "" };
+              const d = parseMonoDate(cells[0] || "");
+              const amt = monoNum(cells[monoCols.card >= 0 ? monoCols.card : 3]);
+              if (!d || amt == null || amt === 0) return { title: "", amount: NaN, date: "", categoryName: "" };   // не вгадуємо дату: такий рядок відкидаємо
+              const details = cells[monoCols.det >= 0 ? monoCols.det : 1] || "Monobank";
+              const opAmt = monoNum(cells[monoCols.op]);
+              const opCur = (cells[monoCols.cur] || "").toUpperCase();
+              const foreign = opAmt != null && opCur && monoCardCurrency && opCur !== monoCardCurrency;
+              const bal = monoNum(cells[monoCols.bal]);
+              if (bal != null && (monoLatestBalance == null || d > monoLatestDate)) { monoLatestBalance = bal; monoLatestDate = d; }
+              return {
+                title: details + (foreign ? ` · ${Math.abs(opAmt as number).toFixed(2).replace(/\.00$/, "")} ${opCur}` : ""),
+                amount: amt, date: d, categoryName: "", currency: monoCardCurrency || undefined,
+                skip: /міграці[ії] рахунку/i.test(details),   // службова пара «зарахування/списання», разом нуль
+              };
             }
             const amt = Number((cells[3] || "0").replace(/\s/g, "").replace(",", "."));
             const d = new Date(cells[2] || "");
@@ -2118,7 +2168,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       return {
         id: `import-${now}-${i}`,
         title: r.title, amount: r.amount, date: r.date, categoryName: r.categoryName,
-        isDuplicate, selected: !isDuplicate,
+        isDuplicate, selected: !isDuplicate && !r.skip,
         currency: r.currency,
         isPayoneerTransfer: r.isPayoneerTransfer,
       };
@@ -2143,9 +2193,18 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     // в ТОЙ САМИЙ день, найближче за сумою (за день може бути кілька виводів).
     // Різниця з курсом НБУ на дату → комісія (окреме поле), пара імпортується як переказ.
     const payoneerAccount = accounts.find((a) => /payoneer|пайонер|піонер/i.test(`${a.name} ${a.bank}`));
+    // Monobank CSV: рахунок за валютою зі заголовка; якщо їх кілька, обираємо той, чий баланс збігається із залишком останньої операції
+    const monoAccountId = (() => {
+      if (!monoCardCurrency) return "";
+      const same = accounts.filter((a) => (a.currency || "UAH").toUpperCase() === monoCardCurrency);
+      if (!same.length) return "";
+      const byBalance = monoLatestBalance == null ? undefined : same.find((a) => Math.abs(Number(a.balance) - (monoLatestBalance as number)) < 0.01);
+      const monoBank = same.find((a) => /mono|моно/i.test(`${a.bank} ${a.name}`));
+      return String((byBalance || monoBank || same[0]).id);
+    })();
     const importAccountId = previewRows.some((r) => r.isPayoneerTransfer) && payoneerAccount
         ? String(payoneerAccount.id)
-        : defaultAccountId;
+        : (monoAccountId || defaultAccountId);
     const importAccountName = accounts.find((a) => String(a.id) === importAccountId)?.name;
     const kyivDay = (iso: string) =>
         new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Kyiv" }).format(new Date(iso));

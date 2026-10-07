@@ -2049,6 +2049,17 @@ export function ImportPreviewModal({
                             style={{ display: "block", marginTop: 4, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", width: "100%" }}>
                         {accounts.map((a) => <option key={String(a.id)} value={String(a.id)}>{a.name} ({a.currency})</option>)}
                     </select>
+                    {(() => {
+                        // Суми у файлі в одній валюті, а рахунок в іншій: попереджаємо, щоб гривні не стали доларами
+                        const fileCur = isPayoneer ? "" : (rows.find((r) => r.currency)?.currency || "").toUpperCase();
+                        const acc = accounts.find((a) => String(a.id) === accountId);
+                        const accCur = (acc?.currency || "").toUpperCase();
+                        return fileCur && accCur && fileCur !== accCur ? (
+                            <p style={{ color: "var(--red)", fontSize: 13, margin: "6px 0 0" }}>
+                                У файлі суми в {fileCur}, а обраний рахунок у {accCur}. Оберіть рахунок у {fileCur}, інакше суми буде позначено неправильною валютою.
+                            </p>
+                        ) : null;
+                    })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                     <button type="button" onClick={toggleAll}
