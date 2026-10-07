@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#0e0d0b", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#0e0d0b", width: "device-width", initialScale: 1, minimumScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="uk" className={`${inter.variable} ${serif.variable}`} suppressHydrationWarning><body><NativeBridge />{children}</body></html>;

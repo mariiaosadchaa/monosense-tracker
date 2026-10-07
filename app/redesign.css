@@ -1072,3 +1072,7 @@ html.is-native .install-banner, html.is-native .pwa-install { display: none !imp
 @media (display-mode: standalone) {
     .content > header { padding-top: calc(max(env(safe-area-inset-top, 0px), 44px) + 10px) !important; }
 }
+
+/* ---------- iOS: не розширювати viewport через широкий вміст (інакше вмикається десктопна розкладка) ---------- */
+html { overflow-x: clip; max-width: 100%; }
+body { max-width: 100%; overflow-x: clip; }

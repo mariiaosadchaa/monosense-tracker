@@ -3,10 +3,14 @@
   "appName": "Rivna",
   "webDir": "www",
   "server": {
-    "url": "https://YOUR-RIVNA-DOMAIN.vercel.app",
+    "url": "https://rivna-app.xyz",
     "cleartext": false,
     "errorPath": "offline.html",
-    "allowNavigation": ["*.supabase.co", "*.vercel.app"]
+    "allowNavigation": [
+      "rivna-app.xyz",
+      "*.supabase.co",
+      "*.vercel.app"
+    ]
   },
   "ios": {
     "scheme": "Rivna",
@@ -30,7 +34,11 @@
       "resizeOnFullScreen": true
     },
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   }
 }
