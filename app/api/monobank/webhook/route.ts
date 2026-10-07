@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { categorizeMonobankItems } from "@/lib/monobank/categorize";
 import { mccCategoryCandidates } from "@/lib/monobank/mcc";
 import { monoItemFee } from "@/lib/monobank/fee";
+import { findPossibleDuplicate } from "@/lib/monobank/dedupe";
 import { createDepositGoal, isDepositOpening } from "@/lib/monobank/deposit";
 
 export async function POST(request: Request) {
@@ -51,6 +52,12 @@ export async function POST(request: Request) {
 
   const amount = item.amount / 100;
   const type = amount < 0 ? "expense" : "income";
+
+  const possibleDuplicate = await findPossibleDuplicate(admin, { accountId: account.id, amount: Math.abs(amount), type, timeSec: item.time });
+  if (possibleDuplicate) {
+    await admin.from("monobank_synced_items").update({ transaction_id: possibleDuplicate.id }).eq("statement_item_id", item.id);
+    return NextResponse.json({ ok: true });
+  }
 
   // Check learned note_contains rules first
   const { data: learnedRules } = await admin

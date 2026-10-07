@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { categorizeMonobankItems } from "@/lib/monobank/categorize";
 import { mccCategoryCandidates } from "@/lib/monobank/mcc";
 import { monoItemFee } from "@/lib/monobank/fee";
+import { findPossibleDuplicate } from "@/lib/monobank/dedupe";
 import { createDepositGoal, isDepositOpening } from "@/lib/monobank/deposit";
 import { nbuRate } from "@/lib/nbu";
 
@@ -603,22 +604,10 @@ export async function POST(request: Request) {
                 refundCategoryId = originalTx?.category_id || null;
             }
 
-            const itemDate2 = new Date(f.item.time * 1000);
-            const dayStart2 = new Date(itemDate2);
-            dayStart2.setUTCHours(0, 0, 0, 0);
-            const dayEnd2 = new Date(itemDate2);
-            dayEnd2.setUTCHours(23, 59, 59, 999);
+            const possibleDuplicate = noDedupe
+                ? null
+                : await findPossibleDuplicate(admin, { accountId: account.id, amount: Math.abs(amount), type, timeSec: f.item.time });
 
-            const { data: possibleDuplicate } = await admin
-                .from("transactions")
-                .select("id")
-                .eq("account_id", account.id)
-                .eq("amount", Math.abs(amount))
-                .eq("type", type)
-                .not("id", "in", `(select transaction_id from monobank_synced_items where transaction_id is not null)`)
-                .gte("booked_at", dayStart2.toISOString())
-                .lte("booked_at", dayEnd2.toISOString())
-                .maybeSingle();
 
             if (possibleDuplicate && !noDedupe) {
                 await admin.from("monobank_synced_items")
