@@ -1076,3 +1076,45 @@ html.is-native .install-banner, html.is-native .pwa-install { display: none !imp
 /* ---------- iOS: не розширювати viewport через широкий вміст (інакше вмикається десктопна розкладка) ---------- */
 html { overflow-x: clip; max-width: 100%; }
 body { max-width: 100%; overflow-x: clip; }
+
+/* ---------- Спільний бюджет: зрозуміла структура ---------- */
+.sb-current { display: flex; align-items: center; gap: 14px; padding: 16px; margin: 14px 0 6px; border-radius: 18px; background: var(--panel-2, var(--soft)); }
+.sb-current > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.sb-current small { color: var(--text-2); font-size: 12px; }
+.sb-current strong { font-size: 18px; }
+.sb-current em { font-style: normal; color: var(--text-2); font-size: 13px; line-height: 1.35; }
+.sb-block { margin-top: 22px; }
+.sb-block h3 { margin: 0 0 4px; font-size: 16px; }
+.sb-sub { margin: 0 0 10px; color: var(--text-2); font-size: 13px; }
+.sb .space-switcher { grid-template-columns: 1fr; margin: 8px 0 0; }
+.sb .space-switcher > button { padding: 12px 14px; cursor: pointer; }
+.sb .space-switcher > button:disabled { cursor: default; opacity: 1; }
+.sb .space-switcher small { font-size: 12px; }
+.sb-now, .sb-go { font-style: normal; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.sb-now { color: var(--green); }
+.sb-go { color: var(--accent, var(--purple)); }
+.sb .member-list small, .sb .pending-invites small { font-size: 12px; }
+.sb .role-badge, .sb .member-role { font-size: 12px; }
+.sb-empty { margin-top: 18px; padding: 18px; border-radius: 16px; background: var(--panel-2, var(--soft)); display: grid; gap: 8px; justify-items: start; }
+.sb-empty p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.45; }
+
+/* ---------- Головна: поділ рахунків «Мої / Спільні» ---------- */
+.dc-acc-row { grid-template-columns: 116px minmax(0, 1fr) !important; }
+@media (max-width: 720px) { .dc-acc-row { grid-template-columns: 1fr !important; } }
+.dc-acc-label { display: inline-flex; align-items: center; gap: 7px; }
+.dc-acc-label small { font-weight: 500; opacity: .6; letter-spacing: 0; }
+.dc-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dc-acc-row.kind-mine .dc-dot { background: #c9a35e; }
+.dc-acc-row.kind-shared .dc-dot { background: #7c6cf0; }
+.dc-acc-row.kind-other .dc-dot { background: #3aa986; }
+.dc-acc-row.kind-mine .dc-chip, .dc-acc-row.kind-shared .dc-chip, .dc-acc-row.kind-other .dc-chip { border-left: 3px solid var(--dot, transparent); }
+.dc-acc-row.kind-mine { --dot: #c9a35e; }
+.dc-acc-row.kind-shared { --dot: #7c6cf0; }
+.dc-acc-row.kind-other { --dot: #3aa986; }
+.dc-split-toggle { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; cursor: pointer; font-size: 13px; color: var(--text-2); user-select: none; }
+.dc-split-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.dc-split-toggle i { width: 36px; height: 21px; border-radius: 999px; background: var(--fill-2, #ccc); position: relative; transition: background .2s; flex: none; }
+.dc-split-toggle i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.dc-split-toggle input:checked + i { background: #c9a35e; }
+.dc-split-toggle input:checked + i::after { transform: translateX(15px); }
+.dc-split-toggle input:focus-visible + i { outline: 2px solid #c9a35e; outline-offset: 2px; }

@@ -233,12 +233,31 @@ export function Dashboard({
         const rank = (k: string) => (k === "__me__" ? 0 : isShared(k) ? 2 : 1);
         return rank(a) - rank(b) || a.localeCompare(b, "uk");
     });
-    const accountGroups = (owners.length ? owners : ["__me__"]).map((k) => ({
-        label: k === "__me__" ? "Мої" : isShared(k) ? "Спільні" : k,
-        items: visibleAccounts.filter((a) => ownerKey(a) === k),
-        add: false,
-        owner: k,
-    }));
+    // Перемикач: розділяти рахунки на «Мої / Спільні / інші» чи показувати одним списком (зберігається в браузері)
+    const [splitAccounts, setSplitAccounts] = useState(true);
+    useEffect(() => {
+        try {
+            if (window.localStorage.getItem("rivna:dash-split") === "0") setSplitAccounts(false);
+        } catch {}
+    }, []);
+    const toggleSplit = (value: boolean) => {
+        setSplitAccounts(value);
+        try {
+            window.localStorage.setItem("rivna:dash-split", value ? "1" : "0");
+        } catch {}
+    };
+    const canSplit = owners.length > 1;
+    const groupKind = (k: string) => (k === "__me__" ? "mine" : isShared(k) ? "shared" : "other");
+    const accountGroups = (canSplit && !splitAccounts
+        ? [{ label: "Усі рахунки", items: visibleAccounts, add: false, owner: "__all__", kind: "all" }]
+        : (owners.length ? owners : ["__me__"]).map((k) => ({
+              label: k === "__me__" ? "Мої" : isShared(k) ? "Спільні" : k,
+              items: visibleAccounts.filter((a) => ownerKey(a) === k),
+              add: false,
+              owner: k,
+              kind: groupKind(k),
+          }))
+    );
     accountGroups[accountGroups.length - 1].add = true;
     const upcoming = [...recurring].sort((a, b) => new Date(a.next).getTime() - new Date(b.next).getTime());
     return (
@@ -299,10 +318,21 @@ export function Dashboard({
             </div>
 
             <div className="dc-accounts" style={{ "--i": 4 } as React.CSSProperties}>
+                {canSplit && (
+                    <label className="dc-split-toggle" title="Показувати рахунки окремо: мої, спільні та інших власників">
+                        <input type="checkbox" checked={splitAccounts} onChange={(e) => toggleSplit(e.target.checked)} />
+                        <i aria-hidden />
+                        <span>Розділяти «Мої» та «Спільні»</span>
+                    </label>
+                )}
                 {accountGroups.map((group) =>
                     group.items.length ? (
-                        <div key={group.label} className="dc-acc-row">
-                            <span className="dc-acc-label">{group.label}</span>
+                        <div key={group.label} className={`dc-acc-row kind-${group.kind}`}>
+                            <span className="dc-acc-label">
+                                <b className="dc-dot" aria-hidden />
+                                {group.label}
+                                <small>{group.items.length}</small>
+                            </span>
                             <div className="dc-chips">
                                 {group.items.map((a) => {
                     const available = (a.balance || 0) + (a.creditLimit || 0);

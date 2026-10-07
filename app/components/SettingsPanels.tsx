@@ -305,86 +305,130 @@ export function MembersPanel({
         window.location.reload();
     }
     const canManage = ["owner", "admin"].includes(myRole);
+    const activeSpace = spaces.find((space) => space.active);
+    const roleHint: Record<string, string> = {
+        owner: "Ви власник: керуєте доступом і можете запрошувати людей.",
+        admin: "Ви адміністратор: можете запрошувати людей і змінювати доступ.",
+        member: "Ви учасник: бачите й додаєте операції, але не керуєте доступом.",
+        viewer: "Ви глядач: лише перегляд, без змін.",
+    };
     return (
-        <section className="panel members-panel">
+        <section className="panel members-panel sb">
             <div className="section-title">
                 <div>
                     <h2>Спільний бюджет</h2>
-                    <p>Хто бачить і веде ваші фінанси разом з вами</p>
+                    <p>Один бюджет, у якому ви разом ведете рахунки, ліміти й операції.</p>
                 </div>
-                {canManage && onInvite ? (
+                {canManage && onInvite && (
                     <button className="small-primary" onClick={onInvite}>
                         <Plus /> Запросити
                     </button>
-                ) : (
-                    <span className="role-badge">{translateRole(myRole)}</span>
                 )}
             </div>
+
+            <div className="sb-current">
+                <span className="member-avatar">
+                    <WalletCards />
+                </span>
+                <div>
+                    <small>Зараз відкрито</small>
+                    <strong>{activeSpace?.name || "Мій бюджет"}</strong>
+                    {roleHint[myRole] && <em>{roleHint[myRole]}</em>}
+                </div>
+                <span className="role-badge">{translateRole(myRole)}</span>
+            </div>
+
             {spaces.length > 1 && (
-                <div className="space-switcher">
-                    {spaces.map((space) => (
-                        <button
-                            key={space.id}
-                            className={space.active ? "active" : ""}
-                            onClick={() => !space.active && switchSpace(space.id)}
-                        >
-              <span className="member-avatar">
-                <WalletCards />
-              </span>
-                            <span>
-                <strong>{space.name}</strong>
-                <small>
-                  {space.currency} · {translateRole(space.role)}
-                </small>
-              </span>
-                            {space.active && <Check />}
-                        </button>
-                    ))}
+                <div className="sb-block">
+                    <h3>Ваші бюджети</h3>
+                    <p className="sb-sub">Ви входите в {spaces.length} бюджети. Натисніть, щоб відкрити інший.</p>
+                    <div className="space-switcher">
+                        {spaces.map((space) => (
+                            <button
+                                key={space.id}
+                                className={space.active ? "active" : ""}
+                                disabled={space.active}
+                                onClick={() => !space.active && switchSpace(space.id)}
+                            >
+                                <span className="member-avatar">
+                                    <WalletCards />
+                                </span>
+                                <span>
+                                    <strong>{space.name}</strong>
+                                    <small>
+                                        {space.role === "owner" ? "Створили ви" : "Вас запросили"} · {space.currency} ·{" "}
+                                        {translateRole(space.role)}
+                                    </small>
+                                </span>
+                                {space.active ? (
+                                    <em className="sb-now">
+                                        <Check /> Відкрито
+                                    </em>
+                                ) : (
+                                    <em className="sb-go">Відкрити</em>
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
-            <div className="member-list">
-                {members.map((member) => (
-                    <div key={member.userId}>
-                        <span className="member-avatar">{member.name.slice(0, 2).toUpperCase()}</span>
-                        <div>
-                            <strong>
-                                {member.name}
-                                {member.isMe ? " · ви" : ""}
-                            </strong>
-                            <small>З {new Date(member.joinedAt).toLocaleDateString("uk-UA")}</small>
+
+            <div className="sb-block">
+                <h3>Учасники · {members.length}</h3>
+                <div className="member-list">
+                    {members.map((member) => (
+                        <div key={member.userId}>
+                            <span className="member-avatar">{member.name.slice(0, 2).toUpperCase()}</span>
+                            <div>
+                                <strong>
+                                    {member.name}
+                                    {member.isMe ? " · ви" : ""}
+                                </strong>
+                                <small>У бюджеті з {new Date(member.joinedAt).toLocaleDateString("uk-UA")}</small>
+                            </div>
+                            {canManage && !member.isMe && member.role !== "owner" ? (
+                                <>
+                                    <select
+                                        value={member.role}
+                                        onChange={(e) =>
+                                            action({ action: "changeRole", userId: member.userId, role: e.target.value })
+                                        }
+                                    >
+                                        <option value="admin">Адміністратор</option>
+                                        <option value="member">Учасник</option>
+                                        <option value="viewer">Глядач</option>
+                                    </select>
+                                    <button
+                                        className="icon-button"
+                                        onClick={() => action({ action: "removeMember", userId: member.userId })}
+                                        aria-label="Видалити учасника"
+                                    >
+                                        <Trash2 />
+                                    </button>
+                                </>
+                            ) : (
+                                <span className="member-role">{translateRole(member.role)}</span>
+                            )}
                         </div>
-                        {canManage && !member.isMe && member.role !== "owner" ? (
-                            <>
-                                <select
-                                    value={member.role}
-                                    onChange={(e) =>
-                                        action({ action: "changeRole", userId: member.userId, role: e.target.value })
-                                    }
-                                >
-                                    <option value="admin">Адміністратор</option>
-                                    <option value="member">Учасник</option>
-                                    <option value="viewer">Глядач</option>
-                                </select>
-                                <button
-                                    className="icon-button"
-                                    onClick={() => action({ action: "removeMember", userId: member.userId })}
-                                    aria-label="Видалити учасника"
-                                >
-                                    <Trash2 />
-                                </button>
-                            </>
-                        ) : (
-                            <span className="member-role">{translateRole(member.role)}</span>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
+
             {members.length <= 1 && invites.length === 0 && (
-                <p className="members-hint">
-                    Поки що тут лише ви. Запросіть партнера — він побачить спільні рахунки, ліміти та операції, а
-                    його картки додадуться до вашого бюджету.
-                </p>
+                <div className="sb-empty">
+                    <strong>Тут поки що лише ви</strong>
+                    <p>
+                        Запросіть партнера: він побачить спільні рахунки, ліміти й операції, а його картки додадуться до
+                        цього бюджету.
+                    </p>
+                    {canManage && onInvite && (
+                        <button className="small-primary" onClick={onInvite}>
+                            <Plus /> Запросити партнера
+                        </button>
+                    )}
+                </div>
             )}
+
             {invites.length > 0 && (
                 <div className="pending-invites">
                     <strong>Очікують приєднання</strong>
