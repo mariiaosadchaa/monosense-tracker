@@ -388,7 +388,7 @@ html body .dc-tile b { font-size: 22px; line-height: 30px; height: 30px; margin-
 .auth-v3-card .form-message { margin-bottom: 18px; }
 .auth-field { display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 600; }
 .otp { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-.otp-cell { width: 100%; min-width: 0; aspect-ratio: 1 / 1.15; max-height: 58px; padding: 0 !important; text-align: center; font-size: 24px !important; font-weight: 700; font-variant-numeric: tabular-nums; border-radius: 14px !important; caret-color: transparent; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.otp-cell { width: 100%; min-width: 0; aspect-ratio: 1 / 1.15; max-height: 58px; padding: 0 !important; text-align: center; font-size: clamp(18px, 5vw, 24px) !important; font-weight: 700; font-variant-numeric: tabular-nums; border-radius: 14px !important; caret-color: transparent; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .otp-cell:focus { outline: none; border-color: var(--purple, #6b2d42) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple, #6b2d42) 18%, transparent); transform: translateY(-1px); }
 .otp-cell.filled { border-color: color-mix(in srgb, var(--purple, #6b2d42) 45%, transparent) !important; }
 .auth-v3-foot { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 18px; font-size: 13px; }

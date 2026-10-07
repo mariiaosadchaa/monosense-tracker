@@ -1,8 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
 
-/** 6 окремих клітинок для коду; значення йде у прихований input name="code". */
-export function OtpInput({ length = 6 }: { length?: number }) {
+/** Довжина коду = Supabase → Auth → Email OTP Length (за замовчуванням тут 8; змінюється через NEXT_PUBLIC_OTP_LENGTH). */
+const OTP_LENGTH = Number(process.env.NEXT_PUBLIC_OTP_LENGTH) || 8;
+
+/** Окремі клітинки для коду; значення йде у прихований input name="code". */
+export function OtpInput({ length = OTP_LENGTH }: { length?: number }) {
     const [digits, setDigits] = useState<string[]>(Array(length).fill(""));
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const focus = (i: number) => refs.current[Math.max(0, Math.min(length - 1, i))]?.focus();
@@ -17,7 +20,7 @@ export function OtpInput({ length = 6 }: { length?: number }) {
         focus(start + clean.length);
     };
     return (
-        <div className="otp">
+        <div className="otp" style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))`, gap: length > 6 ? 6 : 8 }}>
             <input type="hidden" name="code" value={digits.join("")} />
             {digits.map((d, i) => (
                 <input
