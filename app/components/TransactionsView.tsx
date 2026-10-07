@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useClickOutside } from "../lib/useClickOutside";
 import { extractMerchant } from "./AccountCard";
 import type { Transaction, CategoryItem, Account } from "../types";
@@ -781,7 +782,7 @@ function TxDetails({
     if (t.tags?.length) rows.push(["Теги", t.tags.map((x) => `#${x}`).join(" ")]);
     if (t.impulse) rows.push(["Позначка", "Імпульсивна покупка"]);
     if (t.title !== extractMerchant(t.title)) rows.push(["Опис", t.title]);
-    return (
+    return createPortal(
         <div className="modal-backdrop" onMouseDown={close}>
             <div className="expense-modal txd" onMouseDown={(e) => e.stopPropagation()}>
                 <button type="button" className="txd-x" onClick={close} aria-label="Закрити">
@@ -822,6 +823,7 @@ function TxDetails({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

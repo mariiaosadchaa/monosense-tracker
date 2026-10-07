@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { categorizeMonobankItems } from "@/lib/monobank/categorize";
 import { mccCategoryCandidates } from "@/lib/monobank/mcc";
 import { monoItemFee } from "@/lib/monobank/fee";
+import { createDepositGoal, isDepositOpening } from "@/lib/monobank/deposit";
 import { nbuRate } from "@/lib/nbu";
 
 type MonoItem = { id: string; time: number; description?: string; amount: number; balance: number; mcc?: number; operationAmount?: number; currencyCode?: number; commissionRate?: number };
@@ -654,6 +655,10 @@ export async function POST(request: Request) {
             if (txError) {
                 debug.push({ monoAccountId: f.monoAccountId, error: `RPC: ${txError.message}` });
                 continue;
+            }
+
+            if (transaction?.id && isDepositOpening(f.item.description, f.item.amount)) {
+                await createDepositGoal(admin, { householdId: context.householdId, userId: connection.connected_by, amountKop: f.item.amount, currency: account.currency, accountId: null, time: f.item.time });
             }
 
             const feeInfo = await monoItemFee(f.item, account.currency);
