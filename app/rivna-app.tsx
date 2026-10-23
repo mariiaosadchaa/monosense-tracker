@@ -226,6 +226,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
   }, [goals]);
 
   const [debts, setDebts] = useState<DebtItem[]>([]);
@@ -292,6 +293,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   }, [initialLoggedIn]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
     setIsOnline(navigator.onLine);
     setOfflineCount(getOfflineQueue().length);
     const goOnline = () => {
@@ -352,6 +354,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
   }, []);
 
   function notify(message: string) {
@@ -625,6 +628,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   useEffect(() => {
     const timer = window.setTimeout(() => void refreshFinance(), 0);
     return () => window.clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
   }, [initialLoggedIn]);
 
   // iOS-застосунок: оновлюємо дані, коли користувач повертається в застосунок
@@ -632,6 +636,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     const onResume = () => void refreshFinance(true);
     window.addEventListener("rivna:resume", onResume);
     return () => window.removeEventListener("rivna:resume", onResume);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
   }, [initialLoggedIn]);
 
   useEffect(() => {
@@ -828,6 +833,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   useEffect(() => {
     if (localStorage.getItem("rivna-just-onboarded") === "1") {
       localStorage.removeItem("rivna-just-onboarded");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
       setWelcomeAlert({
         key: "welcome",
         name: "Вітаємо в rivna! Все готово — починай керувати фінансами",
@@ -1751,6 +1757,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("rivna-settings-tab") as SettingsTabKey | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
       if (saved) setSettingsTab(saved);
     } catch {}
   }, []);
@@ -2357,6 +2364,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   useEffect(() => {
     if (autoLinkAttempted) return;
     if (!monoStatusLoaded || !accounts.length || !monoAccounts.length) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
     setAutoLinkAttempted(true);
     for (const ma of monoAccounts) {
       if (monoLinks[ma.id]) continue;
@@ -2370,6 +2378,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         linkMonobankAccount(ma.id, String(matchedAccount.id));
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
   }, [monoStatusLoaded, accounts, monoAccounts, monoLinks, autoLinkAttempted]);
   async function connectMonobank() {
     if (!monoToken.trim()) return notify("Встав токен Monobank");

@@ -67,7 +67,9 @@ export function AchievementsPanel({
             if (!t.bookedAt) return min;
             const d = new Date(t.bookedAt).getTime();
             return d < min ? d : min;
+        // eslint-disable-next-line react-hooks/purity -- навмисно: поточний час
         }, Date.now());
+        // eslint-disable-next-line react-hooks/purity -- навмисно: поточний час
         const oldestTransactionDays = Math.floor((Date.now() - oldest) / 86400000);
         return {
             goals,

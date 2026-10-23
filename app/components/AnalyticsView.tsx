@@ -78,6 +78,18 @@ export function AnalyticsView({
         result.setDate(result.getDate() - ((result.getDay() + 6) % 7));
         return result;
     };
+    // Якщо категорії не призначено групу — вгадуємо за назвою/іконкою
+    const guessGroup = (name: string, icon = ""): "needs" | "wants" | "savings" | null => {
+        const n = `${name} ${icon}`.toLowerCase();
+        if (/заощадж|депозит|інвест|борг|кредит|розстроч|ціл|скарбн|savings|piggy/.test(n)) return "savings";
+        if (/продукт|комунал|дім|житл|оренд|квартир|транспорт|пальн|бензин|здоров|аптек|медиц|лікар|зв.язок|інтернет|мобіл|дит|освіт|страх|тварин|пес|собак|кіт|вет|paw|dog|cat|utilit|home|house|pill|stethoscope|fuel|car|bus/.test(n)) return "needs";
+        if (/кафе|ресторан|доставк|розваг|одяг|краса|подарун|хобі|подорож|підписк|спорт|кіно|шопінг|гра|coffee|gift|party|shirt|sparkle|plane|gamepad|film|shopping/.test(n)) return "wants";
+        return null;
+    };
+    const groupByCategoryName = new NativeMap(
+        categories.map((c) => [c.name, c.budgetGroup || guessGroup(c.name, c.icon)]),
+    );
+    const isSavingsTx = (t: Transaction) => groupByCategoryName.get(t.category) === "savings";
     const buckets =
         period === "month"
             ? Array.from({ length: 6 }, (_, index) => {
@@ -117,7 +129,8 @@ export function AnalyticsView({
             (transaction) =>
                 transaction.amount < 0 &&
                 transaction.kind !== "transfer" &&
-                transaction.kind !== "exchange",
+                transaction.kind !== "exchange" &&
+                !isSavingsTx(transaction),
         )
         .forEach((transaction) => {
             const bucket = bucketFor(transaction);
@@ -130,8 +143,18 @@ export function AnalyticsView({
             (transaction) =>
                 transaction.amount < 0 &&
                 transaction.kind !== "transfer" &&
-                transaction.kind !== "exchange",
-        );
+                transaction.kind !== "exchange" &&
+                !isSavingsTx(transaction),
+        ),
+        savedTotal = currentTransactions
+            .filter(
+                (transaction) =>
+                    transaction.amount < 0 &&
+                    transaction.kind !== "transfer" &&
+                    transaction.kind !== "exchange" &&
+                    isSavingsTx(transaction),
+            )
+            .reduce((sum, transaction) => sum + Math.abs(transaction.baseAmount ?? transaction.amount), 0);
     const total = expenses.reduce(
             (sum, transaction) => sum + Math.abs(transaction.baseAmount ?? transaction.amount),
             0,
@@ -150,17 +173,6 @@ export function AnalyticsView({
                 (sum, transaction) => sum + Math.abs(transaction.baseAmount ?? transaction.amount),
                 0,
             );
-    // Якщо категорії не призначено групу — вгадуємо за назвою/іконкою
-    const guessGroup = (name: string, icon = ""): "needs" | "wants" | "savings" | null => {
-        const n = `${name} ${icon}`.toLowerCase();
-        if (/заощадж|депозит|інвест|борг|кредит|розстроч|ціл|скарбн|savings|piggy/.test(n)) return "savings";
-        if (/продукт|комунал|дім|житл|оренд|квартир|транспорт|пальн|бензин|здоров|аптек|медиц|лікар|зв.язок|інтернет|мобіл|дит|освіт|страх|тварин|пес|собак|кіт|вет|paw|dog|cat|utilit|home|house|pill|stethoscope|fuel|car|bus/.test(n)) return "needs";
-        if (/кафе|ресторан|доставк|розваг|одяг|краса|подарун|хобі|подорож|підписк|спорт|кіно|шопінг|гра|coffee|gift|party|shirt|sparkle|plane|gamepad|film|shopping/.test(n)) return "wants";
-        return null;
-    };
-    const groupByCategoryName = new NativeMap(
-        categories.map((c) => [c.name, c.budgetGroup || guessGroup(c.name, c.icon)]),
-    );
     const groupTotals = { needs: 0, wants: 0, savings: 0, unassigned: 0 };
     expenses.forEach((t) => {
         const group = groupByCategoryName.get(t.category);
@@ -177,8 +189,6 @@ export function AnalyticsView({
             return sum;
         }, {}),
     ).sort((a, b) => b[1] - a[1]);
-    const isNonSpending = (name: string) => groupByCategoryName.get(name) === "savings";
-    const nonSpendingTotal = grouped.filter(([n]) => isNonSpending(n)).reduce((s, [, v]) => s + v, 0);
     const current = buckets.at(-1)?.value || 0,
         previous = buckets.at(-2)?.value || 0,
         delta = previous ? Math.round(((current - previous) / previous) * 100) : 0,
@@ -194,33 +204,109 @@ export function AnalyticsView({
                     За тижнями
                 </button>
             </div>
-            <div className="metric-grid">
-                <article className="metric">
-                    <small>Витрати за {period === "month" ? "місяць" : "тиждень"}</small>
-                    <strong>
-                        {symbol} {formatMoney(total)}
-                    </strong>
-                    <span>
-                        {period === "month" ? "Цей місяць" : "Цей тиждень"}
-                        {nonSpendingTotal > 0 && ` · з них накопичення й борги ${symbol} ${formatMoney(nonSpendingTotal)}`}
-                    </span>
-                </article>
-                <article className="metric">
-                    <small>Доходи</small>
-                    <strong>
-                        {symbol} {formatMoney(income)}
-                    </strong>
-                    <span className="positive">
-            Лишилось після витрат: {symbol} {formatMoney(income - total)}
+            <section className="panel an-hero">
+                <p className="an-hero-label">
+                    {period === "month"
+                        ? new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric" }).format(now)
+                        : "Цей тиждень"}
+                </p>
+                <h2 className="an-hero-title">
+                    Витрачено {symbol} {formatMoney(total)}
+                </h2>
+                <p className="an-hero-sub">
+                    {previous
+                        ? `${Math.abs(delta)}% ${delta > 0 ? "більше" : "менше"} ніж ${period === "month" ? "минулого місяця" : "минулого тижня"}`
+                        : "Порівняння з минулим періодом з'явиться згодом"}
+                    {impulsive > 0 && ` · з них незапланованих ${symbol} ${formatMoney(impulsive)}`}
+                </p>
+                {(() => {
+                    const left = income - total - savedTotal;
+                    const base = Math.max(income, total + savedTotal, 1);
+                    return (
+                        <>
+                            <div className="an-split">
+                                <i className="spent" style={{ width: `${(total / base) * 100}%` }} />
+                                <i className="saved" style={{ width: `${(savedTotal / base) * 100}%` }} />
+                                <i className="left" style={{ width: `${(Math.max(0, left) / base) * 100}%` }} />
+                            </div>
+                            <ul className="an-legend">
+                                <li>
+                                    <span className="dot spent" />
+                                    <em>Витрати</em>
+                                    <b>{symbol} {formatMoney(total)}</b>
+                                </li>
+                                <li>
+                                    <span className="dot saved" />
+                                    <em>Відкладено та борги</em>
+                                    <b>{symbol} {formatMoney(savedTotal)}</b>
+                                </li>
+                                <li>
+                                    <span className="dot left" />
+                                    <em>{left >= 0 ? "Лишилось з доходу" : "Витрати перевищили дохід на"}</em>
+                                    <b className={left >= 0 ? "positive" : "negative"}>
+                                        {symbol} {formatMoney(Math.abs(left))}
+                                    </b>
+                                </li>
+                                <li className="total">
+                                    <em>Дохід за період</em>
+                                    <b>{symbol} {formatMoney(income)}</b>
+                                </li>
+                            </ul>
+                        </>
+                    );
+                })()}
+            </section>
+            <div className="analytics-grid">
+                <section className="panel" style={expenses.some((t) => t.impulse) ? undefined : { gridColumn: "1 / -1" }}>
+                    <div className="section-title">
+                        <div>
+                            <h2>На що витрачено</h2>
+                            <p>
+                                Від більшого до меншого · без накопичень і боргів
+                            </p>
+                        </div>
+                    </div>
+                    <div className="cat-list">
+                        {grouped.length ? (
+                            grouped.map(([name, value], index) => (
+                                <div key={name} className="cat-row">
+                                    <div className="cat-row-head">
+                                        <span style={{ background: `hsl(${250 - index * 34} 72% ${58 + index * 3}%)` }} />
+                                        <strong>{name}</strong>
+                                        <b>{symbol} {formatMoney(value)}</b>
+                                        <em>{total ? Math.round((value / total) * 100) : 0}%</em>
+                                    </div>
+                                    <i>
+                                        <u style={{ width: `${total ? (value / total) * 100 : 0}%` }} />
+                                    </i>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="empty-inline">Додайте операції для аналітики</p>
+                        )}
+                    </div>
+                </section>
+                {expenses.some((t) => t.impulse) && (
+                <section className="panel impulse-report">
+          <span className="wizard-icon">
+            <Sparkles />
           </span>
-                </article>
-                <article className="metric">
-                    <small>Незаплановані покупки</small>
-                    <strong>
-                        {symbol} {formatMoney(impulsive)}
-                    </strong>
-                    <span>{total ? Math.round((impulsive / total) * 100) : 0}% усіх витрат</span>
-                </article>
+                    <h2>Звіт про імпульсивні витрати</h2>
+                    <strong>{expenses.filter((transaction) => transaction.impulse).length} покупок</strong>
+                    <p>
+                        Позначайте незаплановані покупки під час створення операції. Rivna покаже їхню частку та
+                        вплив на план.
+                    </p>
+                    <div
+                        className="donut"
+                        style={
+                            { "--percent": `${total ? (impulsive / total) * 100 : 0}%` } as React.CSSProperties
+                        }
+                    >
+                        <span>{total ? Math.round((impulsive / total) * 100) : 0}%</span>
+                    </div>
+                </section>
+                )}
             </div>
             <section className="panel monthly-panel">
                 <div className="section-title">
@@ -250,57 +336,6 @@ export function AnalyticsView({
                     ))}
                 </div>
             </section>
-            <div className="analytics-grid">
-                <section className="panel">
-                    <div className="section-title">
-                        <div>
-                            <h2>Куди пішли гроші</h2>
-                            <p>
-                                Усі категорії цього {period === "month" ? "місяця" : "тижня"} · разом {symbol} {formatMoney(total)}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="cat-list">
-                        {grouped.length ? (
-                            grouped.map(([name, value], index) => (
-                                <div key={name} className="cat-row">
-                                    <div className="cat-row-head">
-                                        <span style={{ background: `hsl(${250 - index * 34} 72% ${58 + index * 3}%)` }} />
-                                        <strong>{name}</strong>
-                                        {isNonSpending(name) && <small>не витрата</small>}
-                                        <b>{symbol} {formatMoney(value)}</b>
-                                        <em>{total ? Math.round((value / total) * 100) : 0}%</em>
-                                    </div>
-                                    <i>
-                                        <u style={{ width: `${total ? (value / total) * 100 : 0}%` }} />
-                                    </i>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="empty-inline">Додайте операції для аналітики</p>
-                        )}
-                    </div>
-                </section>
-                <section className="panel impulse-report">
-          <span className="wizard-icon">
-            <Sparkles />
-          </span>
-                    <h2>Звіт про імпульсивні витрати</h2>
-                    <strong>{expenses.filter((transaction) => transaction.impulse).length} покупок</strong>
-                    <p>
-                        Позначайте незаплановані покупки під час створення операції. Rivna покаже їхню частку та
-                        вплив на план.
-                    </p>
-                    <div
-                        className="donut"
-                        style={
-                            { "--percent": `${total ? (impulsive / total) * 100 : 0}%` } as React.CSSProperties
-                        }
-                    >
-                        <span>{total ? Math.round((impulsive / total) * 100) : 0}%</span>
-                    </div>
-                </section>
-            </div>
             <section className="panel recurring-panel">
                 <div className="section-title">
                     <div>

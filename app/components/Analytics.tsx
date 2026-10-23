@@ -6,6 +6,7 @@ import { Sparkles, Bell } from "lucide-react";
 
 
 export function GracePeriodAlert({ accounts }: { accounts: Account[] }) {
+    // eslint-disable-next-line react-hooks/purity -- навмисно: поточний час
     const now = Date.now();
     const upcoming = accounts.filter((a) => {
         if (!a.graceEnd) return false;

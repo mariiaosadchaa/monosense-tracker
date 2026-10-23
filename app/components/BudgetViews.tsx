@@ -328,6 +328,7 @@ export function LiveBudgetView({
     const spent = Object.values(spentBy).reduce((sum, v) => sum + v, 0);
     const totalDays = Math.round((periodEnd.getTime() - periodStart.getTime()) / 86400000);
     const elapsedDays = isCurrent
+        // eslint-disable-next-line react-hooks/purity -- навмисно: поточний час
         ? Math.min(totalDays, Math.floor((Date.now() - periodStart.getTime()) / 86400000) + 1)
         : totalDays;
     const forecast = Math.round((spent / Math.max(1, elapsedDays)) * totalDays);

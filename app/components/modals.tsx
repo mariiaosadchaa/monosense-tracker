@@ -123,7 +123,7 @@ export function ExpenseModal({
                 </label>
                 {tab !== "transfer" && account && account.currency !== "UAH" && (
                     <label>
-                        Сума з чека, ₴ <small style={{ color: "var(--text-secondary)" }}>(необов'язково — різниця за курсом НБУ піде в комісію)</small>
+                        Сума з чека, ₴ <small style={{ color: "var(--text-secondary)" }}>(необов&apos;язково — різниця за курсом НБУ піде в комісію)</small>
                         <input name="receiptAmount" inputMode="decimal" placeholder="напр. 1000" />
                     </label>
                 )}
@@ -278,7 +278,7 @@ export function ExpenseModal({
                 </label>}
                 {tab !== "transfer" && type === "expense" && goals.length > 0 && (
                     <label>
-                        Покласти в банку (необов'язково)
+                        Покласти в банку (необов&apos;язково)
                         <select name="contributeGoalId" defaultValue="">
                             <option value="">Не класти в банку</option>
                             {goals.map((g) => (
@@ -869,7 +869,7 @@ export function AccountModal({
                     <input name="cardColor" type="color" defaultValue={account?.color || "#252629"} />
                 </label>
                 <label>
-                    Останні 4 цифри картки (для автопідв'язки Monobank)
+                    Останні 4 цифри картки (для автопідв&apos;язки Monobank)
                     <input
                         name="cardLast4"
                         type="text"
@@ -1009,7 +1009,7 @@ export function GoalModal({
                         </select>
                     </label>
                     <label>
-                        Дата (необов'язково)
+                        Дата (необов&apos;язково)
                         <input name="date" type="date" defaultValue={goal?.date?.slice(0, 10)} />
                     </label>
                 </div>
@@ -1754,7 +1754,7 @@ export function EditTransactionModal({
                 )}
                 {type === "expense" && !isTransfer && goals.length > 0 && (
                     <label>
-                        Покласти в банку (необов'язково)
+                        Покласти в банку (необов&apos;язково)
                         <select name="contributeGoalId" defaultValue="">
                             <option value="">Не класти в банку</option>
                             {goals.map((g) => (
@@ -2044,7 +2044,7 @@ export function ImportPreviewModal({
                 {isPayoneer && (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 13 }}>
                         <span className="import-stat">Виводів: <b>{withdrawalCount}</b></span>
-                        <span className="import-stat">Зв'язано з зарахуванням: <b>{transfersWithFee.length}</b>{withdrawalCount > transfersWithFee.length ? ` (без пари: ${withdrawalCount - transfersWithFee.length})` : ""}</span>
+                        <span className="import-stat">Зв&apos;язано з зарахуванням: <b>{transfersWithFee.length}</b>{withdrawalCount > transfersWithFee.length ? ` (без пари: ${withdrawalCount - transfersWithFee.length})` : ""}</span>
                         <span className="import-stat">Комісія разом: <b style={{ color: "var(--red)" }}>₴ {totalFee.toFixed(2)}</b></span>
                     </div>
                 )}
@@ -2673,7 +2673,7 @@ export function InviteModal({
                     <ModalHead label="Спільний бюджет" title="Запрошення готове" close={close} />
                     {result.existing ? (
                         <div className="invite-existing">
-                            ✓ <b>{result.to}</b> вже має акаунт у Rivna. Запрошення з'явиться в нього одразу на
+                            ✓ <b>{result.to}</b> вже має акаунт у Rivna. Запрошення з&apos;явиться в нього одразу на
                             головній — достатньо натиснути <b>«Прийняти»</b>. Посилання нижче — запасний варіант.
                         </div>
                     ) : null}
@@ -2852,43 +2852,47 @@ export function CustomRateModal({
 }
 
 /** Вибір часу: години й хвилини кнопками, без системного пікера браузера. */
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function Part({ v, max, onSet, step }: { v: number; max: number; onSet: (n: number) => void; step: number }) {
+  return (
+    <div className="tf-part">
+        <button type="button" aria-label="Більше" onClick={() => onSet(v + step)}>
+            ▲
+        </button>
+        <input
+            inputMode="numeric"
+            value={pad(v)}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => {
+                const n = Number(e.target.value.replace(/\D/g, "").slice(-2));
+                if (!Number.isNaN(n) && n <= max) onSet(n);
+            }}
+            onWheel={(e) => {
+                e.currentTarget.blur();
+                onSet(v + (e.deltaY < 0 ? step : -step));
+            }}
+            onKeyDown={(e) => {
+                if (e.key === "ArrowUp") { e.preventDefault(); onSet(v + step); }
+                if (e.key === "ArrowDown") { e.preventDefault(); onSet(v - step); }
+            }}
+        />
+        <button type="button" aria-label="Менше" onClick={() => onSet(v - step)}>
+            ▼
+        </button>
+    </div>
+  );
+}
+
 export function TimeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const [hh = "00", mm = "00"] = (value || "00:00").split(":");
     const h = Number(hh) || 0,
         m = Number(mm) || 0;
-    const pad = (n: number) => String(n).padStart(2, "0");
     const set = (nh: number, nm: number) => onChange(`${pad((nh + 24) % 24)}:${pad((nm + 60) % 60)}`);
     const now = () => {
         const d = new Date();
         set(d.getHours(), d.getMinutes());
     };
-    const Part = ({ v, max, onSet, step }: { v: number; max: number; onSet: (n: number) => void; step: number }) => (
-        <div className="tf-part">
-            <button type="button" aria-label="Більше" onClick={() => onSet(v + step)}>
-                ▲
-            </button>
-            <input
-                inputMode="numeric"
-                value={pad(v)}
-                onFocus={(e) => e.currentTarget.select()}
-                onChange={(e) => {
-                    const n = Number(e.target.value.replace(/\D/g, "").slice(-2));
-                    if (!Number.isNaN(n) && n <= max) onSet(n);
-                }}
-                onWheel={(e) => {
-                    e.currentTarget.blur();
-                    onSet(v + (e.deltaY < 0 ? step : -step));
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === "ArrowUp") { e.preventDefault(); onSet(v + step); }
-                    if (e.key === "ArrowDown") { e.preventDefault(); onSet(v - step); }
-                }}
-            />
-            <button type="button" aria-label="Менше" onClick={() => onSet(v - step)}>
-                ▼
-            </button>
-        </div>
-    );
     return (
         <div className="tf">
             <Part v={h} max={23} step={1} onSet={(n) => set(n, m)} />

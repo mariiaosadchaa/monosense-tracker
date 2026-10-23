@@ -108,6 +108,7 @@ export function AccountsView({
     };
     const syncedAgo = (() => {
         if (!monoLastSyncedAt) return null;
+        // eslint-disable-next-line react-hooks/purity -- навмисно: поточний час
         const mins = Math.round((Date.now() - new Date(monoLastSyncedAt).getTime()) / 60000);
         if (!Number.isFinite(mins)) return null;
         if (mins < 1) return "щойно";
@@ -340,7 +341,7 @@ export function AccountsView({
                                                 ) : monoLinking === ma.id ? (
                                                     <div className="mono-linking">
                                                         <span className="btn-spinner" />
-                                                        Прив'язую і завантажую виписку…
+                                                        Прив&apos;язую і завантажую виписку…
                                                     </div>
                                                 ) : (
                                                     <WheelField

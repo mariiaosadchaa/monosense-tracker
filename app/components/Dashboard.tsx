@@ -237,6 +237,7 @@ export function Dashboard({
     const [splitAccounts, setSplitAccounts] = useState(true);
     useEffect(() => {
         try {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
             if (window.localStorage.getItem("rivna:dash-split") === "0") setSplitAccounts(false);
         } catch {}
     }, []);

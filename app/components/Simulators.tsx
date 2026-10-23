@@ -84,9 +84,9 @@ export function InvestmentSimulator({ goals, baseCurrency }: { goals: GoalItem[]
             </div>
             {goals.length > 0 && (
                 <label>
-                    Прив'язати до цілі (необов'язково)
+                    Прив&apos;язати до цілі (необов&apos;язково)
                     <select value={linkedGoal} onChange={(e) => setLinkedGoal(e.target.value)}>
-                        <option value="">Не прив'язано</option>
+                        <option value="">Не прив&apos;язано</option>
                         {goals.map((g) => (
                             <option key={g.id} value={g.id}>
                                 {g.name}
@@ -131,7 +131,7 @@ export function InvestmentSimulator({ goals, baseCurrency }: { goals: GoalItem[]
             </div>
             {selectedGoal && (
                 <div className="form-message success">
-                    При такому темпі ти досягнеш цілі "{selectedGoal.name}" ({symbol}{" "}
+                    При такому темпі ти досягнеш цілі &quot;{selectedGoal.name}&quot; ({symbol}{" "}
                     {formatMoney(selectedGoal.target)}) приблизно за{" "}
                     {(() => {
                         const target = selectedGoal.target;
@@ -219,7 +219,7 @@ export function BigPurchaseSimulator({
             </span>
                     </article>
                     <article className="metric">
-                        <small>Запас на обов'язкові платежі</small>
+                        <small>Запас на обов&apos;язкові платежі</small>
                         <strong>
                             {bufferMonths >= 0 ? `${Math.round(bufferMonths * 10) / 10} міс.` : "—"}
                         </strong>
@@ -249,6 +249,7 @@ export function WrappedModal({
     const [cardIndex, setCardIndex] = useState(0);
     const cardRef = useRef<HTMLDivElement>(null);
     const symbol = currencySymbol(baseCurrency);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- навмисно: уникаємо зациклення
     const now = new Date();
     const monthLabel = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric" }).format(
         now,

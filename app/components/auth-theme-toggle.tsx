@@ -13,6 +13,7 @@ export function AuthThemeToggle() {
       localStorage.removeItem("rivna-skin");
     } catch {}
     delete document.documentElement.dataset.skin;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
     setDark(saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
   }, []);
 

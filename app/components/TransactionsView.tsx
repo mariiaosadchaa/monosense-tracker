@@ -144,6 +144,7 @@ export function TransactionsView({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [query]);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
         if (!search) setQuery("");
     }, [search]);
     // Рендеримо операції порціями, щоб довгий список не гальмував
@@ -220,6 +221,7 @@ export function TransactionsView({
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
         if (initialAccount) setAccount(initialAccount);
     }, [initialAccount]);
 
@@ -305,6 +307,7 @@ export function TransactionsView({
 
     const filterKey = [search, account, category, owner, tag, from, to, minAmount, maxAmount, sortField, sortDir].join("|");
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- навмисно: синхронізація зі сховищем/пропсами
         setVisible(PAGE);
     }, [filterKey]);
     useEffect(() => {
@@ -619,7 +622,6 @@ export function TransactionsView({
             </div>
             {shown.slice(0, visible).map((t) => {
                 const canEdit = t.kind !== "credit_limit_change";
-                const cat = categories.find((c) => c.name === t.category);
                 return (
                     <div
                         className={editMode && canEdit ? "data-row editable" : "data-row"}
