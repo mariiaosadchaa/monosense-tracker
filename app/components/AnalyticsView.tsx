@@ -177,6 +177,8 @@ export function AnalyticsView({
             return sum;
         }, {}),
     ).sort((a, b) => b[1] - a[1]);
+    const isNonSpending = (name: string) => groupByCategoryName.get(name) === "savings";
+    const nonSpendingTotal = grouped.filter(([n]) => isNonSpending(n)).reduce((s, [, v]) => s + v, 0);
     const current = buckets.at(-1)?.value || 0,
         previous = buckets.at(-2)?.value || 0,
         delta = previous ? Math.round(((current - previous) / previous) * 100) : 0,
@@ -198,7 +200,10 @@ export function AnalyticsView({
                     <strong>
                         {symbol} {formatMoney(total)}
                     </strong>
-                    <span>Поточний період</span>
+                    <span>
+                        {period === "month" ? "Цей місяць" : "Цей тиждень"}
+                        {nonSpendingTotal > 0 && ` · з них накопичення й борги ${symbol} ${formatMoney(nonSpendingTotal)}`}
+                    </span>
                 </article>
                 <article className="metric">
                     <small>Доходи</small>
@@ -206,11 +211,11 @@ export function AnalyticsView({
                         {symbol} {formatMoney(income)}
                     </strong>
                     <span className="positive">
-            Чистий потік {symbol} {formatMoney(income - total)}
+            Лишилось після витрат: {symbol} {formatMoney(income - total)}
           </span>
                 </article>
                 <article className="metric">
-                    <small>Імпульсивні покупки</small>
+                    <small>Незаплановані покупки</small>
                     <strong>
                         {symbol} {formatMoney(impulsive)}
                     </strong>
@@ -249,20 +254,26 @@ export function AnalyticsView({
                 <section className="panel">
                     <div className="section-title">
                         <div>
-                            <h2>Витрати за категоріями</h2>
-                            <p>Розподіл поточного періоду</p>
+                            <h2>Куди пішли гроші</h2>
+                            <p>
+                                Усі категорії цього {period === "month" ? "місяця" : "тижня"} · разом {symbol} {formatMoney(total)}
+                            </p>
                         </div>
                     </div>
-                    <div className="category-chart">
+                    <div className="cat-list">
                         {grouped.length ? (
                             grouped.map(([name, value], index) => (
-                                <div key={name}>
-                                    <span style={{ background: `hsl(${250 - index * 34} 72% ${58 + index * 3}%)` }} />
-                                    <strong>{name}</strong>
+                                <div key={name} className="cat-row">
+                                    <div className="cat-row-head">
+                                        <span style={{ background: `hsl(${250 - index * 34} 72% ${58 + index * 3}%)` }} />
+                                        <strong>{name}</strong>
+                                        {isNonSpending(name) && <small>не витрата</small>}
+                                        <b>{symbol} {formatMoney(value)}</b>
+                                        <em>{total ? Math.round((value / total) * 100) : 0}%</em>
+                                    </div>
                                     <i>
-                                        <b style={{ width: `${(value / (grouped[0]?.[1] || 1)) * 100}%` }} />
+                                        <u style={{ width: `${total ? (value / total) * 100 : 0}%` }} />
                                     </i>
-                                    <em>{Math.round((value / total) * 100)}%</em>
                                 </div>
                             ))
                         ) : (
