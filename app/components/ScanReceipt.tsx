@@ -1,14 +1,14 @@
 "use client";
 import { useState } from "react";
-import type { Account, CategoryItem, GoalItem } from "../types";
-import { formatMoney, currencySymbol } from "../lib/format";
+import type { Account, CategoryItem } from "../types";
+import { } from "../lib/format";
 import { ModalHead } from "./modal-head";
 import {PiggyBank} from "lucide-react";
 
 export function MilestoneModal({
                             goalName,
                             percent,
-                            close,
+                            close
                         }: {
     goalName: string;
     percent: number;
@@ -45,7 +45,7 @@ export function ScanReceiptModal({
                               categories,
                               save,
                               removeItem,
-                              close,
+                              close
                           }: {
     items: {
         id: string;
@@ -133,7 +133,7 @@ export function ScanReviewRow({
                            categories,
                            guessCategoryId,
                            onSave,
-                           onSkip,
+                           onSkip
                        }: {
     item: {
         amount: number;

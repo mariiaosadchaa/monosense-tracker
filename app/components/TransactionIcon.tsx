@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, ShoppingBag, Utensils, Car, GraduationCap, CreditCard } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { extractMerchant } from "./AccountCard";
 
 // Словник доменів компаній для автоматичного завантаження логотипів
@@ -21,7 +21,7 @@ const MERCHANT_DOMAINS: Record<string, string> = {
     eva: "eva.ua",
     єва: "eva.ua",
     rozetka: "rozetka.com.ua",
-    розетка: "rozetka.com.ua",
+    розетка: "rozetka.com.ua"
 };
 
 interface TransactionIconProps {

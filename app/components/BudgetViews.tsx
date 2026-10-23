@@ -4,8 +4,7 @@ import type { Transaction, BudgetItem } from "../types";
 import { formatMoney, currencySymbol, toDateKey } from "../lib/format";
 import { budgetPeriodBounds } from "../lib/transfers";
 import { BudgetIcon } from "../lib/icons";
-import { BarChart3, Bell, ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
-import { EmptyState } from "./ScanReceipt";
+import { Bell, ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
 
 // Демо-ліміти, коли своїх ще немає
 const budgetRows = [
@@ -21,7 +20,7 @@ export function BudgetView({
                         transactions,
                         add,
                         baseCurrency,
-                        remove,
+                        remove
                     }: {
     budgets: BudgetItem[];
     transactions: Transaction[];
@@ -40,7 +39,7 @@ export function BudgetView({
             currency: "UAH",
             month: "2026-07-01",
             period: "month" as const,
-            color: b.color,
+            color: b.color
         }));
 
     const spentBy = transactions
@@ -111,7 +110,7 @@ export function BudgetView({
                                         marginBottom: "10px",
                                         padding: "8px",
                                         borderRadius: "4px",
-                                        backgroundColor: "#f9f9f9",
+                                        backgroundColor: "#f9f9f9"
                                     }}
                                 >
                                     <div style={{ display: "flex", alignItems: "center" }}>
@@ -125,7 +124,7 @@ export function BudgetView({
                             borderRadius: "50%",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
+                            justifyContent: "center"
                         }}
                     >
                       <BudgetIcon name={b.icon} />
@@ -143,7 +142,7 @@ export function BudgetView({
                                 width: `${Math.min(100, pct)}%`,
                                 background: pct >= 100 ? "#e05252" : pct >= 80 ? "#f4b740" : b.color,
                                 display: "block",
-                                height: "4px",
+                                height: "4px"
                             }}
                         />
                       </span>
@@ -192,7 +191,7 @@ export function LiveBudgetView({
                             remove,
                             update,
                             createFrom,
-                            rolloverEnabled,
+                            rolloverEnabled
                         }: {
     budgets: BudgetItem[];
     transactions: Transaction[];
@@ -282,7 +281,7 @@ export function LiveBudgetView({
                         ...budget,
                         id: `agg-${currentMonthKey}-${key}`,
                         period: "month",
-                        sourceIds: [budget.id],
+                        sourceIds: [budget.id]
                     };
                     map[key].limit = 0;
                 } else {
@@ -333,7 +332,6 @@ export function LiveBudgetView({
         : totalDays;
     const forecast = Math.round((spent / Math.max(1, elapsedDays)) * totalDays);
     const periodLabel = periodType === "week" ? "тиждень" : "місяць";
-    const planLabel = periodType === "week" ? "Тижневий план" : "Місячний план";
     const symbol = currencySymbol(baseCurrency);
     const periodEndInclusive = new Date(periodEnd.getTime() - 86400000);
     const rangeLabel =

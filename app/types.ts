@@ -68,6 +68,7 @@ export type GoalItem = {
     roundExpenseTo?: number;
     expensePercent?: number;
     sourceAccountId?: string;
+    sourceAccountIds?: string[];
 };
 
 export type DebtItem = {

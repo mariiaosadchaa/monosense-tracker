@@ -334,7 +334,8 @@ export async function POST(request: Request) {
         round_balance_to:body.roundBalanceTo?Number(body.roundBalanceTo):null,
         round_expense_to:body.roundExpenseTo?Number(body.roundExpenseTo):null,
         expense_percent:body.expensePercent?Number(body.expensePercent):null,
-        source_account_id:body.sourceAccountId||null,
+        source_account_ids:Array.isArray(body.sourceAccountIds)?body.sourceAccountIds.map(String):[],
+        source_account_id:(Array.isArray(body.sourceAccountIds)&&body.sourceAccountIds[0])||null,
       }).select().single();
       break;
     case "updateGoal":
@@ -345,7 +346,8 @@ export async function POST(request: Request) {
         round_balance_to:body.roundBalanceTo?Number(body.roundBalanceTo):null,
         round_expense_to:body.roundExpenseTo?Number(body.roundExpenseTo):null,
         expense_percent:body.expensePercent?Number(body.expensePercent):null,
-        source_account_id:body.sourceAccountId||null,
+        source_account_ids:Array.isArray(body.sourceAccountIds)?body.sourceAccountIds.map(String):[],
+        source_account_id:(Array.isArray(body.sourceAccountIds)&&body.sourceAccountIds[0])||null,
       }).eq("id",body.id).eq("household_id",householdId).select().single();
       break;
     case "withdrawGoal": {

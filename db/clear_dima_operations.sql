@@ -1,12 +1,12 @@
--- Видалення ВСІХ операцій і переказів по рахунках Діми (баланси рахунків НЕ змінюються).
--- Supabase → SQL Editor. Спочатку запусти КРОК 1 і перевір, що це саме рахунки Діми.
+-- Видалення ВСІХ операцій і переказів по рахунках користувача noob4ikua@gmail.com (Діма).
+-- Баланси рахунків НЕ змінюються. Supabase → SQL Editor.
 
--- КРОК 1: перевірка
-select a.id, a.name, a.owner_label,
+-- КРОК 1: перевірка (які рахунки і скільки операцій буде видалено)
+select a.id, a.name, a.owner_label, a.household_id,
        (select count(*) from transactions t where t.account_id = a.id) as tx_count,
        (select count(*) from transfers tr where tr.from_account_id = a.id or tr.to_account_id = a.id) as transfers_count
 from accounts a
-where a.owner_label ilike '%діма%' or a.owner_label ilike '%дима%' or a.owner_label ilike '%dima%'
+where a.created_by = (select id from auth.users where lower(email) = 'noob4ikua@gmail.com')
 order by a.name;
 
 -- КРОК 2: видалення (одна транзакція; transfers першими через FK на transactions)
@@ -14,7 +14,7 @@ begin;
 
 create temp table _dima_acc on commit drop as
   select id from accounts
-  where owner_label ilike '%діма%' or owner_label ilike '%дима%' or owner_label ilike '%dima%';
+  where created_by = (select id from auth.users where lower(email) = 'noob4ikua@gmail.com');
 
 delete from transfers
  where from_account_id in (select id from _dima_acc)

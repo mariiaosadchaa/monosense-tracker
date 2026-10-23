@@ -1,6 +1,6 @@
 "use client";
 import {useState, useRef, useEffect} from "react";
-import type { Transaction, Account, GoalItem, DebtItem, RecurringItem, CategoryItem, BudgetItem, RuleItem } from "../types";
+import type { Transaction, Account, GoalItem, DebtItem, CategoryItem, BudgetItem } from "../types";
 import { formatMoney, currencySymbol, crossRate, toDateKey } from "../lib/format";
 import { BudgetIcon, BUDGET_ICON_NAMES, BUDGET_COLORS, MerchantIcon, guessIconFromTitle } from "../lib/icons";
 import { EmptyState } from "./ScanReceipt";
@@ -30,7 +30,7 @@ export function ExpenseModal({
                           transactions,
                           submit,
                           submitTransfer,
-                          close,
+                          close
                       }: {
     amount: string;
     setAmount: (s: string) => void;
@@ -59,7 +59,7 @@ export function ExpenseModal({
     const transferToAccount = accounts.find((a) => String(a.id) === transferToAccountId);
     const accountOptions = accounts.map((item) => ({
         value: String(item.id),
-        label: `${item.name} · ${item.currency}`,
+        label: `${item.name} · ${item.currency}`
     }));
     const sameCurrency = !account || !transferToAccount || account.currency === transferToAccount.currency;
     const showCreditToggle = tab === "transfer" && (transferToAccount?.creditLimit || 0) > 0;
@@ -151,7 +151,7 @@ export function ExpenseModal({
                                 background: "none", border: "none",
                                 color: "var(--purple)", cursor: "pointer",
                                 display: "flex", alignItems: "center", gap: 4,
-                                fontSize: 12, fontWeight: 600, padding: "2px 4px",
+                                fontSize: 12, fontWeight: 600, padding: "2px 4px"
                             }}
                             title="Поміняти місцями"
                         >
@@ -300,7 +300,7 @@ export function ExpenseModal({
                                     { value: "", label: "Не пов'язано з боргом" },
                                     ...debts.map((d) => ({
                                         value: d.id,
-                                        label: `${d.person} · ${d.currency} ${formatMoney(d.amount)}`,
+                                        label: `${d.person} · ${d.currency} ${formatMoney(d.amount)}`
                                     })),
                                     { value: "__other__", label: "Інший борг (не в списку)" },
                                 ]}
@@ -367,7 +367,7 @@ export function WheelField({
                                options,
                                value: controlled,
                                onChange,
-                               defaultValue,
+                               defaultValue
                            }: {
     name: string;
     label: string;
@@ -423,7 +423,7 @@ export function CategoryGridField({
                                categories,
                                type,
                                value,
-                               onChange,
+                               onChange
                            }: {
     categories: CategoryItem[];
     type: "expense" | "income";
@@ -492,7 +492,7 @@ export function DateWheelField({ name }: { name: string }) {
     const selectedLabel = new Intl.DateTimeFormat("uk-UA", {
         day: "numeric",
         month: "long",
-        year: "numeric",
+        year: "numeric"
     }).format(new Date(selectedDate + "T12:00:00"));
 
     function prevMonth() {
@@ -525,17 +525,17 @@ export function DateWheelField({ name }: { name: string }) {
                 <div style={{
                     position: "absolute", zIndex: 40, left: 0, right: 0, top: "calc(100% + 5px)",
                     background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
-                    padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+                    padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)"
                 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                         <button type="button" onClick={prevMonth} style={{
                             background: "transparent", border: "none", cursor: "pointer",
-                            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                         }}>‹</button>
                         <span style={{ fontSize: 12, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
                         <button type="button" onClick={nextMonth} style={{
                             background: "transparent", border: "none", cursor: "pointer",
-                            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                            fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                         }}>›</button>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
@@ -554,7 +554,7 @@ export function DateWheelField({ name }: { name: string }) {
                                         display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
                                         background: dateKey === selectedDate ? "var(--purple)" : "transparent",
                                         color: dateKey === selectedDate ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
-                                        fontWeight: dateKey === selectedDate || dateKey === todayKey ? 700 : 400,
+                                        fontWeight: dateKey === selectedDate || dateKey === todayKey ? 700 : 400
                                     }}
                                     onClick={(e) => {
                                         setSelectedDate(dateKey);
@@ -578,7 +578,7 @@ export function DateTimeField({
                            date,
                            time,
                            onDateChange,
-                           onTimeChange,
+                           onTimeChange
                        }: {
     label: string;
     name: string;
@@ -612,11 +612,6 @@ export function DateTimeField({
         new Date(viewYear, viewMonth, 1),
     );
     const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
-    const summaryLabel = date
-        ? new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", year: "numeric" }).format(
-        new Date(date + "T12:00:00"),
-    ) + (time ? ` ${time}` : "")
-        : "Оберіть дату";
 
     return (
         <div>
@@ -633,17 +628,17 @@ export function DateTimeField({
                     <div style={{
                         position: "absolute", zIndex: 40, left: 0, right: 0, top: "calc(100% + 5px)",
                         background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
-                        padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+                        padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)"
                     }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                             <button type="button" onClick={prevMonth} style={{
                                 background: "transparent", border: "none", cursor: "pointer",
-                                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                             }}>‹</button>
                             <span style={{ fontSize: 12, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
                             <button type="button" onClick={nextMonth} style={{
                                 background: "transparent", border: "none", cursor: "pointer",
-                                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                                fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                             }}>›</button>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
@@ -662,7 +657,7 @@ export function DateTimeField({
                                             display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
                                             background: dateKey === date ? "var(--purple)" : "transparent",
                                             color: dateKey === date ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
-                                            fontWeight: dateKey === date || dateKey === todayKey ? 700 : 400,
+                                            fontWeight: dateKey === date || dateKey === todayKey ? 700 : 400
                                         }}
                                         onClick={(e) => {
                                             onDateChange(dateKey);
@@ -688,7 +683,7 @@ export function DateTimeField({
 export function CalendarPickerInput({
                                  value,
                                  onChange,
-                                 placeholder,
+                                 placeholder
                              }: {
     value: string;
     onChange: (v: string) => void;
@@ -731,17 +726,17 @@ export function CalendarPickerInput({
             <div style={{
                 position: "absolute", zIndex: 50, left: 0, top: "calc(100% + 5px)", width: 260,
                 background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16,
-                padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)",
+                padding: 12, boxShadow: "0 22px 55px rgba(26,30,27,.2)"
             }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <button type="button" onClick={prevMonth} style={{
                         background: "transparent", border: "none", cursor: "pointer",
-                        fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                        fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                     }}>‹</button>
                     <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize", color: "var(--text)" }}>{monthLabel}</span>
                     <button type="button" onClick={nextMonth} style={{
                         background: "transparent", border: "none", cursor: "pointer",
-                        fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8,
+                        fontSize: 20, lineHeight: 1, color: "var(--text)", padding: "2px 8px", borderRadius: 8
                     }}>›</button>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1 }}>
@@ -758,7 +753,7 @@ export function CalendarPickerInput({
                                     display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
                                     background: dateKey === value ? "var(--purple)" : "transparent",
                                     color: dateKey === value ? "#fff" : dateKey === todayKey ? "var(--purple)" : "var(--text)",
-                                    fontWeight: dateKey === value || dateKey === todayKey ? 700 : 400,
+                                    fontWeight: dateKey === value || dateKey === todayKey ? 700 : 400
                                 }}
                                 onClick={(e) => {
                                     onChange(dateKey);
@@ -779,7 +774,7 @@ export function CalendarPickerInput({
                         }}
                         style={{
                             marginTop: 8, width: "100%", border: "none", background: "transparent",
-                            color: "var(--muted)", fontSize: 10, cursor: "pointer", padding: "4px 0",
+                            color: "var(--muted)", fontSize: 10, cursor: "pointer", padding: "4px 0"
                         }}
                     >
                         Очистити
@@ -793,7 +788,7 @@ export function AccountModal({
                           account,
                           submit,
                           close,
-                          openTransactions,
+                          openTransactions
                       }: {
     account: Account | null;
     submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
@@ -958,15 +953,20 @@ export function GoalModal({
                        goal,
                        accounts,
                        submit,
-                       close,
+                       remove,
+                       close
                    }: {
     goal: GoalItem | null;
     accounts: Account[];
     submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
+    remove?: (id: string) => void;
     close: () => void;
 }) {
     const [assetType, setAssetType] = useState(goal?.assetType || "savings");
-    const [autoTopup, setAutoTopup] = useState(Boolean(goal?.sourceAccountId));
+    const [autoTopup, setAutoTopup] = useState(Boolean(goal?.sourceAccountId || goal?.sourceAccountIds?.length));
+    const [sourceIds, setSourceIds] = useState<string[]>(
+        goal?.sourceAccountIds ?? (goal?.sourceAccountId ? [goal.sourceAccountId] : []),
+    );
     return (
         <div className="modal-backdrop" onMouseDown={close}>
             <form
@@ -1058,20 +1058,34 @@ export function GoalModal({
                 </label>
                 {autoTopup && (
                     <>
-                        <label>
-                            З якого рахунку
-                            <select
-                                name="sourceAccountId"
-                                defaultValue={goal?.sourceAccountId}
-                                required={autoTopup}
-                            >
-                                {accounts.map((a) => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.name} · {a.currency}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                        <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                            <legend>З яких рахунків</legend>
+                            {accounts.map((a) => (
+                                <label key={a.id} className="check">
+                                    <input
+                                        type="checkbox"
+                                        name="sourceAccountIds"
+                                        value={a.id}
+                                        checked={sourceIds.includes(String(a.id))}
+                                        onChange={(e) =>
+                                            setSourceIds((prev) =>
+                                                e.target.checked ? [...prev, String(a.id)] : prev.filter((x) => x !== String(a.id)),
+                                            )
+                                        }
+                                    />{" "}
+                                    {a.name} · {a.currency}
+                                </label>
+                            ))}
+                            {autoTopup && sourceIds.length === 0 && (
+                                <input
+                                    tabIndex={-1}
+                                    required
+                                    style={{ opacity: 0, height: 0, padding: 0, border: 0 }}
+                                    onChange={() => {}}
+                                    value=""
+                                />
+                            )}
+                        </fieldset>
                         <div className="form-two">
                             <label>
                                 Округлення залишку до
@@ -1115,6 +1129,16 @@ export function GoalModal({
                     </>
                 )}
                 <button className="primary">{goal ? "Зберегти зміни" : "Створити банку"}</button>
+                {goal && remove && (
+                    <button
+                        type="button"
+                        className="secondary"
+                        style={{ color: "#d94b4b" }}
+                        onClick={() => remove(String(goal.id))}
+                    >
+                        Видалити банку
+                    </button>
+                )}
             </form>
         </div>
     );
@@ -1125,7 +1149,7 @@ export function GoalActionModal({
                              withdraw,
                              contribute,
                              breakGoal,
-                             close,
+                             close
                          }: {
     action: { goal: GoalItem; mode: "withdraw" | "break" | "history" | "contribute" };
     accounts: Account[];
@@ -1149,8 +1173,7 @@ export function GoalActionModal({
             .finally(() => setLoadingHistory(false));
     }, [mode, goal.id]);
     const symbol = currencySymbol(goal.currency);
-    if (mode === "history")
-    { // @ts-ignore
+    if (mode === "history") {
         return (
             <div className="modal-backdrop" onMouseDown={close}>
                 <div className="expense-modal tall-modal" onMouseDown={(e) => e.stopPropagation()}>
@@ -1187,8 +1210,7 @@ export function GoalActionModal({
             </div>
         );
     }
-    if (mode === "break")
-    { // @ts-ignore
+    if (mode === "break") {
         return (
             <div className="modal-backdrop" onMouseDown={close}>
                 <form
@@ -1283,7 +1305,7 @@ export function DebtModal({
                        accounts,
                        categories,
                        submit,
-                       close,
+                       close
                    }: {
     accounts: Account[];
     categories: CategoryItem[];
@@ -1426,7 +1448,7 @@ export function DebtModal({
 }
 export function SplitBillModal({
                             submit,
-                            close,
+                            close
                         }: {
     submit: (participants: { person: string; amount: number }[], totalNote: string) => void;
     close: () => void;
@@ -1508,7 +1530,7 @@ export function SettleDebtModal({
                              debt,
                              accounts,
                              submit,
-                             close,
+                             close
                          }: {
     debt: DebtItem;
     accounts: Account[];
@@ -1552,7 +1574,7 @@ export function EditTransactionModal({
                                   accounts,
                                   goals,
                                   close,
-                                  submit,
+                                  submit
                               }: {
     transaction: Transaction;
     categories: CategoryItem[];
@@ -1609,7 +1631,7 @@ export function EditTransactionModal({
                         isTransfer: type === "expense" && isTransfer,
                         transferToAccountId: type === "expense" && isTransfer ? transferToAccountId : null,
                         reduceCreditLimit: type === "expense" && isTransfer ? reduceCreditLimit : false,
-                        ...(f.has("receiptAmount") ? { receiptAmount: f.get("receiptAmount") || null, receiptCurrency: "UAH" } : {}),
+                        ...(f.has("receiptAmount") ? { receiptAmount: f.get("receiptAmount") || null, receiptCurrency: "UAH" } : {})
                     });
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -1772,7 +1794,7 @@ export function PayInstallmentModal({
                                  debt,
                                  accounts,
                                  submit,
-                                 close,
+                                 close
                              }: {
     debt: DebtItem;
     accounts: Account[];
@@ -1829,7 +1851,7 @@ export function RecurringModal({
                             rates,
                             customRates,
                             submit,
-                            close,
+                            close
                         }: {
     accounts: Account[];
     categories: CategoryItem[];
@@ -1981,7 +2003,7 @@ export function ImportPreviewModal({
                                 preview,
                                 accounts,
                                 onConfirm,
-                                onClose,
+                                onClose
                             }: {
     preview: { rows: ImportPreviewRowExternal[]; accountId: string };
     accounts: Account[];
@@ -2142,7 +2164,7 @@ export function TransferModal({
                            customRates,
                            presetToAccountId,
                            submit,
-                           close,
+                           close
                        }: {
     accounts: Account[];
     rates: { currency: string; rate: number }[];
@@ -2213,7 +2235,7 @@ export function TransferModal({
                                 width: 30, height: 30, borderRadius: "50%",
                                 background: "var(--bg)", border: "2px solid var(--purple)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                cursor: "pointer", zIndex: 2, color: "var(--purple)", padding: 0,
+                                cursor: "pointer", zIndex: 2, color: "var(--purple)", padding: 0
                             }}
                             title="Поміняти місцями"
                         >
@@ -2306,7 +2328,7 @@ export function BudgetModal({
                          baseCurrency,
                          initialCategoryId,
                          submit,
-                         close,
+                         close
                      }: {
     categories: CategoryItem[];
     period: "month" | "week";
@@ -2378,7 +2400,7 @@ export function BudgetModal({
                                 display: "grid",
                                 placeItems: "center",
                                 color: icon === name ? "var(--purple)" : "var(--muted)",
-                                cursor: "pointer",
+                                cursor: "pointer"
                             }}
                         >
                             <BudgetIcon name={name} size={15} />
@@ -2400,7 +2422,7 @@ export function BudgetModal({
                                 border: color === hex ? "2px solid var(--text)" : "2px solid transparent",
                                 display: "grid",
                                 placeItems: "center",
-                                cursor: "pointer",
+                                cursor: "pointer"
                             }}
                         >
                             {color === hex && <Check size={14} color="#fff" />}
@@ -2422,7 +2444,7 @@ export function CategoryModal({
                            category,
                            payerSources = [],
                            submit,
-                           close,
+                           close
                        }: {
     category?: CategoryItem | null;
     payerSources?: string[];
@@ -2494,7 +2516,7 @@ export function CategoryModal({
                                 display: "grid",
                                 placeItems: "center",
                                 color: icon === name ? "var(--purple)" : "var(--muted)",
-                                cursor: "pointer",
+                                cursor: "pointer"
                             }}
                         >
                             <BudgetIcon name={name} size={15} />
@@ -2516,7 +2538,7 @@ export function CategoryModal({
                                 border: color === hex ? "2px solid var(--text)" : "2px solid transparent",
                                 display: "grid",
                                 placeItems: "center",
-                                cursor: "pointer",
+                                cursor: "pointer"
                             }}
                         >
                             {color === hex && <Check size={14} color="#fff" />}
@@ -2532,7 +2554,7 @@ export function RuleModal({
                        categories,
                        goals,
                        submit,
-                       close,
+                       close
                    }: {
     categories: CategoryItem[];
     goals: GoalItem[];
@@ -2636,7 +2658,7 @@ export function InviteModal({
                          submit,
                          close,
                          result,
-                         again,
+                         again
                      }: {
     submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
     close: () => void;
@@ -2723,7 +2745,7 @@ export function InviteModal({
 }
 export function MonoSyncDebugModal({
                                        debug,
-                                       close,
+                                       close
                                    }: {
     debug: { monoAccountId: string; status?: number; error?: string; itemsFound?: number }[];
     close: () => void;
@@ -2743,7 +2765,7 @@ export function MonoSyncDebugModal({
                                 padding: 12,
                                 borderRadius: 12,
                                 background: "#fff0f0",
-                                border: "1px solid #f0caca",
+                                border: "1px solid #f0caca"
                             }}
                         >
                             <span style={{ fontSize: 16 }}>⚠️</span>
@@ -2761,7 +2783,7 @@ export function MonoSyncDebugModal({
                                 padding: 12,
                                 borderRadius: 12,
                                 background: "#eaf8f1",
-                                border: "1px solid #c6ecd9",
+                                border: "1px solid #c6ecd9"
                             }}
                         >
                             <strong style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
@@ -2786,7 +2808,7 @@ export function MonoSyncDebugModal({
 }
 export function CustomRateModal({
                              submit,
-                             close,
+                             close
                          }: {
     submit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
     close: () => void;
@@ -2858,8 +2880,8 @@ export function TimeField({ value, onChange }: { value: string; onChange: (v: st
                     onSet(v + (e.deltaY < 0 ? step : -step));
                 }}
                 onKeyDown={(e) => {
-                    if (e.key === "ArrowUp") (e.preventDefault(), onSet(v + step));
-                    if (e.key === "ArrowDown") (e.preventDefault(), onSet(v - step));
+                    if (e.key === "ArrowUp") { e.preventDefault(); onSet(v + step); }
+                    if (e.key === "ArrowDown") { e.preventDefault(); onSet(v - step); }
                 }}
             />
             <button type="button" aria-label="Менше" onClick={() => onSet(v - step)}>

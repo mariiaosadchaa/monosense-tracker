@@ -2,42 +2,42 @@ import type { Transaction, GoalItem, BudgetItem, DebtItem, RuleItem } from "@/ap
 import type { AchievementContext } from "./Analytics";
 import { useMemo } from "react";
 
-import { Award, Target, Wallet, PiggyBank, Flame, Zap, Plus, Trash2 } from "lucide-react";
+import { Target, Wallet, PiggyBank, Flame, Plus, Trash2 } from "lucide-react";
 const ACHIEVEMENTS = [
     {
         id: "first_step",
         title: "Перший крок",
         description: "Додано хоча б одну операцію",
         icon: Wallet,
-        check: (ctx: AchievementContext) => ctx.transactions.length > 0,
+        check: (ctx: AchievementContext) => ctx.transactions.length > 0
     },
     {
         id: "saver",
         title: "Заощадник",
         description: "Створено принаймні одну ціль для накопичень",
         icon: PiggyBank,
-        check: (ctx: AchievementContext) => ctx.goals.length > 0,
+        check: (ctx: AchievementContext) => ctx.goals.length > 0
     },
     {
         id: "budget_pro",
         title: "Контроль витрат",
         description: "Встановлено хоча б один бюджет",
         icon: Target,
-        check: (ctx: AchievementContext) => ctx.budgets.length > 0,
+        check: (ctx: AchievementContext) => ctx.budgets.length > 0
     },
     {
         id: "active_user",
         title: "Фінансова дисципліна",
         description: "Записано більше 10 операцій",
         icon: Flame,
-        check: (ctx: AchievementContext) => ctx.transactions.length >= 10,
+        check: (ctx: AchievementContext) => ctx.transactions.length >= 10
     },
 ];
 export function AchievementsPanel({
                                goals,
                                budgets,
                                debts,
-                               transactions,
+                               transactions
                            }: {
     goals: GoalItem[];
     budgets: BudgetItem[];
@@ -75,7 +75,7 @@ export function AchievementsPanel({
             debts,
             transactions,
             spentByCategory,
-            oldestTransactionDays,
+            oldestTransactionDays
         };
     }, [goals, budgets, debts, transactions]);
     return (
@@ -110,7 +110,7 @@ export function AchievementsPanel({
 export function RulesPanel({
                         rules,
                         addRule,
-                        removeRule,
+                        removeRule
                     }: {
     rules: RuleItem[];
     addRule: () => void;
@@ -121,11 +121,11 @@ export function RulesPanel({
         amount_lt: "Сума менше",
         no_category: "Без категорії",
         currency_is: "Валюта дорівнює",
-        note_contains: "Назва містить",
+        note_contains: "Назва містить"
     };
     const actionLabels: Record<string, string> = {
         set_category: "Встановити категорію",
-        contribute_goal_percent: "% доходу в банку",
+        contribute_goal_percent: "% доходу в банку"
     };
     return (
         <section className="panel">

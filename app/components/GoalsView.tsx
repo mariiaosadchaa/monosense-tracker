@@ -9,11 +9,8 @@ export function GoalsView({
                        goals,
                        authenticated,
                        add,
-                       contribute,
-                       recurring,
-                       addRecurring,
                        edit,
-                       openAction,
+                       openAction
                    }: {
     goals: GoalItem[];
     authenticated: boolean;
@@ -35,7 +32,7 @@ export function GoalsView({
                     target: 200000,
                     current: 120000,
                     currency: "UAH",
-                    color: "#6558E8",
+                    color: "#6558E8"
                 },
                 {
                     id: "demo2",
@@ -43,7 +40,7 @@ export function GoalsView({
                     target: 150000,
                     current: 38500,
                     currency: "UAH",
-                    color: "#159B70",
+                    color: "#159B70"
                 },
             ];
     const isEmpty = authenticated && !goals.length;

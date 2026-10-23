@@ -25,7 +25,7 @@ export function addToOfflineQueue(payload: Record<string, unknown>) {
     saveOfflineQueue(queue);
 }
 
-export function mergeTransferPairs(transactions: Transaction[], transfers: any[] = []): Transaction[] {
+export function mergeTransferPairs(transactions: Transaction[]): Transaction[] {
     const result: Transaction[] = [];
     const processed = new Set<string | number>();
 

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { Transaction, RecurringItem, CategoryItem, Account } from "../types";
 import { formatMoney, currencySymbol, conversionRate } from "../lib/format";
 import {ArrowDownLeft, Sparkles} from "lucide-react";
@@ -15,7 +15,7 @@ export function AnalyticsView({
                            rates,
                            customRates,
                            categories,
-                           accounts = [],
+                           accounts = []
                        }: {
     transactions: Transaction[];
     baseCurrency: string;
@@ -90,7 +90,7 @@ export function AnalyticsView({
                     label: new Intl.DateTimeFormat("uk-UA", { month: "short" })
                         .format(start)
                         .replace(".", ""),
-                    value: 0,
+                    value: 0
                 };
             })
             : Array.from({ length: 8 }, (_, index) => {
@@ -104,7 +104,7 @@ export function AnalyticsView({
                     start,
                     end,
                     label: `${start.getDate()}.${start.getMonth() + 1}`,
-                    value: 0,
+                    value: 0
                 };
             });
     const bucketFor = (transaction: Transaction) => {
@@ -241,7 +241,7 @@ export function AnalyticsView({
                             <span>
                 <i
                     style={{
-                        height: `${Math.max(bucket.value ? 8 : 2, (bucket.value / maxValue) * 100)}%`,
+                        height: `${Math.max(bucket.value ? 8 : 2, (bucket.value / maxValue) * 100)}%`
                     }}
                 />
               </span>

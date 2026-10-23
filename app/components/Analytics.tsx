@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import type { Account, Transaction, RecurringItem, GoalItem, BudgetItem, DebtItem } from "../types";
 import { formatMoney, currencySymbol, conversionRate } from "../lib/format";
-import { PiggyBank, Check, BarChart3, HandCoins, Sparkles, Target, Bell } from "lucide-react";
+import { Sparkles, Bell } from "lucide-react";
 
 
 export function GracePeriodAlert({ accounts }: { accounts: Account[] }) {
@@ -38,7 +38,7 @@ export function GracePeriodAlert({ accounts }: { accounts: Account[] }) {
 }
 export  function AnomalyAlerts({
                            transactions,
-                           baseCurrency,
+                           baseCurrency
                        }: {
     transactions: Transaction[];
     baseCurrency: string;
@@ -107,7 +107,7 @@ export function CashflowCalendar({
                               transactions,
                               rates,
                               customRates,
-                              baseCurrency,
+                              baseCurrency
                           }: {
     balance: number;
     recurring: RecurringItem[];
@@ -193,7 +193,7 @@ export function CashflowCalendar({
         }
         const withBalance = list.map((e) => ({
             ...e,
-            after: dayList.find((x) => x.date.getTime() === e.date.getTime())?.balance ?? running,
+            after: dayList.find((x) => x.date.getTime() === e.date.getTime())?.balance ?? running
         }));
         return {
             events: withBalance,
@@ -201,7 +201,7 @@ export function CashflowCalendar({
             endBalance: running,
             minPoint: min,
             incomeSum: list.filter((e) => e.kind === "income").reduce((s, e) => s + e.amount, 0),
-            expenseSum: list.filter((e) => e.kind === "expense").reduce((s, e) => s + e.amount, 0),
+            expenseSum: list.filter((e) => e.kind === "expense").reduce((s, e) => s + e.amount, 0)
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recurring, rates, customRates, baseCurrency, balance, avgDailySpend, horizon]);
@@ -306,56 +306,6 @@ export type SettingsProfile = {
     digestFrequency?: "weekly" | "monthly";
     digestEmailEnabled?: boolean;
 };
-const ACHIEVEMENTS = [
-    {
-        id: "first-goal",
-        label: "Перша банка",
-        desc: "Створи фінансову ціль",
-        icon: PiggyBank,
-        check: (ctx: AchievementContext) => ctx.goals.length > 0,
-    },
-    {
-        id: "goal-closed",
-        label: "Ціль досягнута",
-        desc: "Накопич повну суму хоча б однієї цілі",
-        icon: Check,
-        check: (ctx: AchievementContext) => ctx.goals.some((g) => g.current >= g.target),
-    },
-    {
-        id: "budget-master",
-        label: "Місяць без перевищень",
-        desc: "Не перевищуй жоден ліміт бюджету за місяць",
-        icon: BarChart3,
-        check: (ctx: AchievementContext) =>
-            ctx.budgets.length > 0 &&
-            ctx.budgets.every((b) => {
-                const spent = ctx.spentByCategory[b.name] || 0;
-                return spent <= b.limit;
-            }),
-    },
-    {
-        id: "debt-free",
-        label: "Без боргів",
-        desc: "Закрий усі свої борги",
-        icon: HandCoins,
-        check: (ctx: AchievementContext) =>
-            ctx.debts.length > 0 && ctx.debts.every((d) => d.direction === "owed_to_me"),
-    },
-    {
-        id: "streak-10",
-        label: "10 операцій",
-        desc: "Додай 10 операцій в застосунку",
-        icon: Sparkles,
-        check: (ctx: AchievementContext) => ctx.transactions.length >= 10,
-    },
-    {
-        id: "tracker",
-        label: "Місяць з rivna",
-        desc: "Користуйся застосунком місяць поспіль",
-        icon: Target,
-        check: (ctx: AchievementContext) => ctx.oldestTransactionDays >= 30,
-    },
-];
 export type AchievementContext = {
     goals: GoalItem[];
     budgets: BudgetItem[];

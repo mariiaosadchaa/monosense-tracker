@@ -1,21 +1,65 @@
 "use client";
 import { useState, useEffect } from "react";
-import type { GoalItem, BudgetItem, DebtItem, Transaction, RuleItem, CategoryItem } from "../types";
-import { formatMoney, currencySymbol } from "../lib/format";
 import type { SettingsProfile } from "./Analytics";
 import {Check, Plus, Sparkles, Trash2, WalletCards} from "lucide-react";
+
+function Toggle({
+    title,
+    hint,
+    checked,
+    onChange
+}: {
+    title: string;
+    hint: string;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="st-toggle">
+        <span>
+            <strong>{title}</strong>
+            <small>{hint}</small>
+        </span>
+        <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    </label>
+  );
+}
+
+function Swatches({
+    value,
+    onChange,
+    items
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    items: [string, string, string][];
+}) {
+  return (
+    <div className="skin-picker">
+        {items.map(([key, bg, label]) => (
+            <button
+                key={key}
+                type="button"
+                className={`skin-swatch${value === key ? " active" : ""}`}
+                onClick={() => onChange(key)}
+            >
+                <i style={{ background: bg }} />
+                <small>{label}</small>
+            </button>
+        ))}
+    </div>
+  );
+}
 
 export function ProfileSettings({
                              dark,
                              setDark,
-                             skin,
-                             setSkin,
                              cardStyle,
                              setCardStyle,
                              budgetRollover,
                              setBudgetRollover,
                              notify,
-                             section = "profile",
+                             section = "profile"
                          }: {
     section?: "profile" | "look" | "notify" | "budget";
     dark: boolean;
@@ -42,55 +86,13 @@ export function ProfileSettings({
         const response = await fetch("/api/settings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "saveProfile", ...profile }),
+            body: JSON.stringify({ action: "saveProfile", ...profile })
         });
         const result = await response.json();
         notify(response.ok ? "Налаштування збережено" : result.error || "Не вдалося зберегти");
         if (response.ok) window.setTimeout(() => window.location.reload(), 500);
     }
-    const Toggle = ({
-        title,
-        hint,
-        checked,
-        onChange,
-    }: {
-        title: string;
-        hint: string;
-        checked: boolean;
-        onChange: (v: boolean) => void;
-    }) => (
-        <label className="st-toggle">
-            <span>
-                <strong>{title}</strong>
-                <small>{hint}</small>
-            </span>
-            <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        </label>
-    );
     const set = (patch: Partial<SettingsProfile>) => setProfile((p) => (p ? { ...p, ...patch } : p));
-    const Swatches = ({
-        value,
-        onChange,
-        items,
-    }: {
-        value: string;
-        onChange: (v: string) => void;
-        items: [string, string, string][];
-    }) => (
-        <div className="skin-picker">
-            {items.map(([key, bg, label]) => (
-                <button
-                    key={key}
-                    type="button"
-                    className={`skin-swatch${value === key ? " active" : ""}`}
-                    onClick={() => onChange(key)}
-                >
-                    <i style={{ background: bg }} />
-                    <small>{label}</small>
-                </button>
-            ))}
-        </div>
-    );
     const saveBtn = (
         <div className="st-save">
             <button className="primary" disabled={!profile}>
@@ -260,7 +262,7 @@ type FinanceSpace = { id: string; name: string; currency: string; role: string; 
 export function MembersPanel({
     notify,
     onInvite,
-    version = 0,
+    version = 0
 }: {
     notify: (message: string) => void;
     onInvite?: () => void;
@@ -287,7 +289,7 @@ export function MembersPanel({
         const response = await fetch("/api/settings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
         notify(response.ok ? "Доступ оновлено" : result.error || "Помилка");
@@ -297,7 +299,7 @@ export function MembersPanel({
         const response = await fetch("/api/settings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "switchHousehold", householdId }),
+            body: JSON.stringify({ action: "switchHousehold", householdId })
         });
         const result = await response.json();
         if (!response.ok) return notify(result.error || "Не вдалося перемкнути бюджет");
@@ -310,7 +312,7 @@ export function MembersPanel({
         owner: "Ви власник: керуєте доступом і можете запрошувати людей.",
         admin: "Ви адміністратор: можете запрошувати людей і змінювати доступ.",
         member: "Ви учасник: бачите й додаєте операції, але не керуєте доступом.",
-        viewer: "Ви глядач: лише перегляд, без змін.",
+        viewer: "Ви глядач: лише перегляд, без змін."
     };
     return (
         <section className="panel members-panel sb">
@@ -490,7 +492,7 @@ export function RecategorizePanel({ notify }: { notify: (msg: string) => void })
 
 export function GuideFeedback({
                            notify,
-                           authenticated,
+                           authenticated
                        }: {
     notify: (message: string) => void;
     authenticated: boolean;
@@ -505,7 +507,7 @@ export function GuideFeedback({
         const response = await fetch("/api/feedback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rating, message }),
+            body: JSON.stringify({ rating, message })
         });
         const result = await response.json();
         setSending(false);

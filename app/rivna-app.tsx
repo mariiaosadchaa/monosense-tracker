@@ -1,136 +1,35 @@
 "use client";
-// @ts-ignore
-// @ts-ignore
-import { bankStyle, extractMerchant } from "./components/AccountCard";
+import { bankStyle } from "./components/AccountCard";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useClickOutside } from "./lib/useClickOutside";
 import { markInternalTransfers, resolveOrphanTransfers } from "./lib/internalTransfers";
 import confetti from "canvas-confetti";
 import {
-  ArrowDownLeft,
-  ArrowLeft,
-  ArrowRight,
   ArrowUpRight,
   BarChart3,
   Bell,
-  Check,
-  ChevronDown,
-  CircleDollarSign,
-  CreditCard,
-  Download,
-  Eye,
-  EyeOff,
-  Fingerprint,
-  Goal,
   Home,
-  Landmark,
   Moon,
   MoreHorizontal,
-  PiggyBank,
   Plus,
-  Search,
   Settings,
-  ShoppingBag,
   Sparkles,
   Sun,
   Target,
-  Trash2,
-  Upload,
-  Utensils,
   WalletCards,
-  X,
   PieChart,
   HandCoins,
-  Repeat2,
-  ShoppingCart,
-  Coffee,
-  Bus,
-  House,
-  HeartPulse,
-  Gamepad2,
-  Car,
-  Fuel,
-  Shirt,
-  Plane,
-  Dumbbell,
-  Wifi,
-  GraduationCap,
-  Gift,
-  PawPrint,
-  Smartphone,
-  Wallet,
-  Music,
-  BookOpen,
-  Baby,
-  Palette,
-  Bike,
-  Train,
-  Stethoscope,
-  Cat,
-  Scissors,
-  Wrench,
-  Phone,
-  Laptop,
-  Film,
-  Pizza,
-  Hotel,
-  Umbrella,
-  PartyPopper,
-  Cake,
-  Percent,
-  Banknote,
-  CreditCard as CreditCardIcon,
-  ArrowLeftRight,
-  Repeat,
-  Zap,
-  Droplets,
-  Tv,
-  Beer,
-  ShieldCheck,
-  Globe,
-  Camera,
-  TrendingUp,
-  Coins,
-  Leaf,
-  Star,
-  Flame,
-  Package,
-  Map as LucideMap,
-  Mountain,
-  Glasses,
-  Dog,
-  Trophy,
-  Amphora,
-  Sofa,
-  Sandwich,
-  IceCream2,
-  Wine,
-  Syringe,
-  HeartHandshake,
-  Flower2,
-  Dice5,
-  Volleyball,
-  Brush,
-  Lamp,
-  Bed,
-  ShowerHead,
-  Ham,
-  Candy,
-  Apple,
-  Fish,
   ChevronLeft,
-  LogOut,
+  LogOut
 } from "lucide-react";
 import { PasskeyButton } from "./components/passkey-button";
 import { Dashboard } from "./components/Dashboard";
 import { Login } from "./components/Login";
-import { AccountCard, BankMark, TransactionList } from "./components/AccountCard";
-import { GracePeriodAlert, AnomalyAlerts, CashflowCalendar } from "./components/Analytics";
 import { InvestmentSimulator, BigPurchaseSimulator, WrappedModal, SettlementPanel } from "./components/Simulators";
 import type { Page, Transaction, Account, GoalItem, DebtItem, RecurringItem, CategoryItem, BudgetItem, RuleItem, AuditItem } from "./types";
-import { formatMoney, currencySymbol, conversionRate, crossRate, toDateKey } from "./lib/format";
+import { formatMoney, conversionRate, toDateKey } from "./lib/format";
 import { exportCsv, exportExcel, exportJson } from "./lib/export";
-import { BUDGET_COLORS, merchantSkeleton } from "./lib/icons";
+import { BUDGET_COLORS, merchantSkeleton, isJarTitle } from "./lib/icons";
 import { DebtsView } from "./components/DebtsView";
 import { TransactionsView } from "./components/TransactionsView";
 import { BudgetView, LiveBudgetView } from "./components/BudgetViews";
@@ -140,13 +39,12 @@ import { AnalyticsView } from "./components/AnalyticsView";
 
 import { SettingsView, settingsTabs, type SettingsTabKey } from "./components/SettingsView";
 import { MembersPanel, RecategorizePanel, GuideFeedback } from "./components/SettingsPanels";
-import { ModalHead } from "./components/modal-head";
-import { MilestoneModal, EmptyState, ScanReceiptModal, ScanReviewRow } from "./components/ScanReceipt";
+import { MilestoneModal } from "./components/ScanReceipt";
 import {
-  ExpenseModal, WheelField, CategoryGridField, DateWheelField, DateTimeField, CalendarPickerInput,
+  ExpenseModal, 
   AccountModal, GoalModal, GoalActionModal, DebtModal, SplitBillModal, SettleDebtModal,
   EditTransactionModal, PayInstallmentModal, RecurringModal, ImportPreviewModal, TransferModal,
-  BudgetModal, CategoryModal, RuleModal, InviteModal, CustomRateModal, MonoSyncDebugModal,
+  BudgetModal, CategoryModal, RuleModal, InviteModal, CustomRateModal, MonoSyncDebugModal
 } from "./components/modals";
 // Explicit alias for the built-in Map to avoid Turbopack shadowing it with the Lucide "Map" icon
 const NativeMap = globalThis.Map;
@@ -162,7 +60,7 @@ export {
   findMerchantDomain,
   BudgetIcon,
   MerchantIcon,
-  BUDGET_COLORS,
+  BUDGET_COLORS
 } from "./lib/icons";
 
 const seedTransactions: Transaction[] = [
@@ -179,7 +77,7 @@ const seedAccounts: Account[] = [
     owner: "Мій",
     currency: "UAH",
     balance: 48240,
-    style: "mono",
+    style: "mono"
   },
   {
     id: 2,
@@ -188,7 +86,7 @@ const seedAccounts: Account[] = [
     owner: "Мій",
     currency: "UAH",
     balance: 32180,
-    style: "privat",
+    style: "privat"
   },
   {
     id: 3,
@@ -197,7 +95,7 @@ const seedAccounts: Account[] = [
     owner: "Спільний",
     currency: "USD",
     balance: 1080,
-    style: "stash",
+    style: "stash"
   },
 ];
 const seedCategories: CategoryItem[] = [
@@ -216,7 +114,7 @@ const seedGoals: GoalItem[] = [
     target: 200000,
     current: 120000,
     currency: "UAH",
-    color: "#6558E8",
+    color: "#6558E8"
   },
   {
     id: "demo2",
@@ -224,17 +122,15 @@ const seedGoals: GoalItem[] = [
     target: 150000,
     current: 38500,
     currency: "UAH",
-    color: "#159B70",
+    color: "#159B70"
   },
 ];
 import {
   getOfflineQueue,
   saveOfflineQueue,
   addToOfflineQueue,
-  mergeTransferPairs,
   evaluateExpression,
-  budgetPeriodBounds,
-  isLight,
+  budgetPeriodBounds
 } from "./lib/transfers";
 export {
   getOfflineQueue,
@@ -243,7 +139,7 @@ export {
   mergeTransferPairs,
   evaluateExpression,
   budgetPeriodBounds,
-  isLight,
+  isLight
 } from "./lib/transfers";
 
 export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolean }) {
@@ -472,7 +368,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const response = await fetch("/api/finance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(item.payload),
+          body: JSON.stringify(item.payload)
         });
         if (response.ok) remaining = remaining.filter((q) => q.id !== item.id);
       } catch {
@@ -509,7 +405,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             cardLast4: item.card_last4 ? String(item.card_last4) : undefined,
             creditLimit: Number(item.credit_limit) || 0,
             graceEnd: item.grace_period_end ? String(item.grace_period_end) : undefined,
-            graceBalance: item.grace_balance ? Number(item.grace_balance) : undefined,
+            graceBalance: item.grace_balance ? Number(item.grace_balance) : undefined
           })),
       );
       const transferDirection: Record<string, "in" | "out"> = {};
@@ -535,13 +431,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           title: diff > 0 ? "Підвищення кредитного ліміту" : "Зниження кредитного ліміту",
           category: "Кредитний ліміт",
           date: new Intl.DateTimeFormat("uk-UA", {
-            dateStyle: "medium",
+            dateStyle: "medium"
           }).format(new Date(String(item.changed_at))),
           bookedAt: String(item.changed_at),
           account: String((item.accounts as { name?: string } | null)?.name || ""),
           amount: diff,
           currency: "UAH",
-          kind: "credit_limit_change",
+          kind: "credit_limit_change"
         };
       });
 
@@ -573,7 +469,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                       ? ""
                       : String((item.categories as { id?: string } | null)?.id || item.category_id || ""),
                   date: new Intl.DateTimeFormat("uk-UA", {
-                    dateStyle: "medium",
+                    dateStyle: "medium"
                   }).format(new Date(String(item.booked_at))),
                   bookedAt: String(item.booked_at),
                   account: String((item.accounts as { name?: string } | null)?.name || ""),
@@ -588,7 +484,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   originalAmount: item.original_amount != null ? Number(item.original_amount) : undefined,
                   originalCurrency: item.original_currency ? String(item.original_currency) : undefined,
                   kind: isTransferLeg ? (direction === "in" ? "transfer" : "transfer") : String(item.type || "expense"),
-                  orphanTransfer: isTransferLeg && !(transferCounterpartId[id] && accountNameById[transferCounterpartId[id]]) ? true : undefined,
+                  orphanTransfer: isTransferLeg && !(transferCounterpartId[id] && accountNameById[transferCounterpartId[id]]) ? true : undefined
                 };
               })
               .concat(limitEvents),
@@ -609,6 +505,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             roundExpenseTo: item.round_expense_to ? Number(item.round_expense_to) : undefined,
             expensePercent: item.expense_percent ? Number(item.expense_percent) : undefined,
             sourceAccountId: item.source_account_id ? String(item.source_account_id) : undefined,
+            sourceAccountIds: Array.isArray(item.source_account_ids) && item.source_account_ids.length
+              ? item.source_account_ids.map(String)
+              : item.source_account_id ? [String(item.source_account_id)] : undefined
           })),
       );
       setDebts(
@@ -621,7 +520,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             due: item.due_date ? String(item.due_date) : undefined,
             note: String(item.note || ""),
             isInstallment: Boolean(item.is_installment),
-            installmentMonths: item.installment_months ? Number(item.installment_months) : undefined,
+            installmentMonths: item.installment_months ? Number(item.installment_months) : undefined
           })),
       );
       setRecurring(
@@ -635,7 +534,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             auto: Boolean(item.auto_create),
             kind: item.kind === "income" ? "income" : "expense",
             accountId: item.account_id ? String(item.account_id) : undefined,
-            categoryId: item.category_id ? String(item.category_id) : undefined,
+            categoryId: item.category_id ? String(item.category_id) : undefined
           })),
       );
       setTransfers(
@@ -647,7 +546,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             toAccountId: item.to_account_id ? String(item.to_account_id) : null,
             feeAmount: Number(item.fee_amount) || 0,
             feeCurrency: String(item.fee_currency || ""),
-            bookedAt: String(item.booked_at || ""),
+            bookedAt: String(item.booked_at || "")
           })),
       );
       if (data.categories)
@@ -659,7 +558,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               color: String(item.color && item.color !== "#6558E8" ? item.color : BUDGET_COLORS[idx % BUDGET_COLORS.length]),
               icon: String(item.icon || "CircleDollarSign"),
               isDefault: Boolean(item.is_default),
-              budgetGroup: (item.budget_group as "needs" | "wants" | "savings" | null) || null,
+              budgetGroup: (item.budget_group as "needs" | "wants" | "savings" | null) || null
             })),
         );
       setSavedBudgets(
@@ -676,7 +575,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             period: item.period_type === "week" ? "week" : "month",
             color: String(
                 item.color || (item.categories as { color?: string } | null)?.color || "#6558E8",
-            ),
+            )
           })),
       );
       if (data.planningPeriod) {
@@ -692,7 +591,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               entity: String(item.entity_type),
               action: String(item.action),
               created: String(item.created_at),
-              actor: item.actor_id ? String(item.actor_id) : undefined,
+              actor: item.actor_id ? String(item.actor_id) : undefined
             })),
         );
       if (data.rules) setRules(
@@ -704,7 +603,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             actionType: String(item.action_type),
             actionCategoryId: item.action_category_id ? String(item.action_category_id) : undefined,
             actionGoalId: item.action_goal_id ? String(item.action_goal_id) : undefined,
-            actionValue: item.action_value ? Number(item.action_value) : undefined,
+            actionValue: item.action_value ? Number(item.action_value) : undefined
           })),
       );
       if (data.exchangeRates)
@@ -712,7 +611,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             (data.exchangeRates || []).map((item: Record<string, unknown>) => ({
               currency: String(item.quote_currency),
               rate: Number(item.custom_rate || item.official_rate),
-              date: String(item.rate_date),
+              date: String(item.rate_date)
             })),
         );
     } catch (error) {
@@ -865,14 +764,17 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       ...transaction,
       baseAmount:
           (transaction.amount * conversionRate(transaction.currency || "UAH", rates, customRates)) /
-          conversionRate(baseCurrency, rates, customRates),
+          conversionRate(baseCurrency, rates, customRates)
     }));
     const ownerByAccount = new NativeMap(viewAccounts.map((a) => [a.name.trim(), a.owner]));
     const relabeled = withBase.map((t) => {
       const o = t.account ? ownerByAccount.get(t.account.trim()) : undefined;
       return o && o !== t.owner ? { ...t, owner: o } : t;
     });
-    return resolveOrphanTransfers(markInternalTransfers(relabeled, viewAccounts));
+    // Операції з банками (накопичення): не в статистиці, категорія «Накопичення»
+    return resolveOrphanTransfers(markInternalTransfers(relabeled, viewAccounts)).map((t) =>
+        isJarTitle(t.title) ? { ...t, kind: "transfer" as const, category: "Накопичення", pairRole: undefined, pairId: undefined } : t,
+    );
   }, [transactions, rates, customRates, baseCurrency, viewAccounts]);
   const filteredTransactions = useMemo(() => {
     // Always return raw (both transfer legs present).
@@ -929,7 +831,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       setWelcomeAlert({
         key: "welcome",
         name: "Вітаємо в rivna! Все готово — починай керувати фінансами",
-        percent: -1,
+        percent: -1
       });
     }
   }, []);
@@ -959,7 +861,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           return {
             key: `${b.name}-${monthKey}-${percent >= 100 ? "100" : "80"}`,
             name: b.name,
-            percent,
+            percent
           };
         })
         .filter((a) => a.percent >= 80);
@@ -985,7 +887,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           currency: a.currency,
           note: "Кредитні кошти",
           isVirtual: true,
-          accountId: String(a.id),
+          accountId: String(a.id)
         }));
     return [...debts, ...creditDebts];
   }, [accounts, debts]);
@@ -1018,7 +920,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               feeCurrency: fromAccount.currency,
               note: note || "Переказ",
               creditLimitDelta: reduceCreditLimit ? value : 0,
-              bookedAt: form.get("date") ? new Date(String(form.get("date"))).toISOString() : undefined,
+              bookedAt: form.get("date") ? new Date(String(form.get("date"))).toISOString() : undefined
             },
             "Переказ виконано",
         );
@@ -1056,7 +958,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           repeatFrequency: form.get("repeatFrequency"),
           repeatDay: form.get("repeatDay"),
           debtId: !isIncome ? form.get("debtId") || null : null,
-          receiptAmount: form.get("receiptAmount") || null,
+          receiptAmount: form.get("receiptAmount") || null
         };
         if (!navigator.onLine) {
           addToOfflineQueue(payload);
@@ -1070,7 +972,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const response = await fetch("/api/finance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
         const result = await response.json();
         if (!response.ok) return notify(result.error || "Не вдалося додати операцію");
@@ -1099,7 +1001,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           date: "Щойно",
           amount: isIncome ? value : -value,
           currency: account?.currency || "UAH",
-          impulse: !isIncome && form.get("impulse") === "on",
+          impulse: !isIncome && form.get("impulse") === "on"
         },
         ...transactions,
       ]);
@@ -1141,8 +1043,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             graceEnd: form.get("graceEnd"),
             graceBalance: form.get("graceBalance"),
             cardColor: form.get("cardColor"),
-            cardLast4: form.get("cardLast4"),
-          }),
+            cardLast4: form.get("cardLast4")
+          })
         });
         const result = await response.json();
         if (!response.ok) return notify(result.error || "Не вдалося створити рахунок");
@@ -1162,7 +1064,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           currency: String(form.get("currency") || "UAH"),
           balance: Number(form.get("balance")) || 0,
           style: "stash",
-          color: String(form.get("cardColor") || "#6558e8"),
+          color: String(form.get("cardColor") || "#6558e8")
         },
       ]);
       setModal(null);
@@ -1180,7 +1082,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const response = await fetch("/api/finance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "deleteAccount", id }),
+          body: JSON.stringify({ action: "deleteAccount", id })
         });
         const result = await response.json();
         if (!response.ok) return notify(result.error || "Помилка видалення");
@@ -1202,7 +1104,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         const response = await fetch("/api/finance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "deleteTransaction", id }),
+          body: JSON.stringify({ action: "deleteTransaction", id })
         });
         const result = await response.json();
         if (!response.ok) return notify(result.error || "Помилка видалення");
@@ -1240,7 +1142,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         feeCurrency: fromAccount?.currency || "UAH",
         note: String(payload.note || ""),
         bookedAt: payload.bookedAt,
-        creditLimitDelta: payload.reduceCreditLimit ? sent : 0,
+        creditLimitDelta: payload.reduceCreditLimit ? sent : 0
       }, "Операцію перетворено на переказ");
       if (ok) setEditingTransaction(null);
       return;
@@ -1281,7 +1183,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               current: Number(payload.currentAmount) || 0,
               currency: String(payload.currency || "UAH"),
               date: payload.targetDate ? String(payload.targetDate) : undefined,
-              color: "#6558E8",
+              color: "#6558E8"
             },
           ]);
         else if (action === "updateGoal")
@@ -1292,7 +1194,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         ...item,
                         name: String(payload.name || item.name),
                         target: Number(payload.targetAmount) || item.target,
-                        date: payload.targetDate ? String(payload.targetDate) : item.date,
+                        date: payload.targetDate ? String(payload.targetDate) : item.date
                       }
                       : item,
               ),
@@ -1313,7 +1215,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   item.id === id
                       ? {
                         ...item,
-                        current: Math.min(item.target, item.current + Number(payload.amount || 0)),
+                        current: Math.min(item.target, item.current + Number(payload.amount || 0))
                       }
                       : item,
               ),
@@ -1328,7 +1230,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               amount: Number(payload.amount),
               currency: String(payload.currency || "UAH"),
               due: payload.dueDate ? String(payload.dueDate) : undefined,
-              note: String(payload.note || ""),
+              note: String(payload.note || "")
             },
           ]);
         else if (action === "settleDebt")
@@ -1344,7 +1246,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               frequency: String(payload.frequency || "monthly"),
               next: String(payload.nextRunAt),
               auto: Boolean(payload.autoCreate),
-              kind: payload.kind === "income" ? "income" : "expense",
+              kind: payload.kind === "income" ? "income" : "expense"
             },
           ]);
         else if (action === "deleteRecurring")
@@ -1361,7 +1263,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             currency: String(payload.currency || "UAH"),
             month: String(payload.month),
             period: payload.periodType === "week" ? "week" : "month",
-            color: String(payload.color || "#6558e8"),
+            color: String(payload.color || "#6558e8")
           };
           setSavedBudgets((items) => [
             ...items.filter(
@@ -1383,7 +1285,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               kind: String(payload.kind || "expense"),
               color: String(payload.color || "#6558E8"),
               icon: String(payload.icon || "CircleDollarSign"),
-              budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
+              budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null
             },
           ]);
         else if (action === "updateCategory")
@@ -1395,7 +1297,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         name: String(payload.name || item.name),
                         color: String(payload.color || item.color),
                         icon: String(payload.icon || item.icon),
-                        budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null,
+                        budgetGroup: (payload.budgetGroup as "needs" | "wants" | "savings") || null
                       }
                       : item,
               ),
@@ -1413,7 +1315,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             {
               currency: String(payload.quoteCurrency || "USD"),
               rate: Number(payload.rate),
-              date: String(payload.date || new Date().toISOString().slice(0, 10)),
+              date: String(payload.date || new Date().toISOString().slice(0, 10))
             },
             ...items.filter((item) => item.currency !== String(payload.quoteCurrency)),
           ]);
@@ -1435,7 +1337,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         balance:
                             item.balance -
                             sent -
-                            (String(payload.feeCurrency) === item.currency ? fee : 0),
+                            (String(payload.feeCurrency) === item.currency ? fee : 0)
                       }
                       : String(item.id) === to
                           ? {
@@ -1443,7 +1345,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                             balance:
                                 item.balance +
                                 received -
-                                (String(payload.feeCurrency) === item.currency ? fee : 0),
+                                (String(payload.feeCurrency) === item.currency ? fee : 0)
                           }
                           : item,
               ),
@@ -1462,7 +1364,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         creditLimit: Number(payload.creditLimit) || 0,
                         graceEnd: payload.graceEnd ? String(payload.graceEnd) : undefined,
                         graceBalance: payload.graceBalance ? Number(payload.graceBalance) : undefined,
-                        color: payload.cardColor ? String(payload.cardColor) : item.color,
+                        color: payload.cardColor ? String(payload.cardColor) : item.color
                       }
                       : item,
               ),
@@ -1476,7 +1378,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const response = await fetch("/api/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (!response.ok) {
@@ -1505,10 +1407,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       assetType: String(f.get("assetType") || "savings"),
       annualRate: f.get("annualRate") || undefined,
       compoundInterest: f.get("compoundInterest") === "on",
-      sourceAccountId: f.get("sourceAccountId") || undefined,
+      sourceAccountIds: f.getAll("sourceAccountIds").map(String),
       roundBalanceTo: f.get("roundBalanceTo") || undefined,
       roundExpenseTo: f.get("roundExpenseTo") || undefined,
-      expensePercent: f.get("expensePercent") || undefined,
+      expensePercent: f.get("expensePercent") || undefined
     };
     if (await financeAction(payload, editingGoal ? "Ціль оновлено" : "Ціль створено")) {
       setModal(null);
@@ -1518,6 +1420,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   async function withdrawGoal(id: string, amount: number, targetAccountId: string) {
     if (await financeAction({ action: "withdrawGoal", id, amount, targetAccountId }, "Кошти знято"))
       setGoalAction(null);
+  }
+  async function deleteGoal(id: string) {
+    if (!window.confirm("Видалити банку? Накопичену суму буде втрачено з цілі, рахунки не зміняться.")) return;
+    if (await financeAction({ action: "deleteGoal", id }, "Банку видалено")) {
+      setModal(null);
+      setEditingGoal(null);
+    }
   }
   async function breakGoal(id: string, targetAccountId: string) {
     if (!window.confirm("Розбити банку? Уся сума перейде на обраний рахунок, ціль буде видалено."))
@@ -1542,7 +1451,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               frequency: String(f.get("frequency")),
               nextRunAt: f.get("date") ? String(f.get("date")) : undefined,
               autoCreate: f.get("auto") === "on",
-              kind: String(f.get("kind") || "expense"),
+              kind: String(f.get("kind") || "expense")
             },
             f.get("kind") === "income" ? "Плановий дохід додано" : "Регулярний платіж створено",
         )
@@ -1563,8 +1472,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             direction: "owed_to_me",
             amount: p.amount,
             currency: baseCurrency,
-            note: note || "Спільний чек",
-          }),
+            note: note || "Спільний чек"
+          })
         });
         if (!response.ok) failed = true;
       }
@@ -1603,8 +1512,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           dueDate: f.get("date") ? String(f.get("date")) : undefined,
           note: String(f.get("note") || ""),
           isInstallment: f.get("isInstallment") === "on",
-          installmentMonths: months || undefined,
-        }),
+          installmentMonths: months || undefined
+        })
       });
       const debtResult = await debtResponse.json();
       if (!debtResponse.ok) return notify(debtResult.error || "Не вдалося додати борг");
@@ -1626,8 +1535,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 ? new Date(String(f.get("autoFirstDate"))).toISOString()
                 : undefined,
             autoCreate: true,
-            debtId: debtResult.data.id,
-          }),
+            debtId: debtResult.data.id
+          })
         });
         if (!recurringResponse.ok) {
           const recurringResult = await recurringResponse.json();
@@ -1662,7 +1571,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           feeCurrency: String(f.get("feeCurrency")),
           note: String(f.get("note") || ""),
           creditLimitDelta,
-          bookedAt: f.get("bookedAt") ? new Date(String(f.get("bookedAt"))).toISOString() : undefined,
+          bookedAt: f.get("bookedAt") ? new Date(String(f.get("bookedAt"))).toISOString() : undefined
         },
         "Переказ виконано",
     );
@@ -1698,8 +1607,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             limitAmount: week.limit,
             currency: baseCurrency,
             icon: String(f.get("icon") || "CircleDollarSign"),
-            color: String(f.get("color") || "#6558e8"),
-          }),
+            color: String(f.get("color") || "#6558e8")
+          })
         });
         if (!response.ok) failed = true;
       }
@@ -1716,8 +1625,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
             limitAmount: Math.round(monthTotal * 100) / 100,
             currency: baseCurrency,
             icon: String(f.get("icon") || "CircleDollarSign"),
-            color: String(f.get("color") || "#6558e8"),
-          }),
+            color: String(f.get("color") || "#6558e8")
+          })
         });
         if (!monthResponse.ok) failed = true;
       }
@@ -1740,7 +1649,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               limitAmount: Number(f.get("limit")),
               currency: baseCurrency,
               icon: String(f.get("icon") || "CircleDollarSign"),
-              color: String(f.get("color") || "#6558e8"),
+              color: String(f.get("color") || "#6558e8")
             },
             "Ліміт збережено",
         )
@@ -1761,7 +1670,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               icon: String(f.get("icon")),
               color: String(f.get("color")),
               budgetGroup: f.get("budgetGroup") || null,
-              ...(f.has("payerSources") ? { payerSources: String(f.get("payerSources") || "") } : {}),
+              ...(f.has("payerSources") ? { payerSources: String(f.get("payerSources") || "") } : {})
             },
             id ? "Категорію оновлено" : "Категорію створено",
         )
@@ -1783,7 +1692,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               actionType: f.get("actionType"),
               actionCategoryId: f.get("actionCategoryId") || undefined,
               actionGoalId: f.get("actionGoalId") || undefined,
-              actionValue: f.get("actionValue") || undefined,
+              actionValue: f.get("actionValue") || undefined
             },
             "Правило створено",
         )
@@ -1799,7 +1708,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               action: "createCustomRate",
               quoteCurrency: String(f.get("currency")),
               rate: Number(f.get("rate")),
-              date: String(f.get("date") || new Date().toISOString().slice(0, 10)),
+              date: String(f.get("date") || new Date().toISOString().slice(0, 10))
             },
             "Власний курс збережено",
         )
@@ -1824,7 +1733,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const r = await fetch("/api/household/incoming", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ id, action })
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) return notify(d.error || "Не вдалося");
@@ -1860,7 +1769,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const response = await fetch("/api/household/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: f.get("identifier"), role: f.get("role") }),
+        body: JSON.stringify({ identifier: f.get("identifier"), role: f.get("role") })
       });
       const result = await response.json();
       if (!response.ok) return notify(result.error || "Не вдалося створити запрошення");
@@ -1893,12 +1802,12 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     const applicationServerKey = Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey,
+      applicationServerKey
     });
     const response = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(subscription),
+      body: JSON.stringify(subscription)
     });
     if (!response.ok) return notify("Не вдалося зберегти push-подpиску");
     setPushEnabled(true);
@@ -2096,7 +2005,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           card: headerCells.findIndex((h) => h.startsWith("сума в валюті картки")),
           op: headerCells.findIndex((h) => h.startsWith("сума в валюті операції")),
           cur: headerCells.indexOf("валюта"),
-          bal: headerCells.findIndex((h) => h.startsWith("залишок")),
+          bal: headerCells.findIndex((h) => h.startsWith("залишок"))
         };
         let monoLatestDate = "";
         if (isMonoCsv) {
@@ -2170,7 +2079,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         title: r.title, amount: r.amount, date: r.date, categoryName: r.categoryName,
         isDuplicate, selected: !isDuplicate && !r.skip,
         currency: r.currency,
-        isPayoneerTransfer: r.isPayoneerTransfer,
+        isPayoneerTransfer: r.isPayoneerTransfer
       };
     });
     // Правила користувача ("Звідки приходить платіж", авто-вивчені назви) мають пріоритет над вгадуванням
@@ -2260,7 +2169,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           rowId: row.id, tx: t, diff, score: diff + dayDiff * 0.05, // ближча дата — пріоритет, але сума важливіша
           fee: Math.max(0, Math.round((sentUah - receivedUah) * 100) / 100),
           expectedUah: Math.round(sentUah * 100) / 100,
-          existingFromTxId,
+          existingFromTxId
         });
       }
     }
@@ -2298,7 +2207,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         if (matchedTx.has(String(t.id))) reasons.push("вже зайняте іншим виводом");
         best = {
           score,
-          text: `найближче: +${t.amount.toFixed(2)} ${cur} на ${t.account || "?"} ${t.bookedAt.slice(0, 10)}${reasons.length ? ` — ${reasons.join(", ")}` : ""}`,
+          text: `найближче: +${t.amount.toFixed(2)} ${cur} на ${t.account || "?"} ${t.bookedAt.slice(0, 10)}${reasons.length ? ` — ${reasons.join(", ")}` : ""}`
         };
       }
       return best ? best.text : "зарахувань ±5 днів не знайдено (онови сторінку, якщо щойно міняла дані)";
@@ -2317,7 +2226,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         fee: m.fee,
         existingFromTxId: m.existingFromTxId,
         isDuplicate: row.isDuplicate || alreadyExact,
-        selected: alreadyExact ? false : row.selected,
+        selected: alreadyExact ? false : row.selected
       };
     });
     setImportPreview({ rows: withFees, accountId: importAccountId });
@@ -2328,7 +2237,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const imported = rows.map((r, i) => ({
         id: Date.now() + i, title: r.title, category: r.categoryName || "Без категорії",
         date: new Intl.DateTimeFormat("uk-UA", { dateStyle: "medium" }).format(new Date(r.date)),
-        bookedAt: r.date, amount: r.amount, kind: r.amount >= 0 ? "income" : "expense",
+        bookedAt: r.date, amount: r.amount, kind: r.amount >= 0 ? "income" : "expense"
       }));
       setTransactions((prev) => [...(imported as unknown as Transaction[]), ...prev]);
       notify(`Додано операцій: ${imported.length}`);
@@ -2346,9 +2255,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           accountId,
           links: linkedRows.map((r) => ({
             note: r.title, amount: Math.abs(r.amount), booked_at: r.date, matchedTxId: r.matchedTxId,
-            existingFromTxId: r.existingFromTxId,
-          })),
-        }),
+            existingFromTxId: r.existingFromTxId
+          }))
+        })
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) { notify(result.error || "Помилка імпорту переказів Payoneer"); return; }
@@ -2363,13 +2272,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       note: r.title, amount: Math.abs(r.amount),
       type: r.amount >= 0 ? "income" : "expense",
       booked_at: r.date,
-      category_id: catMap.get(r.categoryName.toLowerCase()) || null,
+      category_id: catMap.get(r.categoryName.toLowerCase()) || null
     }));
     setBusy(true);
     try {
       const res = await fetch("/api/import/rows", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId, rows: apiRows }),
+        body: JSON.stringify({ accountId, rows: apiRows })
       });
       const result = await res.json();
       if (!res.ok) { notify(result.error || "Помилка імпорту"); return; }
@@ -2469,7 +2378,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const response = await fetch("/api/monobank/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: monoToken.trim() }),
+        body: JSON.stringify({ token: monoToken.trim() })
       });
       const result = await response.json();
       if (!response.ok) return notify(result.error || "Не вдалося підключити Monobank");
@@ -2490,7 +2399,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const response = await fetch("/api/monobank/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monoAccountId, ...body }),
+        body: JSON.stringify({ monoAccountId, ...body })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) return notify(result.error || "Не вдалося прив'язати картку. Спробуй ще раз");
@@ -2516,7 +2425,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     const response = await fetch("/api/monobank/unlink", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ monoAccountId }),
+      body: JSON.stringify({ monoAccountId })
     });
     const result = await response.json();
     if (!response.ok) return notify(result.error || "Не вдалося відв'язати");
@@ -2553,7 +2462,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       const response = await fetch("/api/monobank/resync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: Boolean(force), days: days || 31, monoAccountId: monoAccountId || undefined, noDedupe: Boolean(noDedupe) }),
+        body: JSON.stringify({ force: Boolean(force), days: days || 31, monoAccountId: monoAccountId || undefined, noDedupe: Boolean(noDedupe) })
       });
       let result: {
         error?: string;
@@ -2608,7 +2517,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               ) => ({
                 ...t,
                 id: `scan-${Date.now()}-${i}`,
-                type: t.type === "income" ? "income" : "expense",
+                type: t.type === "income" ? "income" : "expense"
               }),
           ),
       );
@@ -2642,12 +2551,12 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         feeAmount: 0,
         feeCurrency: account.currency,
         note: item.title,
-        bookedAt: item.date ? new Date(item.date).toISOString() : undefined,
+        bookedAt: item.date ? new Date(item.date).toISOString() : undefined
       };
       const response = await fetch("/api/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (!response.ok) {
@@ -2668,12 +2577,12 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         currency: account.currency,
         note: item.title,
         type,
-        bookedAt: item.date ? new Date(item.date).toISOString() : undefined,
+        bookedAt: item.date ? new Date(item.date).toISOString() : undefined
       };
       const response = await fetch("/api/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (!response.ok) {
@@ -2691,7 +2600,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         category: categories.find((c) => c.id === realCategoryId)?.name || "Інше",
         date: "Щойно",
         amount: type === "income" ? item.amount : -item.amount,
-        currency: account.currency,
+        currency: account.currency
       },
       ...transactions,
     ]);
@@ -2959,7 +2868,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                                 limitAmount,
                                 currency: baseCurrency,
                                 icon: b.icon,
-                                color: b.color,
+                                color: b.color
                               },
                               "Ліміт оновлено",
                           )
@@ -3076,7 +2985,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                               direction: "owed_to_me",
                               amount,
                               currency: baseCurrency,
-                              note: "Спільні витрати місяця",
+                              note: "Спільні витрати місяця"
                             },
                             "Борг створено",
                         )
@@ -3223,6 +3132,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                 goal={editingGoal}
                 accounts={accounts}
                 submit={addGoal}
+                remove={deleteGoal}
                 close={() => {
                   setModal(null);
                   setEditingGoal(null);
@@ -3415,7 +3325,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
               opacity: 0.35,
               pointerEvents: "none",
               zIndex: 9999,
-              fontFamily: "monospace",
+              fontFamily: "monospace"
             }}
         >
           v{APP_VERSION}

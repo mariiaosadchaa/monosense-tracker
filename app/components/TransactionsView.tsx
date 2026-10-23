@@ -4,8 +4,7 @@ import { createPortal } from "react-dom";
 import { useClickOutside } from "../lib/useClickOutside";
 import { extractMerchant } from "./AccountCard";
 import type { Transaction, CategoryItem, Account } from "../types";
-import { formatMoney, currencySymbol, toDateKey } from "../lib/format";
-import { mergeTransferPairs } from "../lib/transfers";
+import { formatMoney, currencySymbol } from "../lib/format";
 import {
     ArrowDownLeft,
     ArrowLeftRight,
@@ -44,13 +43,37 @@ function collapsePairs(
         const outId = inToOut.get(String(t.id));
         if (outId && ids.has(outId)) hidden.add(String(t.id));
     }
+    // Payoneer → картка → переказ далі: це одна операція, ногу зарахування Payoneer ховаємо
+    // (у статистиці вона лишається — тут лише відображення)
+    const HOUR = 3600 * 1000;
+    const payoneerSrc = new Map<string, string>(); // outId -> лише ознака
+    for (const inc of list) {
+        if (inc.kind === "transfer" || inc.kind === "exchange" || inc.amount <= 0 || !inc.bookedAt || !/payoneer/i.test(inc.title)) continue;
+        const incTime = Date.parse(inc.bookedAt);
+        const out = list.find(
+            (o) =>
+                o.pairRole === "out" &&
+                !payoneerSrc.has(String(o.id)) &&
+                (o.account || "").trim() === (inc.account || "").trim() &&
+                (o.currency || "UAH") === (inc.currency || "UAH") &&
+                Math.abs(Math.abs(o.amount) - inc.amount) < 0.01 &&
+                !!o.bookedAt &&
+                Date.parse(o.bookedAt) >= incTime - HOUR &&
+                Date.parse(o.bookedAt) <= incTime + 96 * HOUR,
+        );
+        if (out) {
+            payoneerSrc.set(String(out.id), "Payoneer");
+            hidden.add(String(inc.id));
+        }
+    }
     return list
         .filter((t) => !hidden.has(String(t.id)))
         .map((t) => {
             const inId = outToIn.get(String(t.id));
             const inLeg = inId ? byId.get(inId) : undefined;
             if (t.pairRole === "out" || (inLeg && hidden.has(String(inLeg.id)))) {
-                const title = inLeg ? `${t.account} → ${inLeg.account}` : t.title;
+                const from = payoneerSrc.get(String(t.id)) || t.account;
+                const title = inLeg ? `${from} → ${inLeg.account}` : t.title.replace(/^[^→]+(?=\s→)/, from || "");
                 return { ...t, title, pairRole: "out", kind: "transfer", collapsedPair: true };
             }
             return t;
@@ -82,7 +105,7 @@ export function TransactionsView({
                                      scanning,
                                      transfers,
                                      categories,
-                                     accounts,
+                                     accounts
                                  }: {
     transactions: Transaction[];
     search: string;
@@ -129,7 +152,6 @@ export function TransactionsView({
     const sentinelRef = useRef<HTMLDivElement>(null);
     useClickOutside(filtersRef, () => setFiltersOpen(false), filtersOpen);
     useClickOutside(exportRef, () => setExportOpen(false), exportOpen);
-    const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [details, setDetails] = useState<Transaction | null>(null);
     const [manualOrder, setManualOrder] = useState<(string | number)[]>([]);
@@ -303,7 +325,8 @@ export function TransactionsView({
         const rawIcon = t.categoryIcon || cat?.icon;
         const iconName = isJarTitle(t.title) ? "PiggyBank" : (rawIcon && rawIcon !== "CircleDollarSign") ? rawIcon : guessIconFromTitle(t.title);
         const catColor = cat?.color || "#6558e8";
-        const isTransferDisplay = t.kind === "transfer" || t.title.includes("→") || t.title.includes("←");
+        const isJar = isJarTitle(t.title);
+        const isTransferDisplay = !isJar && (t.kind === "transfer" || t.title.includes("→") || t.title.includes("←"));
                             const merchantTitle = extractMerchant(t.title);
                             const hasKnownLogo = !isTransferDisplay && !!findMerchantDomain(merchantTitle.toLowerCase());
                             const isPerson = !isTransferDisplay && !hasKnownLogo && isPersonName(merchantTitle);
@@ -351,7 +374,7 @@ export function TransactionsView({
         (from || to) && {
             key: "date",
             label: preset && preset !== "all" && presetLabel ? presetLabel : `${fmtDate(from) || "…"} – ${fmtDate(to) || "…"}`,
-            clear: () => applyPreset("all"),
+            clear: () => applyPreset("all")
         },
         (minAmount || maxAmount) && {
             key: "amount",
@@ -359,7 +382,7 @@ export function TransactionsView({
             clear: () => {
                 setMinAmount("");
                 setMaxAmount("");
-            },
+            }
         },
     ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
@@ -597,9 +620,6 @@ export function TransactionsView({
             {shown.slice(0, visible).map((t) => {
                 const canEdit = t.kind !== "credit_limit_change";
                 const cat = categories.find((c) => c.name === t.category);
-                const rawIcon = t.categoryIcon || cat?.icon;
-                const iconName = isJarTitle(t.title) ? "PiggyBank" : (rawIcon && rawIcon !== "CircleDollarSign") ? rawIcon : guessIconFromTitle(t.title);
-                const catColor = cat?.color || "#6558e8";
                 return (
                     <div
                         className={editMode && canEdit ? "data-row editable" : "data-row"}
@@ -645,7 +665,7 @@ export function TransactionsView({
     </small>
 </span>
                         <span>{t.date}</span>
-                        <b className={t.collapsedPair ? "transfer-amount" : t.amount > 0 ? "income-amount" : ""}>
+                        <b className={t.collapsedPair || isJarTitle(t.title) ? "transfer-amount" : t.amount > 0 ? "income-amount" : ""}>
                             {t.collapsedPair ? "" : t.amount > 0 ? "+" : "−"} {currencySymbol(t.currency || "UAH")}{" "}
                             {formatMoney(Math.abs(t.amount))}
                             {(t.originalAmount && t.originalCurrency && t.originalCurrency !== (t.currency || "UAH")) || (t.feeAmount && t.feeAmount > 0) ? (
@@ -736,7 +756,7 @@ function TxDetails({
     close,
     edit,
     remove,
-    filterSimilar,
+    filterSimilar
 }: {
     t: Transaction;
     icon: React.ReactNode;
@@ -754,11 +774,13 @@ function TxDetails({
               month: "long",
               year: "numeric",
               hour: "2-digit",
-              minute: "2-digit",
+              minute: "2-digit"
           })
         : t.date;
     const kindLabel =
-        t.kind === "transfer"
+        isJarTitle(t.title)
+            ? "Накопичення — не враховується в статистиці"
+            : t.kind === "transfer"
             ? t.category === "Між своїми рахунками"
                 ? "Переказ між своїми рахунками — не враховується в статистиці"
                 : "Переказ"

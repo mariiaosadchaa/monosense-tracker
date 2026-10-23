@@ -53,7 +53,7 @@ export async function POST(request:Request){
   const now=new Date(),weekStart=new Date(now);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
   const monthStart=now.toISOString().slice(0,7)+"-01";
   const categoryIds=new Map((categories||[]).map(item=>[item.name,item.id]));
-  const budgets:any[]=[];
+  const budgets:Record<string,unknown>[]=[];
   for(const item of chosen){
     const categoryId=categoryIds.get(item.name);
     if(!categoryId)continue;

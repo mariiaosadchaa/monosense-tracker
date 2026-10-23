@@ -8,7 +8,7 @@ import {
     Camera, Dice5, Volleyball, Trophy, Mountain, Map, Amphora, Shirt, Glasses, GraduationCap,
     BookOpen, PawPrint, Cat, Dog, Gift, PartyPopper, Star, Smartphone, Wifi, Globe, Baby,
     Palette, Brush, Landmark, ShieldCheck, ArrowLeftRight, Repeat, Package, HeartHandshake,
-    Leaf, Flame, Sparkles, CreditCard, TrendingUp, Coins, Scissors, PiggyBank,
+    Leaf, Flame, Sparkles, CreditCard, TrendingUp, Coins, PiggyBank
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -33,7 +33,7 @@ export const BUDGET_ICONS: Record<string, ComponentType<{ size?: number }>> = {
     HeartHandshake,
     Leaf, Flame,
     Sparkles,
-    PiggyBank,
+    PiggyBank
 };
 export const BUDGET_ICON_NAMES = Object.keys(BUDGET_ICONS);
 export const BUDGET_COLORS = [
@@ -333,7 +333,7 @@ export const MERCHANT_LOGO_DOMAINS: [string, string][] = [
 const CYR_TO_LAT: Record<string, string> = {
     а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ie", ж: "zh", з: "z", и: "y", і: "i", ї: "i",
     й: "i", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh",
-    ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "", ю: "iu", я: "ia", ы: "y", э: "e", ё: "e", ъ: "", "'": "", "’": "",
+    ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "", ю: "iu", я: "ia", ы: "y", э: "e", ё: "e", ъ: "", "'": "", "’": ""
 };
 
 /** Латинський «скелет» назви: трансліт + зведення варіантів (y/i, kh/h, g/h, ts/c…), без пробілів. */
@@ -380,7 +380,7 @@ function keySkeleton(key: string): string {
 
 /** Операції з банками (накопиченнями) Монобанку — це не мерчант */
 export function isJarTitle(title: string): boolean {
-    return /(зняття\s+(з\s+)?банки|виплата\s+банки|поповнення\s+банки|на\s+банку|з\s+банки)/i.test(title || "");
+    return /(зняття\s+(з\s+)?банки|виплата\s+банки|поповнення\s+банки|на\s+банку|з\s+банки|округлення\s+балансу)/i.test(title || "");
 }
 
 export function findMerchantDomain(title: string): string | null {
@@ -422,7 +422,7 @@ const BANK_DOMAINS: Record<string, string> = {
     укрсиббанк: "ukrsibbank.com",
     "отп банк": "otpbank.com.ua",
     кредобанк: "kredobank.com.ua",
-    пайонер: "payoneer.com",
+    пайонер: "payoneer.com"
 };
 export function findBankDomain(bankName: string): string | null {
     const lower = bankName.toLowerCase();
@@ -453,7 +453,7 @@ export function MerchantIcon({
                                  title,
                                  bankName,
                                  imgStyle,
-                                 fallback,
+                                 fallback
                              }: {
     title: string;
     bankName?: string;
