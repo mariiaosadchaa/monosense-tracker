@@ -11,6 +11,7 @@ export type Page =
 export type Transaction = {
     id: number | string;
     title: string;
+    comment?: string;            // особиста нотатка («що купила»), окремо від назви мерчанта
     category: string;
     categoryIcon?: string;
     date: string;
@@ -69,6 +70,7 @@ export type GoalItem = {
     expensePercent?: number;
     sourceAccountId?: string;
     sourceAccountIds?: string[];
+    createdAt?: string;
 };
 
 export type DebtItem = {

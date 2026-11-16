@@ -6,6 +6,7 @@ import { mccCategoryCandidates } from "@/lib/monobank/mcc";
 import { monoItemFee } from "@/lib/monobank/fee";
 import { findPossibleDuplicate } from "@/lib/monobank/dedupe";
 import { createDepositGoal, isDepositOpening } from "@/lib/monobank/deposit";
+import { applyJarMovement } from "@/lib/monobank/jar";
 import { nbuRate } from "@/lib/nbu";
 
 type MonoItem = { id: string; time: number; description?: string; amount: number; balance: number; mcc?: number; operationAmount?: number; currencyCode?: number; commissionRate?: number };
@@ -648,6 +649,10 @@ export async function POST(request: Request) {
 
             if (transaction?.id && isDepositOpening(f.item.description, f.item.amount)) {
                 await createDepositGoal(admin, { householdId: context.householdId, userId: connection.connected_by, amountKop: f.item.amount, currency: account.currency, accountId: null, time: f.item.time });
+            }
+
+            if (transaction?.id) {
+              await applyJarMovement(admin, { householdId: context.householdId, userId: connection.connected_by, description: f.item.description, amount: f.item.amount / 100, currency: account.currency });
             }
 
             const feeInfo = await monoItemFee(f.item, account.currency);

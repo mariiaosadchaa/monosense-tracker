@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         .select("app_account_id").eq("household_id", context.householdId).eq("mono_account_id", monoAccountId).maybeSingle();
     if (!link) return NextResponse.json({ error: "Картку не прив'язано" }, { status: 400 });
     const { data: account } = await admin.from("accounts")
-        .select("id,name,currency,balance").eq("id", link.app_account_id).maybeSingle();
+        .select("id,name,currency,balance,credit_limit").eq("id", link.app_account_id).maybeSingle();
 
     const to = Math.floor(Date.now() / 1000);
     const from = to - days * 24 * 3600;
@@ -92,7 +92,8 @@ export async function POST(request: Request) {
         account: account?.name || "",
         currency: account?.currency || "",
         monoBalance: items.length ? [...items].sort((a, b) => b.time - a.time)[0].balance / 100 : null,
-        appBalance: account ? Number(account.balance) : null,
+        // Monobank показує залишок з кредитним лімітом — порівнюємо так само
+        appBalance: account ? Number(account.balance) + (Number(account.credit_limit) || 0) : null,
         total: result.length,
         okCount: result.filter((r) => r.status === "ok").length,
         items: result.filter((r) => r.status !== "ok"),

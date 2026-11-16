@@ -157,6 +157,11 @@ export async function POST(request: Request) {
           }
         }
       }
+      if (!result.error && result.data?.id && typeof body.comment === "string" && body.comment.trim()) {
+        // окремим запитом: якщо колонки comment ще немає — операція все одно створиться
+        await supabase.from("transactions").update({ comment: body.comment.trim().slice(0, 1000) })
+          .eq("id", result.data.id).eq("household_id", householdId);
+      }
       if (!result.error && result.data?.id && body.receiptAmount) {
         await applyReceiptFee(supabase, householdId, String(result.data.id), {
           amount: Number(body.amount), currency: String(body.currency || "UAH"), type: String(body.type),
@@ -185,6 +190,10 @@ export async function POST(request: Request) {
             result = await supabase.from("transactions").update({
               account_id:newAccountId,amount:newAmount,type:newType,category_id:body.categoryId||null,note:String(body.note||"").slice(0,500),booked_at:body.bookedAt||undefined,
             }).eq("id",body.id).eq("household_id",householdId).select().single();
+            if (!result.error && "comment" in body) {
+              await supabase.from("transactions").update({ comment: String(body.comment || "").trim().slice(0, 1000) || null })
+                .eq("id", body.id).eq("household_id", householdId);
+            }
             if (!result.error && "receiptAmount" in body) {
               const { data: accRow } = await supabase.from("accounts").select("currency").eq("id", newAccountId).eq("household_id", householdId).maybeSingle();
               await applyReceiptFee(supabase, householdId, String(body.id), {
@@ -325,22 +334,9 @@ export async function POST(request: Request) {
       }, { onConflict: "household_id,category_id,month,period_type" }).select().single();
       break;
     case "createGoal":
-      result = await supabase.from("goals").insert({
-        household_id: householdId, name: String(body.name).slice(0,100), target_amount:Number(body.targetAmount),
-        current_amount:Number(body.currentAmount)||0, currency:String(body.currency||"UAH"), target_date:body.targetDate||null,
-        color:body.color||"#6558E8", created_by:user.id,
-        asset_type:["savings","deposit","bond","security"].includes(body.assetType)?body.assetType:"savings",
-        annual_rate:body.annualRate?Number(body.annualRate):null, compound_interest:Boolean(body.compoundInterest),
-        round_balance_to:body.roundBalanceTo?Number(body.roundBalanceTo):null,
-        round_expense_to:body.roundExpenseTo?Number(body.roundExpenseTo):null,
-        expense_percent:body.expensePercent?Number(body.expensePercent):null,
-        source_account_ids:Array.isArray(body.sourceAccountIds)?body.sourceAccountIds.map(String):[],
-        source_account_id:(Array.isArray(body.sourceAccountIds)&&body.sourceAccountIds[0])||null,
-      }).select().single();
-      break;
-    case "updateGoal":
-      result = await supabase.from("goals").update({
-        name: String(body.name).slice(0,100), target_amount:Number(body.targetAmount), target_date:body.targetDate||null,
+    case "updateGoal": {
+      const goalFields: Record<string, unknown> = {
+        name: String(body.name).slice(0,100), target_amount:Number(body.targetAmount)>0?Number(body.targetAmount):null, target_date:body.targetDate||null,
         color:body.color||"#6558E8", asset_type:["savings","deposit","bond","security"].includes(body.assetType)?body.assetType:"savings",
         annual_rate:body.annualRate?Number(body.annualRate):null, compound_interest:Boolean(body.compoundInterest),
         round_balance_to:body.roundBalanceTo?Number(body.roundBalanceTo):null,
@@ -348,8 +344,22 @@ export async function POST(request: Request) {
         expense_percent:body.expensePercent?Number(body.expensePercent):null,
         source_account_ids:Array.isArray(body.sourceAccountIds)?body.sourceAccountIds.map(String):[],
         source_account_id:(Array.isArray(body.sourceAccountIds)&&body.sourceAccountIds[0])||null,
-      }).eq("id",body.id).eq("household_id",householdId).select().single();
+      };
+      if (body.action === "createGoal") Object.assign(goalFields, {
+        household_id: householdId, created_by: user.id,
+        current_amount: Number(body.currentAmount)||0, currency: String(body.currency||"UAH"),
+      });
+      const saveGoal = (fields: Record<string, unknown>) => body.action === "createGoal"
+        ? supabase.from("goals").insert(fields).select().single()
+        : supabase.from("goals").update(fields).eq("id",body.id).eq("household_id",householdId).select().single();
+      result = await saveGoal(goalFields);
+      // Міграцію з source_account_ids ще не застосовано — зберігаємо лише перший рахунок
+      if (result.error && /source_account_ids/.test(result.error.message)) {
+        delete goalFields.source_account_ids;
+        result = await saveGoal(goalFields);
+      }
       break;
+    }
     case "withdrawGoal": {
       const amount=Number(body.amount);
       const { data: goalRow } = await supabase.from("goals").select("current_amount").eq("id",body.id).eq("household_id",householdId).single();

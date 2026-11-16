@@ -211,7 +211,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
 
   useEffect(() => {
     goals.forEach((goal) => {
-      const percent = Math.min(100, Math.round((goal.current / Math.max(1, goal.target)) * 100));
+      if (!goal.target || goal.target <= 0) return;
+      const percent = Math.min(100, Math.round((goal.current / goal.target) * 100));
       const milestones = [25, 50, 75, 100];
       const reached = milestones.filter((m) => percent >= m);
       const lastSeen = seenMilestones[goal.id] || 0;
@@ -463,6 +464,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                         return direction === "in" ? `${myAccount} ← ${otherAccount}` : `${myAccount} → ${otherAccount}`;
                       })()
                       : String(item.note || (item.type === "income" ? "Дохід" : "Витрата")),
+                  comment: item.comment ? String(item.comment) : undefined,
                   category: isTransferLeg
                       ? "Переказ"
                       : String(
@@ -496,7 +498,8 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           (data.goals || []).map((item: Record<string, unknown>) => ({
             id: String(item.id),
             name: String(item.name),
-            target: Number(item.target_amount),
+            target: item.target_amount ? Number(item.target_amount) : 0,
+            createdAt: item.created_at ? String(item.created_at) : undefined,
             current: Number(item.current_amount),
             currency: String(item.currency),
             date: item.target_date ? String(item.target_date) : undefined,
@@ -948,6 +951,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           amount: value,
           currency: account.currency,
           note,
+          comment: String(form.get("comment") || ""),
           type: operationType,
           isImpulsive: !isIncome && form.get("impulse") === "on",
           splitTotal: isIncome ? null : form.get("splitTotal") || null,
@@ -1199,7 +1203,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                       ? {
                         ...item,
                         name: String(payload.name || item.name),
-                        target: Number(payload.targetAmount) || item.target,
+                        target: Number(payload.targetAmount) || 0,
                         date: payload.targetDate ? String(payload.targetDate) : item.date
                       }
                       : item,
@@ -1221,7 +1225,9 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                   item.id === id
                       ? {
                         ...item,
-                        current: Math.min(item.target, item.current + Number(payload.amount || 0))
+                        current: item.target > 0
+                            ? Math.min(item.target, item.current + Number(payload.amount || 0))
+                            : item.current + Number(payload.amount || 0)
                       }
                       : item,
               ),
@@ -1405,7 +1411,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       action: editingGoal ? "updateGoal" : "createGoal",
       id: editingGoal?.id,
       name: f.get("name"),
-      targetAmount: Number(f.get("target")),
+      targetAmount: f.get("target") ? Number(f.get("target")) : null,
       currentAmount: Number(f.get("current")),
       currency: String(f.get("currency") || "UAH"),
       targetDate: f.get("date") ? String(f.get("date")) : undefined,
@@ -1965,6 +1971,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     // Виписка Monobank не містить номера картки: валюта рахунку лише в назві стовпця «Сума в валюті картки (UAH)»
     let monoCardCurrency = null as string | null;
     let monoLatestBalance = null as number | null;
+    let monoLatestDate = "";
     try {
       if (excel) {
         const XLSX = await import("xlsx");
@@ -2014,7 +2021,6 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
           cur: headerCells.indexOf("валюта"),
           bal: headerCells.findIndex((h) => h.startsWith("залишок"))
         };
-        let monoLatestDate = "";
         if (isMonoCsv) {
           const cm = /\(([a-z]{3})\)/i.exec(headerCells[monoCols.card] || "");
           monoCardCurrency = cm ? cm[1].toUpperCase() : "UAH";
@@ -2071,20 +2077,13 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     }
     if (!rawRows.length) return notify("Файл не містить операцій");
 
-    const existingKeys = new Set(
-        transactions.filter((t) => t.bookedAt).map((t) =>
-            `${t.bookedAt!.slice(0, 10)}|${Math.abs(t.amount).toFixed(2)}|${(t.currency || "UAH").toUpperCase()}`
-        )
-    );
     const now = Date.now();
     let previewRows: ImportPreviewRow[] = rawRows.map((r, i) => {
-      const cur = (r.currency || "UAH").toUpperCase();
-      const key = `${r.date.slice(0, 10)}|${Math.abs(r.amount).toFixed(2)}|${cur}`;
-      const isDuplicate = existingKeys.has(key);
+      // дублікати визначаються нижче, коли відомий рахунок імпорту
       return {
         id: `import-${now}-${i}`,
         title: r.title, amount: r.amount, date: r.date, categoryName: r.categoryName,
-        isDuplicate, selected: !isDuplicate && !r.skip,
+        isDuplicate: false, selected: !r.skip,
         currency: r.currency,
         isPayoneerTransfer: r.isPayoneerTransfer
       };
@@ -2122,6 +2121,32 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         ? String(payoneerAccount.id)
         : (monoAccountId || defaultAccountId);
     const importAccountName = accounts.find((a) => String(a.id) === importAccountId)?.name;
+    // Дублікати: лише операції ЦЬОГО рахунку, зі знаком, за київською добою і з урахуванням кількості
+    // (дві кави по 50 ₴ за день — це дві операції, а не дубль; −100 на іншій картці — не дубль).
+    const kyivDayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Kyiv" }).format(new Date(iso));
+    const accountTxs = transactions.filter((t) => t.bookedAt && importAccountName && t.account === importAccountName);
+    const existingCount = new NativeMap<string, number>();
+    for (const t of accountTxs) {
+      const k = `${kyivDayKey(t.bookedAt!)}|${Number(t.amount).toFixed(2)}`;
+      existingCount.set(k, (existingCount.get(k) || 0) + 1);
+    }
+    previewRows = previewRows.map((row) => {
+      const k = `${kyivDayKey(row.date)}|${Number(row.amount).toFixed(2)}`;
+      const left = existingCount.get(k) || 0;
+      if (!left) return row;
+      existingCount.set(k, left - 1);
+      return { ...row, isDuplicate: true, selected: false };
+    });
+    // Звірка з колонкою «Залишок» виписки Монобанку (для кредитки там сума разом з лімітом)
+    const reconcile = monoLatestBalance != null && monoLatestDate
+        ? {
+          statementBalance: monoLatestBalance as number,
+          statementAt: monoLatestDate,
+          afterByAccount: Object.fromEntries(accounts.map((a) => [String(a.id),
+            transactions.filter((t) => t.account === a.name && t.bookedAt && new Date(t.bookedAt).getTime() > new Date(monoLatestDate).getTime())
+                .reduce((sum, t) => sum + Number(t.amount || 0), 0)])) as Record<string, number>,
+        }
+        : undefined;
     const kyivDay = (iso: string) =>
         new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Kyiv" }).format(new Date(iso));
     const withdrawals = previewRows.filter((r) => r.isPayoneerTransfer && r.amount < 0 && !r.isDuplicate);
@@ -2236,10 +2261,10 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
         selected: alreadyExact ? false : row.selected
       };
     });
-    setImportPreview({ rows: withFees, accountId: importAccountId });
+    setImportPreview({ rows: withFees, accountId: importAccountId, reconcile });
   }
 
-  async function confirmImport(rows: ImportPreviewRow[], accountId: string) {
+  async function confirmImport(rows: ImportPreviewRow[], accountId: string, setBalance?: number) {
     if (!initialLoggedIn) {
       const imported = rows.map((r, i) => ({
         id: Date.now() + i, title: r.title, category: r.categoryName || "Без категорії",
@@ -2268,7 +2293,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) { notify(result.error || "Помилка імпорту переказів Payoneer"); return; }
-      if (!plainRows.length) {
+      if (!plainRows.length && setBalance == null) {
         notify(`Зв'язано переказів: ${result.linked}`);
         setImportPreview(null);
         await refreshFinance();
@@ -2285,11 +2310,11 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
     try {
       const res = await fetch("/api/import/rows", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId, rows: apiRows })
+        body: JSON.stringify({ accountId, rows: apiRows, setBalance })
       });
       const result = await res.json();
       if (!res.ok) { notify(result.error || "Помилка імпорту"); return; }
-      notify(`Додано операцій: ${result.imported}`);
+      notify(`Додано операцій: ${result.imported}${result.balance != null ? " · баланс звірено з випискою" : ""}`);
       setImportPreview(null);
       await refreshFinance();
     } finally { setBusy(false); }
@@ -2316,6 +2341,7 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
   const [importPreview, setImportPreview] = useState<{
     rows: ImportPreviewRow[];
     accountId: string;
+    reconcile?: { statementBalance: number; statementAt: string; afterByAccount: Record<string, number> };
   } | null>(null);
 
   const [scanning, setScanning] = useState(false);

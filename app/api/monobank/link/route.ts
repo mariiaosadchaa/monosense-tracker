@@ -36,7 +36,8 @@ export async function POST(request: Request) {
           bank: "monobank",
           owner_label: "Мій",
           currency: String(body.currency || "UAH").slice(0, 3),
-          balance: Number(body.balance) || 0,
+          // Monobank віддає баланс разом із кредитним лімітом; у нас balance = власні кошти
+          balance: (Number(body.balance) || 0) - (Number(body.creditLimit) || 0),
           credit_limit: Number(body.creditLimit) || 0,
           card_color: "#000000",
         })

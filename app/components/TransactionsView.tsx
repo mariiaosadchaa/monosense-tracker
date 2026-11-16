@@ -658,6 +658,7 @@ export function TransactionsView({
                             {t.impulse && <em>Імпульсивна</em>}
                             {t.duplicateOf != null && <em className="dup-badge" title="Є операція з тією ж сумою на цьому рахунку — схоже на дубль. Не враховується в статистиці.">Можливий дубль</em>}
                             <small className="row-tags">{t.tags?.map((x) => `#${x}`).join(" ")}</small>
+                            {t.comment && <small className="row-comment">{t.comment}</small>}
                         </strong>
                         <span>
     {t.category}
@@ -806,6 +807,7 @@ function TxDetails({
     if (t.tags?.length) rows.push(["Теги", t.tags.map((x) => `#${x}`).join(" ")]);
     if (t.impulse) rows.push(["Позначка", "Імпульсивна покупка"]);
     if (t.title !== extractMerchant(t.title)) rows.push(["Опис", t.title]);
+    if (t.comment) rows.push(["Нотатка", t.comment]);
     return createPortal(
         <div className="modal-backdrop" onMouseDown={close}>
             <div className="expense-modal txd" onMouseDown={(e) => e.stopPropagation()}>

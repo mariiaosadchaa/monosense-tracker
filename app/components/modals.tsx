@@ -13,6 +13,9 @@ import {
     BarChart3,
     Check,
     CircleDollarSign,
+    HandCoins,
+    Landmark,
+    PiggyBank,
     Sparkles,
     Trash2
 } from "lucide-react";
@@ -265,13 +268,17 @@ export function ExpenseModal({
                     </div>
                 </details>}
                 <label>
-                    Нотатка
+                    {tab === "transfer" ? "Опис" : "Де / назва"}
                     <input
-                        placeholder={tab === "transfer" ? "Наприклад, поповнення з основної" : type === "income" ? "Наприклад, зарплата" : "Наприклад, кава"}
+                        placeholder={tab === "transfer" ? "Наприклад, поповнення з основної" : type === "income" ? "Наприклад, зарплата" : "Наприклад, Сільпо"}
                         value={note}
                         onChange={(event) => setNote(event.target.value)}
                     />
                 </label>
+                {tab !== "transfer" && <label>
+                    Нотатка
+                    <textarea name="comment" rows={2} placeholder="Що купила, для кого, навіщо…" />
+                </label>}
                 {tab !== "transfer" && <label>
                     Теги
                     <input name="tags" placeholder="#відпустка #робота" />
@@ -578,7 +585,8 @@ export function DateTimeField({
                            date,
                            time,
                            onDateChange,
-                           onTimeChange
+                           onTimeChange,
+                           inline = false
                        }: {
     label: string;
     name: string;
@@ -586,6 +594,7 @@ export function DateTimeField({
     time: string;
     onDateChange: (d: string) => void;
     onTimeChange: (t: string) => void;
+    inline?: boolean;
 }) {
     const todayKey = toDateKey(new Date());
     const [viewYear, setViewYear] = useState(() => Number(date.split("-")[0]));
@@ -614,7 +623,7 @@ export function DateTimeField({
     const dayNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
     return (
-        <div>
+        <div className={inline ? "dtf-inline" : undefined}>
             <div className="picker-label">
                 {label}
                 <details className="compact-picker">
@@ -672,7 +681,7 @@ export function DateTimeField({
                     </div>
                 </details>
             </div>
-            <div className="picker-label" style={{ marginTop: 8 }}>
+            <div className="picker-label" style={inline ? undefined : { marginTop: 8 }}>
                 Час
                 <TimeField value={time} onChange={onTimeChange} />
             </div>
@@ -811,6 +820,29 @@ export function AccountModal({
             "Інший",
         ],
         selected = banks.includes(account?.bank || "") ? account?.bank : "Інший";
+    // Кредитка: у БД зберігаємо власні кошти (balance, може бути < 0), доступно = balance + ліміт.
+    // Користувач вводить те, що бачить у банку: «Доступно», «Власні» або «Борг».
+    const [isCredit, setIsCredit] = useState(Boolean(account?.creditLimit || account?.graceEnd));
+    const [limitInput, setLimitInput] = useState(account?.creditLimit ? String(account.creditLimit) : "");
+    const [balanceMode, setBalanceMode] = useState<"available" | "own" | "debt">("available");
+    const [balanceInput, setBalanceInput] = useState(() => {
+        const own = Number(account?.balance) || 0;
+        const lim = Number(account?.creditLimit) || 0;
+        return account ? String(+(own + lim).toFixed(2)) : "";
+    });
+    const num = (v: string) => Number(String(v).replace(/\s/g, "").replace(",", ".")) || 0;
+    const limitValue = num(limitInput);
+    const toOwn = (mode: typeof balanceMode, raw: string) => {
+        const v = num(raw);
+        return mode === "available" ? v - limitValue : mode === "debt" ? -Math.abs(v) : v;
+    };
+    const ownFunds = toOwn(balanceMode, balanceInput);
+    function switchMode(next: typeof balanceMode) {
+        const own = ownFunds;
+        const shown = next === "available" ? own + limitValue : next === "debt" ? Math.max(0, -own) : own;
+        setBalanceMode(next);
+        if (balanceInput !== "") setBalanceInput(String(+shown.toFixed(2)));
+    }
     return (
         <div className="modal-backdrop" onMouseDown={close}>
             <form className="expense-modal" onSubmit={submit} onMouseDown={(e) => e.stopPropagation()}>
@@ -853,17 +885,98 @@ export function AccountModal({
                             <option>PLN</option>
                         </select>
                     </label>
-                    <label>
-                        Баланс
-                        <input
-                            name="balance"
-                            type="number"
-                            step=".01"
-                            defaultValue={account?.balance}
-                            placeholder="0"
-                        />
-                    </label>
+                    {!isCredit && (
+                        <label>
+                            Баланс
+                            <input
+                                name="balance"
+                                type="number"
+                                inputMode="decimal"
+                                step=".01"
+                                defaultValue={account?.balance}
+                                placeholder="0"
+                            />
+                        </label>
+                    )}
                 </div>
+                <label className="dc-split-toggle">
+                    <input type="checkbox" checked={isCredit} onChange={(e) => setIsCredit(e.target.checked)} />
+                    <i />
+                    Кредитна картка (є кредитний ліміт)
+                </label>
+                {isCredit && (
+                    <div className="split-details credit-balance">
+                        <div className="form-two">
+                            <label>
+                                Кредитний ліміт
+                                <input
+                                    name="creditLimit"
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    step=".01"
+                                    value={limitInput}
+                                    onChange={(e) => setLimitInput(e.target.value)}
+                                    placeholder="Наприклад, 50000"
+                                />
+                            </label>
+                            <label>
+                                {balanceMode === "available" ? "Доступно в банку" : balanceMode === "own" ? "Власні кошти" : "Заборгованість"}
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    step=".01"
+                                    min={balanceMode === "own" ? undefined : "0"}
+                                    value={balanceInput}
+                                    onChange={(e) => setBalanceInput(e.target.value)}
+                                    placeholder="0"
+                                />
+                            </label>
+                        </div>
+                        <div className="credit-mode" role="radiogroup" aria-label="Що ви вводите">
+                            {([
+                                ["available", "Доступно"],
+                                ["own", "Власні"],
+                                ["debt", "Борг"],
+                            ] as const).map(([mode, text]) => (
+                                <button
+                                    key={mode}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={balanceMode === mode}
+                                    className={balanceMode === mode ? "active" : ""}
+                                    onClick={() => switchMode(mode)}
+                                >
+                                    {text}
+                                </button>
+                            ))}
+                        </div>
+                        <small className="credit-summary">
+                            {ownFunds >= 0
+                                ? <>Власні кошти: <b>{ownFunds.toFixed(2)}</b> · кредит не використано</>
+                                : <>Використано кредиту: <b>{(-ownFunds).toFixed(2)}</b> з {limitValue.toFixed(2)} · доступно {(ownFunds + limitValue).toFixed(2)}</>}
+                        </small>
+                        <input type="hidden" name="balance" value={ownFunds.toFixed(2)} />
+                        <div className="form-two">
+                            <label>
+                                Кінець грейс-періоду
+                                <input name="graceEnd" type="date" defaultValue={account?.graceEnd?.slice(0, 10)} />
+                            </label>
+                            <label>
+                                Пільговий баланс (до сплати)
+                                <input
+                                    name="graceBalance"
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    step=".01"
+                                    defaultValue={account?.graceBalance}
+                                    placeholder="Наприклад, 4500"
+                                />
+                            </label>
+                        </div>
+                    </div>
+                )}
                 <label>
                     Колір картки
                     <input name="cardColor" type="color" defaultValue={account?.color || "#252629"} />
@@ -900,39 +1013,6 @@ export function AccountModal({
                     />
                 </label>
                 <input type="hidden" name="cardImageUrl" defaultValue={account?.cardImage} />
-                <details
-                    className="split-details"
-                    open={Boolean(account?.creditLimit || account?.graceEnd)}
-                >
-                    <summary>Кредитна картка</summary>
-                    <div className="form-two">
-                        <label>
-                            Кредитний ліміт
-                            <input
-                                name="creditLimit"
-                                type="number"
-                                min="0"
-                                defaultValue={account?.creditLimit}
-                                placeholder="0"
-                            />
-                        </label>
-                        <label>
-                            Кінець грейс-періоду
-                            <input name="graceEnd" type="date" defaultValue={account?.graceEnd?.slice(0, 10)} />
-                        </label>
-                        <label>
-                            Пільговий баланс (до сплати)
-                            <input
-                                name="graceBalance"
-                                type="number"
-                                min="0"
-                                step=".01"
-                                defaultValue={account?.graceBalance}
-                                placeholder="Наприклад, 4500"
-                            />
-                        </label>
-                    </div>
-                </details>
                 <div className="form-two">
                     <button className="primary">{account ? "Зберегти зміни" : "Створити рахунок"}</button>
                     {account && (
@@ -949,6 +1029,13 @@ export function AccountModal({
         </div>
     );
 }
+const GOAL_TYPES = [
+    { id: "savings", label: "Банка", hint: "Відкладати на ціль", placeholder: "Резервний фонд", Icon: PiggyBank },
+    { id: "deposit", label: "Депозит", hint: "Ставка й термін", placeholder: "Депозит Моно 6 міс.", Icon: Landmark },
+    { id: "bond", label: "Облігація", hint: "ОВДП до погашення", placeholder: "ОВДП 239107", Icon: HandCoins },
+    { id: "security", label: "Цінний папір", hint: "Акції, фонди", placeholder: "S&P 500 ETF", Icon: BarChart3 },
+] as const;
+
 export function GoalModal({
                        goal,
                        accounts,
@@ -962,7 +1049,7 @@ export function GoalModal({
     remove?: (id: string) => void;
     close: () => void;
 }) {
-    const [assetType, setAssetType] = useState(goal?.assetType || "savings");
+    const [assetType, setAssetType] = useState<string | null>(goal ? goal.assetType || "savings" : null);
     const [autoTopup, setAutoTopup] = useState(Boolean(goal?.sourceAccountId || goal?.sourceAccountIds?.length));
     const [sourceIds, setSourceIds] = useState<string[]>(
         goal?.sourceAccountIds ?? (goal?.sourceAccountId ? [goal.sourceAccountId] : []),
@@ -970,84 +1057,120 @@ export function GoalModal({
     return (
         <div className="modal-backdrop" onMouseDown={close}>
             <form
-                className="expense-modal tall-modal"
+                className="expense-modal tall-modal gm"
                 onSubmit={submit}
                 onMouseDown={(e) => e.stopPropagation()}
             >
                 <ModalHead
                     label="Накопичення"
-                    title={goal ? "Редагувати банку" : "Нова банка"}
+                    title={goal ? "Редагувати" : assetType ? `Новий актив · ${GOAL_TYPES.find((t) => t.id === assetType)?.label}` : "Що створюємо?"}
                     close={close}
                 />
-                <label>
-                    Назва
-                    <input name="name" required defaultValue={goal?.name} placeholder="Резервний фонд" />
-                </label>
-                <div className="form-two">
+                <div className={`gm-types${assetType ? " compact" : ""}`} role="radiogroup">
+                    {GOAL_TYPES.map(({ id, label, hint, Icon }) => (
+                        <button
+                            key={id}
+                            type="button"
+                            role="radio"
+                            aria-checked={assetType === id}
+                            className={assetType === id ? "active" : ""}
+                            onClick={() => setAssetType(id)}
+                        >
+                            <Icon size={18} />
+                            <span>{label}</span>
+                            {!assetType && <small>{hint}</small>}
+                        </button>
+                    ))}
+                </div>
+                {assetType && (
+                <>
+                <input type="hidden" name="assetType" value={assetType} />
+                <div className="gm-row gm-name">
                     <label>
-                        Цільова сума
-                        <input name="target" type="number" min="1" required defaultValue={goal?.target} />
+                        Назва
+                        <input
+                            name="name"
+                            required
+                            defaultValue={goal?.name}
+                            placeholder={GOAL_TYPES.find((t) => t.id === assetType)?.placeholder}
+                        />
                     </label>
+                    <label className="gm-color" title="Колір">
+                        Колір
+                        <input name="color" type="color" defaultValue={goal?.color || "#6558e8"} />
+                    </label>
+                </div>
+                <div className={`gm-row${assetType === "savings" ? " gm-money" : " gm-two"}`}>
+                    {assetType === "savings" && (
+                        <label>
+                            Ціль <small>необов&apos;язково</small>
+                            <input name="target" type="number" min="1" step=".01" placeholder="—" defaultValue={goal?.target || ""} />
+                        </label>
+                    )}
                     <label>
-                        Вже накопичено
+                        {assetType === "savings" ? "Накопичено" : "Вкладено"}
                         <input
                             name="current"
                             type="number"
                             min="0"
-                            defaultValue={goal?.current ?? 0}
+                            step=".01"
+                            defaultValue={goal?.current ?? ""}
+                            placeholder="0"
                             disabled={Boolean(goal)}
                         />
                     </label>
-                </div>
-                <div className="form-two">
                     <label>
                         Валюта
-                        <select name="currency" defaultValue={goal?.currency || "UAH"}>
+                        <select name="currency" defaultValue={goal?.currency || "UAH"} disabled={Boolean(goal)}>
                             <option>UAH</option>
                             <option>USD</option>
                             <option>EUR</option>
                         </select>
                     </label>
+                </div>
+                {assetType === "savings" ? (
                     <label>
-                        Дата (необов&apos;язково)
+                        Дата цілі <small>необов&apos;язково</small>
                         <input name="date" type="date" defaultValue={goal?.date?.slice(0, 10)} />
                     </label>
-                </div>
-                <label>
-                    Тип активу
-                    <select name="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)}>
-                        <option value="savings">Накопичення (готівка/банка)</option>
-                        <option value="deposit">Депозит</option>
-                        <option value="bond">Облігація</option>
-                        <option value="security">Цінний папір</option>
-                    </select>
-                </label>
-                {assetType !== "savings" && (
-                    <div className="form-two">
+                ) : (
+                    <div className="gm-row">
                         <label>
-                            Відсоток прибутку на рік, %
+                            {assetType === "security" ? "Очікувана дохідність, %" : assetType === "bond" ? "Дохідність, % річних" : "Ставка, % річних"}
                             <input
                                 name="annualRate"
                                 type="number"
                                 min="0"
                                 step=".01"
+                                required={assetType !== "security"}
+                                placeholder={assetType === "bond" ? "напр. 16.5" : "напр. 14"}
                                 defaultValue={goal?.annualRate}
                             />
                         </label>
-                        <label className="check impulse" style={{ alignSelf: "end" }}>
+                        <label>
+                            {assetType === "deposit" ? "Кінець депозиту" : assetType === "bond" ? "Дата погашення" : "Горизонт"}
+                            {assetType === "security" && <small> необов&apos;язково</small>}
                             <input
-                                name="compoundInterest"
-                                type="checkbox"
-                                defaultChecked={goal?.compoundInterest}
-                            />{" "}
-                            Капіталізація відсотків
+                                name="date"
+                                type="date"
+                                required={assetType !== "security"}
+                                defaultValue={goal?.date?.slice(0, 10)}
+                            />
                         </label>
                     </div>
                 )}
-                <label>
-                    Колір
-                    <input name="color" type="color" defaultValue={goal?.color || "#6558e8"} />
-                </label>
+                {assetType === "deposit" && (
+                    <label className="check impulse">
+                        <input
+                            name="compoundInterest"
+                            type="checkbox"
+                            defaultChecked={goal?.compoundInterest}
+                        />{" "}
+                        Капіталізація відсотків (щомісяця)
+                    </label>
+                )}
+                {assetType === "savings" && (
+                <>
                 <label className="check impulse">
                     <input
                         type="checkbox"
@@ -1123,17 +1246,22 @@ export function GoalModal({
                             />
                         </label>
                         <small className="field-help">
-                            Округлення залишку рахується раз на добу. Округлення витрат і відсоток від витрат —
-                            одразу при кожній новій витраті з обраного рахунку.
+                            <b>Округлення залишку</b> — раз на добу баланс картки зрізається вниз до кратного: було 1 237 ₴,
+                            до 100 → 37 ₴ іде в банку, на картці 1 200 ₴.<br />
+                            <b>Округлення витрат</b> — з кожної покупки: кава 47 ₴, до 10 → 3 ₴ іде в банку (разом 50 ₴).<br />
+                            <b>Відсоток</b> — частка кожної витрати: 1% від 500 ₴ = 5 ₴ у банку.
                         </small>
                     </>
                 )}
-                <button className="primary">{goal ? "Зберегти зміни" : "Створити банку"}</button>
+                </>
+                )}
+                </>
+                )}
+                <button className="primary etx-save" disabled={!assetType}>{goal ? "Зберегти зміни" : assetType === "savings" || !assetType ? "Створити банку" : "Додати актив"}</button>
                 {goal && remove && (
                     <button
                         type="button"
-                        className="secondary"
-                        style={{ color: "#d94b4b" }}
+                        className="secondary gm-delete"
                         onClick={() => remove(String(goal.id))}
                     >
                         Видалити банку
@@ -1612,7 +1740,7 @@ export function EditTransactionModal({
     return (
         <div className="modal-backdrop" onMouseDown={close}>
             <form
-                className="expense-modal"
+                className="expense-modal etx"
                 onSubmit={(e) => {
                     e.preventDefault();
                     const f = new FormData(e.currentTarget);
@@ -1623,6 +1751,7 @@ export function EditTransactionModal({
                         type,
                         categoryId: isTransfer ? null : (f.get("category") || null),
                         note: f.get("note"),
+                        comment: String(f.get("comment") || ""),
                         bookedAt: f.get("date") ? new Date(String(f.get("date"))).toISOString() : undefined,
                         tags: String(f.get("tags") || "")
                             .split(/\s+/)
@@ -1653,6 +1782,7 @@ export function EditTransactionModal({
                         <ArrowDownLeft /> Дохід
                     </button>
                 </div>
+                <div className="etx-row">
                 <label>
                     Рахунок
                     <select name="account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
@@ -1674,6 +1804,7 @@ export function EditTransactionModal({
                         defaultValue={Math.abs(transaction.amount)}
                     />
                 </label>
+                </div>
                 {!isTransfer && (accounts.find((a) => String(a.id) === accountId)?.currency || "UAH") !== "UAH" && (
                     <label>
                         Сума з чека, ₴ <small style={{ color: "var(--text-secondary)" }}>(різниця за курсом НБУ піде в комісію)</small>
@@ -1688,6 +1819,7 @@ export function EditTransactionModal({
                         ) : null}
                     </label>
                 )}
+                <div className="etx-row">
                 {!isTransfer && (
                     <label>
                         Категорія
@@ -1707,8 +1839,22 @@ export function EditTransactionModal({
                         </select>
                     </label>
                 )}
+                {type === "expense" && !isTransfer && goals.length > 0 && (
+                    <label>
+                        В банку
+                        <select name="contributeGoalId" defaultValue="">
+                            <option value="">—</option>
+                            {goals.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+                </div>
                 {type === "expense" && (
-                    <label className="check impulse">
+                    <label className="check impulse etx-check">
                         <input
                             type="checkbox"
                             checked={isTransfer}
@@ -1752,19 +1898,6 @@ export function EditTransactionModal({
                         })()}
                     </>
                 )}
-                {type === "expense" && !isTransfer && goals.length > 0 && (
-                    <label>
-                        Покласти в банку (необов&apos;язково)
-                        <select name="contributeGoalId" defaultValue="">
-                            <option value="">Не класти в банку</option>
-                            {goals.map((g) => (
-                                <option key={g.id} value={g.id}>
-                                    {g.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                )}
                 <DateTimeField
                     label="Дата"
                     name="date"
@@ -1772,10 +1905,16 @@ export function EditTransactionModal({
                     time={editTime}
                     onDateChange={setEditDate}
                     onTimeChange={setEditTime}
+                    inline
                 />
                 <label>
-                    Нотатка
+                    Назва / мерчант
                     <input name="note" defaultValue={transaction.title} />
+                </label>
+                <div className="etx-row">
+                <label>
+                    Нотатка
+                    <textarea name="comment" rows={1} defaultValue={transaction.comment || ""} placeholder="Що купила, для кого, навіщо…" />
                 </label>
                 <label>
                     Теги
@@ -1785,7 +1924,8 @@ export function EditTransactionModal({
                         placeholder="#відпустка #робота"
                     />
                 </label>
-                <button className="primary">Зберегти зміни</button>
+                </div>
+                <button className="primary etx-save">Зберегти зміни</button>
             </form>
         </div>
     );
@@ -2005,9 +2145,13 @@ export function ImportPreviewModal({
                                 onConfirm,
                                 onClose
                             }: {
-    preview: { rows: ImportPreviewRowExternal[]; accountId: string };
+    preview: {
+        rows: ImportPreviewRowExternal[];
+        accountId: string;
+        reconcile?: { statementBalance: number; statementAt: string; afterByAccount: Record<string, number> };
+    };
     accounts: Account[];
-    onConfirm: (rows: ImportPreviewRowExternal[], accountId: string) => void;
+    onConfirm: (rows: ImportPreviewRowExternal[], accountId: string, setBalance?: number) => void;
     onClose: () => void;
 }) {
     const [rows, setRows] = useState(preview.rows);
@@ -2018,6 +2162,16 @@ export function ImportPreviewModal({
         setRows((prev) => prev.map((r) => r.isDuplicate ? r : { ...r, selected: !allSelected }));
     };
     const selectedCount = rows.filter((r) => r.selected).length;
+    // Звірка: залишок з виписки (для кредитки — разом з лімітом) + операції в Rivna після дати виписки
+    const rec = preview.reconcile;
+    const recAccount = accounts.find((a) => String(a.id) === accountId);
+    const selectedSum = rows.filter((r) => r.selected && !r.isPayoneerTransfer).reduce((s, r) => s + r.amount, 0);
+    const projected = (Number(recAccount?.balance) || 0) + selectedSum;
+    const expected = rec && recAccount
+        ? rec.statementBalance - (Number(recAccount.creditLimit) || 0) + (rec.afterByAccount[accountId] || 0)
+        : null;
+    const recDiff = expected == null ? 0 : +(expected - projected).toFixed(2);
+    const [alignBalance, setAlignBalance] = useState(true);
     const dupCount = rows.filter((r) => r.isDuplicate).length;
     const newCount = rows.filter((r) => !r.isDuplicate).length;
     const fmt = new Intl.DateTimeFormat("uk-UA", { dateStyle: "short" });
@@ -2090,6 +2244,27 @@ export function ImportPreviewModal({
                     </button>
                     <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Обрано: {selectedCount}</span>
                 </div>
+                {expected != null && (
+                    <div className={`import-reconcile${Math.abs(recDiff) >= 0.01 ? " off" : ""}`}>
+                        <div>
+                            Залишок за випискою на {fmt.format(new Date(rec!.statementAt))}:{" "}
+                            <b>{rec!.statementBalance.toFixed(2)}</b>
+                            {(recAccount?.creditLimit || 0) > 0 && <> (з лімітом; власні {(rec!.statementBalance - (recAccount!.creditLimit || 0)).toFixed(2)})</>}
+                        </div>
+                        <div>
+                            У Rivna після імпорту: <b>{projected.toFixed(2)}</b>
+                            {Math.abs(recDiff) >= 0.01
+                                ? <> · різниця <b className="neg">{recDiff > 0 ? "+" : ""}{recDiff.toFixed(2)}</b></>
+                                : <> · збігається ✓</>}
+                        </div>
+                        {Math.abs(recDiff) >= 0.01 && (
+                            <label className="import-align">
+                                <input type="checkbox" checked={alignBalance} onChange={(e) => setAlignBalance(e.target.checked)} />
+                                Вирівняти баланс рахунку за випискою ({expected.toFixed(2)})
+                            </label>
+                        )}
+                    </div>
+                )}
                 <div className="import-table-wrap" style={{ maxHeight: "50vh", overflowY: "auto", border: "1px solid var(--border)", borderRadius: 10 }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                         <thead style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--panel)", boxShadow: "0 1px 0 var(--line)" }}>
@@ -2147,10 +2322,11 @@ export function ImportPreviewModal({
                             style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-secondary)", cursor: "pointer", color: "var(--text)" }}>
                         Скасувати
                     </button>
-                    <button type="button" disabled={selectedCount === 0}
-                            onClick={() => onConfirm(rows.filter((r) => r.selected), accountId)}
-                            style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: selectedCount === 0 ? "var(--border)" : "var(--purple)", color: "#fff", cursor: selectedCount === 0 ? "default" : "pointer", fontWeight: 600 }}>
-                        Імпортувати обрані ({selectedCount})
+                    <button type="button" disabled={selectedCount === 0 && !(alignBalance && Math.abs(recDiff) >= 0.01)}
+                            onClick={() => onConfirm(rows.filter((r) => r.selected), accountId,
+                                expected != null && alignBalance && Math.abs(recDiff) >= 0.01 ? expected : undefined)}
+                            style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: selectedCount === 0 && !(alignBalance && Math.abs(recDiff) >= 0.01) ? "var(--border)" : "var(--purple)", color: "#fff", cursor: "pointer", fontWeight: 600 }}>
+                        {selectedCount === 0 ? "Лише вирівняти баланс" : `Імпортувати обрані (${selectedCount})`}
                     </button>
                 </div>
             </div>

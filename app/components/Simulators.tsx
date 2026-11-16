@@ -82,12 +82,12 @@ export function InvestmentSimulator({ goals, baseCurrency }: { goals: GoalItem[]
                     />
                 </label>
             </div>
-            {goals.length > 0 && (
-                <label>
+            {goals.some((g) => g.target > 0) && (
+                <label className="sim-link">
                     Прив&apos;язати до цілі (необов&apos;язково)
                     <select value={linkedGoal} onChange={(e) => setLinkedGoal(e.target.value)}>
                         <option value="">Не прив&apos;язано</option>
-                        {goals.map((g) => (
+                        {goals.filter((g) => g.target > 0).map((g) => (
                             <option key={g.id} value={g.id}>
                                 {g.name}
                             </option>
@@ -129,7 +129,7 @@ export function InvestmentSimulator({ goals, baseCurrency }: { goals: GoalItem[]
                     </div>
                 ))}
             </div>
-            {selectedGoal && (
+            {selectedGoal && selectedGoal.target > 0 && (
                 <div className="form-message success">
                     При такому темпі ти досягнеш цілі &quot;{selectedGoal.name}&quot; ({symbol}{" "}
                     {formatMoney(selectedGoal.target)}) приблизно за{" "}

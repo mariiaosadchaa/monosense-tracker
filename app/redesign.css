@@ -1118,3 +1118,143 @@ body { max-width: 100%; overflow-x: clip; }
 .dc-split-toggle input:checked + i { background: #c9a35e; }
 .dc-split-toggle input:checked + i::after { transform: translateX(15px); }
 .dc-split-toggle input:focus-visible + i { outline: 2px solid #c9a35e; outline-offset: 2px; }
+
+/* ============================================================
+   19. Модалки на iPhone: скролиться вікно, а не сторінка під ним.
+   Блокування body — ScrollLock.tsx (клас html.modal-open).
+   ============================================================ */
+.modal-backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+.expense-modal {
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 0px)) - 20px);
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+}
+html.modal-open, html.modal-open body { overflow: hidden !important; }
+@media (max-width: 720px) {
+    .expense-modal {
+        max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - 8px);
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    /* інпути ≥16px — iOS не зумить сторінку при фокусі */
+    .expense-modal input, .expense-modal select, .expense-modal textarea { font-size: max(16px, 1em); }
+}
+
+/* ---------- Рахунок: ввід балансу кредитки ---------- */
+.credit-balance { display: grid; gap: 10px; }
+.credit-mode { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: var(--fill, rgba(127,127,127,.12)); }
+.credit-mode button { border: 0 !important; background: transparent !important; color: var(--text-2) !important; padding: 8px 0 !important; border-radius: 9px !important; font-size: 13px !important; font-weight: 600; min-height: 0 !important; }
+.credit-mode button.active { background: var(--panel) !important; color: var(--text) !important; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.credit-summary { color: var(--text-2); font-size: 12.5px; line-height: 1.4; }
+.credit-summary b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---------- Деталі операції: «Видалити» не ховається під «Редагувати» ---------- */
+.txd-actions { gap: 12px; }
+.txd-del { flex: none; white-space: nowrap; padding: 0 4px; min-height: 44px; }
+.expense-modal.txd .txd-actions button.primary { width: auto !important; flex: 1 1 auto; min-width: 0; justify-content: center; }
+.txd-similar, .txd-x { background: var(--panel) !important; }
+
+/* ---------- Імпорт: звірка з залишком виписки ---------- */
+.import-reconcile { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
+.import-reconcile b { color: var(--text); font-variant-numeric: tabular-nums; }
+.import-reconcile.off { box-shadow: inset 3px 0 0 var(--gold, #b3915b); }
+.import-reconcile b.neg { color: var(--neg, #d94b4b); }
+.import-align { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; margin-top: 4px; color: var(--text); font-size: 13px; }
+.import-align input { width: 18px; height: 18px; }
+.data-row strong small.row-comment { display: block; font-weight: 400; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.expense-modal textarea { resize: vertical; min-height: 44px; font: inherit; }
+
+/* ---------- Редагування операції: компактна форма ---------- */
+.expense-modal.etx { gap: 12px; padding-bottom: 0; }
+.etx .modal-head { margin-bottom: -2px; }
+.etx-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+.etx-row:empty { display: none; }
+.etx-row > label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 13px; color: var(--text-2); font-weight: 500; }
+.etx-row > label input, .etx-row > label select, .etx-row > label textarea { width: 100%; min-width: 0; }
+.etx > label:not(.check) { gap: 6px; }
+.etx input:not([type="checkbox"]), .etx select, .etx textarea { min-height: 44px; padding-top: 10px !important; padding-bottom: 10px !important; }
+.etx textarea { min-height: 44px; }
+.etx-check { padding: 8px 12px; border-radius: 12px; font-size: 13px; }
+.dtf-inline { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.dtf-inline .picker-label { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dtf-inline .compact-picker summary { min-height: 44px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dtf-inline .tf { margin-top: 0; padding: 2px 6px; gap: 2px; flex-wrap: nowrap; }
+.dtf-inline .tf-part button { padding: 1px 8px; font-size: 8px; }
+.dtf-inline .tf-part input { width: 38px; height: 28px; font-size: 17px !important; }
+.dtf-inline .tf-colon { font-size: 17px; }
+.dtf-inline .tf-quick { display: none; }
+.etx-save { position: sticky; bottom: 0; z-index: 5; margin-top: 4px; box-shadow: 0 -14px 18px 6px var(--bg); margin-bottom: 16px; }
+
+/* ---------- Банка: компактна форма ---------- */
+.form-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.form-two > label { min-width: 0; }
+.form-two input, .form-two select { width: 100%; min-width: 0; }
+.expense-modal.gm { gap: 12px; padding-bottom: 0; overflow-x: hidden !important; }
+.gm-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.gm-row.gm-name { grid-template-columns: minmax(0, 1fr) 56px; }
+.gm-row.gm-money { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 88px; }
+.gm-row > label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 13px; color: var(--text-2); font-weight: 500; }
+.gm-row > label input:not([type="checkbox"]), .gm-row > label select { width: 100%; min-width: 0; }
+.gm input:not([type="checkbox"]):not([type="color"]), .gm select { min-height: 44px; padding-top: 10px !important; padding-bottom: 10px !important; }
+.gm-color input[type="color"] { width: 100%; height: 44px; padding: 4px !important; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); cursor: pointer; }
+.gm-color input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.gm-color input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 8px; }
+.gm-color input[type="color"]::-moz-color-swatch { border: 0; border-radius: 8px; }
+.gm-row > label.gm-check { flex-direction: row; align-items: center; align-self: end; min-height: 44px; padding: 0 12px; border-radius: 12px; font-size: 13px; }
+.gm > label.check { padding: 8px 12px; border-radius: 12px; font-size: 13px; }
+.gm .etx-save { margin-bottom: 6px; }
+.gm-delete { color: #d94b4b !important; background: transparent !important; border: 0 !important; min-height: 36px; margin-bottom: 14px; font-size: 14px; }
+@media (max-width: 380px) { .gm-row.gm-money { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .gm-row.gm-money > label:last-child { grid-column: 1 / -1; } }
+
+/* ---------- Цілі: картки ---------- */
+.goals-panel { min-height: 0 !important; }
+.goals-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)) !important; gap: 14px !important; margin-top: 18px !important; align-items: stretch !important; }
+.goal-card { display: flex; flex-direction: column; padding: 16px !important; translate: none !important; }
+.page-stage .goals-grid .goal-card { animation: goal-card-in .45s cubic-bezier(.2,.8,.2,1) both !important; animation-timeline: auto !important; animation-delay: calc(var(--i, 0) * 60ms) !important; }
+@keyframes goal-card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.goal-card-top { justify-content: flex-start !important; gap: 10px; margin-bottom: 14px !important; }
+.goal-card-head { min-width: 0; }
+.goal-card-title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-card-head .goal-card-label { margin: 2px 0 0 !important; font-size: 12px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--text-2) !important; }
+.goal-card-amount { margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.goal-progress { margin-top: auto; margin-bottom: 14px; }
+.goal-progress-text { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 7px; }
+.goal-progress-text span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal-progress-text b { flex: none; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.goal-card .goal-card-bar { height: 6px !important; margin: 0 !important; }
+.goal-card .goal-card-bar > i { transform-origin: left; animation: goal-bar-in .9s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 60ms + .15s); }
+@keyframes goal-bar-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.goal-actions-row { display: flex !important; gap: 6px !important; align-items: center; }
+.goal-action-main { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border: 0; border-radius: 999px; background: var(--ink, #111); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+.goal-action-main:hover { opacity: .88; }
+.goal-actions-row .goal-action-btn { flex: none; width: 36px; height: 36px; padding: 0 !important; transition: background-color .15s, color .15s; }
+.goal-actions-row .goal-action-btn:hover { background: var(--fill) !important; }
+@media (prefers-reduced-motion: reduce) { .page-stage .goals-grid .goal-card, .goal-card .goal-card-bar > i { animation: none !important; } }
+
+/* Симулятор: прив'язка до цілі */
+.sim-link { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--text-2); max-width: 360px; }
+.sim-link select { min-height: 44px; border-radius: 12px; padding: 0 12px; border: 0; background: var(--panel-2, var(--bg)); color: var(--text); font: inherit; }
+
+/* Банка: вибір типу активу */
+.gm-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gm-types button { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; padding: 14px; border: 1px solid var(--hairline, var(--line)); border-radius: 14px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.gm-types button svg { grid-row: 1 / span 2; color: var(--gold-text, var(--purple)); }
+.gm-types button span { font-size: 14px; font-weight: 650; }
+.gm-types button small { font-size: 12px; color: var(--text-2); }
+.gm-types button:hover { border-color: var(--text-2); }
+.gm-types button.active { border-color: var(--text); background: var(--fill); }
+.gm-types.compact { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 3px; border-radius: 12px; background: var(--fill); }
+.gm-types.compact button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px; border: 0; border-radius: 9px; background: transparent; }
+.gm-types.compact button span { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gm-types.compact button svg { width: 16px; height: 16px; }
+.gm-types.compact button.active { background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.gm-row.gm-two { grid-template-columns: minmax(0, 1fr) 88px; }
+.gm > label:not(.check) { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-2); font-weight: 500; }
+.gm label small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.gm .etx-save:disabled { opacity: .4; cursor: default; }

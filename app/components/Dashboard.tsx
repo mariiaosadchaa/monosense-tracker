@@ -174,7 +174,7 @@ export function Dashboard({
                     currency: "UAH",
                     color: "#6558E8",
                 }),
-        goalProgress = primaryGoal
+        goalProgress = primaryGoal && primaryGoal.target > 0
             ? Math.min(100, Math.round((primaryGoal.current / Math.max(1, primaryGoal.target)) * 100))
             : 0;
     const symbol = currencySymbol(baseCurrency);
