@@ -2909,6 +2909,40 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                           )
                       }
                       rolloverEnabled={budgetRollover}
+                      recurring={recurring}
+                      toBase={(amount: number, currency: string) =>
+                          (amount * conversionRate(currency, rates, customRates)) /
+                          conversionRate(baseCurrency, rates, customRates)
+                      }
+                      addRecurring={() => setModal("recurring")}
+                      applyCuts={async (month, rows) => {
+                        setBusy(true);
+                        try {
+                          let failed = 0;
+                          for (const r of rows) {
+                            const cat = categories.find((c) => c.id === r.categoryId);
+                            const res = await fetch("/api/finance", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                action: "createBudget",
+                                categoryId: r.categoryId,
+                                month,
+                                periodType: "month",
+                                limitAmount: r.limit,
+                                currency: baseCurrency,
+                                icon: cat?.icon,
+                                color: cat?.color
+                              })
+                            });
+                            if (!res.ok) failed++;
+                          }
+                          notify(failed ? `Не вдалося зберегти ${failed} з ${rows.length} лімітів` : `Встановлено ${rows.length} лімітів`);
+                          await refreshFinance();
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
                   />
               ) : (
                   <BudgetView

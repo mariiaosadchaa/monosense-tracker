@@ -6241,3 +6241,49 @@ button:disabled {
 .an-legend em { font-style: normal; flex: 1; }
 .an-legend b { font-weight: 600; }
 .an-legend li.total { border-top: 1px solid var(--line); padding-top: 10px; color: var(--muted); }
+
+/* ===== План ЗП по тижнях ===== */
+.pp-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--muted, #80808c); }
+.pp-empty p { margin: 0; font-size: 13px; }
+.pp-empty .lim-add { width: 100%; }
+.pp-hero { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pp-hero small { color: var(--muted, #80808c); font-size: 12px; }
+.pp-hero strong { font-size: 30px; letter-spacing: -.02em; }
+.pp-hero em { font-style: normal; font-size: 12px; color: #2fb67c; }
+.pp-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+.pp-chips span { font-size: 11px; background: var(--line); border-radius: 999px; padding: 4px 9px; }
+.pp-warn { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 12px; color: #e05252; }
+.pp-h { margin: 0 0 6px; font-size: 14px; display: flex; justify-content: space-between; }
+.pp-h span { color: var(--muted, #80808c); font-weight: 500; }
+.pp-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.pp-inc, .pp-bill { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.pp-inc:last-child, .pp-bill:last-child { border-bottom: 0; }
+.pp-inc > small, .pp-bill small { display: block; color: var(--muted, #80808c); font-size: 12px; margin-top: 2px; }
+.pp-split { display: flex; height: 10px; border-radius: 6px; overflow: hidden; gap: 2px; margin-top: 10px; background: var(--line); }
+.pp-split i { display: block; min-width: 2px; }
+.pp-split i.bills, .pp-legend .dot.bills { background: #e05252; }
+.pp-split i.save, .pp-legend .dot.save { background: var(--gold, #b8924a); }
+.pp-split i.free, .pp-legend .dot.free { background: #2fb67c; }
+.pp-legend { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.pp-legend li { display: flex; align-items: center; gap: 8px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.pp-covers { margin-top: 8px; font-size: 11px; color: var(--muted, #80808c); }
+.pp-reserve { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.pp-reserve input { flex: 1; accent-color: var(--purple); }
+
+/* ===== Зменшити витрати на X% ===== */
+.cut-head { width: 100%; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; }
+.cut-head .lim-ic { grid-row: auto; }
+.cut-head small { display: block; color: var(--muted, #80808c); font-size: 12px; }
+.cut-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.cut-chips button { border: 0; background: var(--line); color: inherit; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.cut-chips button.on { background: var(--purple); color: #fff; }
+.cut-chips label { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
+.cut-chips input { width: 56px; border: 1px solid var(--line); background: none; color: inherit; border-radius: 999px; padding: 6px 8px; font: inherit; text-align: center; }
+.cut-sum { margin: 12px 0 6px; font-size: 13px; }
+.cut-list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; }
+.cut-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 8px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.cut-list li:last-child { border-bottom: 0; }
+.cut-list small { color: var(--muted, #80808c); }
+.cut-list em { grid-column: 1 / 4; font-style: normal; font-size: 11px; color: #f4b740; }
+.cut-apply { width: 100%; margin-top: 12px; }

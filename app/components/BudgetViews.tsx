@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
-import type { Transaction, BudgetItem } from "../types";
+import type { Transaction, BudgetItem, RecurringItem } from "../types";
+import { PaycheckPlanner } from "./PaycheckPlanner";
 import { formatMoney, currencySymbol, toDateKey } from "../lib/format";
 import { budgetPeriodBounds } from "../lib/transfers";
 import { BudgetIcon } from "../lib/icons";
-import { Bell, ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, Plus, Scissors, Trash2, X } from "lucide-react";
 
 // Демо-ліміти, коли своїх ще немає
 const budgetRows = [
@@ -191,7 +192,11 @@ export function LiveBudgetView({
                             remove,
                             update,
                             createFrom,
-                            rolloverEnabled
+                            rolloverEnabled,
+                            recurring = [],
+                            toBase = (a: number) => a,
+                            addRecurring = () => {},
+                            applyCuts
                         }: {
     budgets: BudgetItem[];
     transactions: Transaction[];
@@ -205,7 +210,15 @@ export function LiveBudgetView({
     update: (id: string, limitAmount: number) => void;
     createFrom: (budget: BudgetItem, limitAmount: number) => void;
     rolloverEnabled: boolean;
+    recurring?: RecurringItem[];
+    toBase?: (amount: number, currency: string) => number;
+    addRecurring?: () => void;
+    applyCuts?: (month: string, rows: { categoryId: string; name: string; limit: number }[]) => Promise<void>;
 }) {
+    const [showPlan, setShowPlan] = useState(false);
+    const [cutPct, setCutPct] = useState(10);
+    const [cutOpen, setCutOpen] = useState(false);
+    const [cutBusy, setCutBusy] = useState(false);
     const { periodStart, periodEnd } = budgetPeriodBounds(periodType, anchor);
     const isCurrent = new Date() >= periodStart && new Date() < periodEnd;
     const currentMonthKey = `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, "0")}`;
@@ -372,6 +385,76 @@ export function LiveBudgetView({
         setEditing(null);
     };
 
+    // «Зменшити витрати на X%»: витрати минулого місяця по категоріях → ліміти на цей місяць
+    const cutRows = (() => {
+        if (periodType !== "month") return [];
+        const prevStart = new Date(periodStart.getFullYear(), periodStart.getMonth() - 1, 1);
+        const byCat: Record<string, { categoryId: string; name: string; spent: number }> = {};
+        transactions.forEach((t) => {
+            if (t.amount >= 0 || t.kind === "transfer" || t.kind === "exchange" || !t.bookedAt || !t.categoryId) return;
+            const d = new Date(t.bookedAt);
+            if (d < prevStart || d >= periodStart) return;
+            const row = (byCat[t.categoryId] ||= { categoryId: t.categoryId, name: t.category, spent: 0 });
+            row.spent += Math.abs(t.baseAmount ?? t.amount);
+        });
+        return Object.values(byCat)
+            .filter((r) => r.spent >= 1)
+            .sort((a, b) => b.spent - a.spent)
+            .map((r) => ({
+                ...r,
+                limit: Math.max(10, Math.round((r.spent * (1 - cutPct / 100)) / 10) * 10),
+                current: activeBudgets.find((b) => b.categoryId === r.categoryId && !b.id.startsWith("agg-"))?.baseLimit,
+            }));
+    })();
+    const cutWas = cutRows.reduce((s, r) => s + r.spent, 0);
+    const cutNew = cutRows.reduce((s, r) => s + r.limit, 0);
+    const prevMonthName = new Intl.DateTimeFormat("uk-UA", { month: "long" }).format(
+        new Date(periodStart.getFullYear(), periodStart.getMonth() - 1, 1),
+    );
+    const runCuts = async () => {
+        if (!applyCuts || !cutRows.length) return;
+        const replacing = cutRows.filter((r) => r.current !== undefined).length;
+        if (replacing && !window.confirm(`Буде замінено ${replacing} існуючих лімітів на цей місяць. Продовжити?`)) return;
+        setCutBusy(true);
+        try {
+            await applyCuts(`${currentMonthKey}-01`, cutRows.map(({ categoryId, name, limit }) => ({ categoryId, name, limit })));
+            setCutOpen(false);
+        } finally {
+            setCutBusy(false);
+        }
+    };
+
+    const segment = (
+            <div className="lim-seg">
+                {(["month", "week"] as const).map((p) => (
+                    <button
+                        key={p}
+                        type="button"
+                        className={!showPlan && periodType === p ? "on" : ""}
+                        onClick={() => {
+                            setShowPlan(false);
+                            setPeriodType(p);
+                            goToday();
+                        }}
+                    >
+                        {p === "month" ? "Місяць" : "Тиждень"}
+                    </button>
+                ))}
+                <button type="button" className={showPlan ? "on" : ""} onClick={() => setShowPlan(true)}>
+                    План ЗП
+                </button>
+            </div>
+    );
+
+    if (showPlan) {
+        return (
+            <div className="lim">
+                {segment}
+                <PaycheckPlanner recurring={recurring} toBase={toBase} baseCurrency={baseCurrency} addRecurring={addRecurring} />
+            </div>
+        );
+    }
+
     return (
         <div className="lim">
             <div className="lim-head">
@@ -386,21 +469,7 @@ export function LiveBudgetView({
                     <ChevronRight size={18} />
                 </button>
             </div>
-            <div className="lim-seg">
-                {(["month", "week"] as const).map((p) => (
-                    <button
-                        key={p}
-                        type="button"
-                        className={periodType === p ? "on" : ""}
-                        onClick={() => {
-                            setPeriodType(p);
-                            goToday();
-                        }}
-                    >
-                        {p === "month" ? "Місяць" : "Тиждень"}
-                    </button>
-                ))}
-            </div>
+            {segment}
 
             <section className="lim-card lim-hero">
                 <div className="lim-ring">
@@ -485,6 +554,59 @@ export function LiveBudgetView({
                                 </button>
                             );
                         })}
+                </section>
+            )}
+
+            {periodType === "month" && applyCuts && cutRows.length > 0 && (
+                <section className="lim-card cut">
+                    <button type="button" className="cut-head" onClick={() => setCutOpen((v) => !v)}>
+                        <span className="lim-ic" style={{ color: "var(--purple)", background: "color-mix(in srgb, var(--purple) 12%, transparent)" }}>
+                            <Scissors size={17} />
+                        </span>
+                        <span>
+                            <b>Зменшити витрати</b>
+                            <small>від витрат за {prevMonthName}: {formatMoney(cutWas)} {symbol}</small>
+                        </span>
+                        <ChevronRight size={16} style={{ transform: cutOpen ? "rotate(90deg)" : undefined }} />
+                    </button>
+                    {cutOpen && (
+                        <>
+                            <div className="cut-chips">
+                                {[5, 10, 15, 20].map((p) => (
+                                    <button key={p} type="button" className={cutPct === p ? "on" : ""} onClick={() => setCutPct(p)}>
+                                        −{p}%
+                                    </button>
+                                ))}
+                                <label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={90}
+                                        value={cutPct}
+                                        onChange={(e) => setCutPct(Math.min(90, Math.max(0, Number(e.target.value) || 0)))}
+                                    />
+                                    %
+                                </label>
+                            </div>
+                            <p className="cut-sum">
+                                {formatMoney(cutWas)} → <b>{formatMoney(cutNew)} {symbol}</b>
+                                <span className="ok"> економія {formatMoney(cutWas - cutNew)} {symbol}</span>
+                            </p>
+                            <ul className="cut-list">
+                                {cutRows.map((r) => (
+                                    <li key={r.categoryId}>
+                                        <span>{r.name}</span>
+                                        <small>{formatMoney(r.spent)} →</small>
+                                        <b>{formatMoney(r.limit)} {symbol}</b>
+                                        {r.current !== undefined && <em>зараз {formatMoney(r.current)}</em>}
+                                    </li>
+                                ))}
+                            </ul>
+                            <button type="button" className="small-primary cut-apply" disabled={cutBusy || cutPct <= 0} onClick={runCuts}>
+                                {cutBusy ? "Зберігаю…" : `Встановити ліміти (−${cutPct}%)`}
+                            </button>
+                        </>
+                    )}
                 </section>
             )}
 
