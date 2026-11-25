@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import type { Transaction, BudgetItem, RecurringItem } from "../types";
-import { PaycheckPlanner } from "./PaycheckPlanner";
+import type { Transaction, BudgetItem, RecurringItem, Account } from "../types";
+import { PaycheckPlanner, type IncomeDraft } from "./PaycheckPlanner";
 import { formatMoney, currencySymbol, toDateKey } from "../lib/format";
 import { budgetPeriodBounds } from "../lib/transfers";
 import { BudgetIcon } from "../lib/icons";
@@ -199,7 +199,10 @@ export function LiveBudgetView({
                             recurring = [],
                             toBase = (a: number) => a,
                             addRecurring = () => {},
-                            applyCuts
+                            applyCuts,
+                            accounts,
+                            saveIncome,
+                            removeRecurring
                         }: {
     budgets: BudgetItem[];
     transactions: Transaction[];
@@ -216,6 +219,9 @@ export function LiveBudgetView({
     recurring?: RecurringItem[];
     toBase?: (amount: number, currency: string) => number;
     addRecurring?: () => void;
+    accounts?: Account[];
+    saveIncome?: (d: IncomeDraft, id?: string) => Promise<void>;
+    removeRecurring?: (id: string) => void;
     applyCuts?: (month: string, rows: { categoryId: string; name: string; limit: number }[]) => Promise<void>;
 }) {
     const [showPlan, setShowPlan] = useState(false);
@@ -454,7 +460,7 @@ export function LiveBudgetView({
         return (
             <div className="lim">
                 {segment}
-                <PaycheckPlanner recurring={recurring} toBase={toBase} baseCurrency={baseCurrency} addRecurring={addRecurring} />
+                <PaycheckPlanner recurring={recurring} toBase={toBase} baseCurrency={baseCurrency} addRecurring={addRecurring} accounts={accounts} saveIncome={saveIncome} removeRecurring={removeRecurring} />
             </div>
         );
     }

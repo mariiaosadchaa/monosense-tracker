@@ -2915,6 +2915,26 @@ export function RivnaApp({ initialLoggedIn = false }: { initialLoggedIn?: boolea
                           conversionRate(baseCurrency, rates, customRates)
                       }
                       addRecurring={() => setModal("recurring")}
+                      accounts={accounts}
+                      saveIncome={async (d, id) => {
+                        const account = accounts.find((a) => String(a.id) === d.accountId);
+                        await financeAction(
+                            {
+                              action: id ? "updateRecurring" : "createRecurring",
+                              id,
+                              accountId: d.accountId,
+                              name: d.name,
+                              amount: d.amount,
+                              currency: account?.currency || baseCurrency,
+                              frequency: d.frequency,
+                              nextRunAt: d.nextRunAt,
+                              autoCreate: false,
+                              kind: "income"
+                            },
+                            id ? "ЗП оновлено" : "ЗП додано",
+                        );
+                      }}
+                      removeRecurring={(id) => financeAction({ action: "deleteRecurring", id }, "ЗП видалено")}
                       applyCuts={async (month, rows) => {
                         setBusy(true);
                         try {

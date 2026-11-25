@@ -468,6 +468,13 @@ export async function POST(request: Request) {
         case "deleteRule":
           result = await supabase.from("transaction_rules").delete().eq("id",body.id).eq("household_id",householdId);
           break;
+      case "updateRecurring":
+          result = await supabase.from("recurring_rules").update({
+            name:String(body.name).slice(0,100),amount:Number(body.amount),currency:String(body.currency),
+            frequency:body.frequency||"monthly",next_run_at:body.nextRunAt,
+            ...(body.accountId?{account_id:body.accountId}:{}),
+          }).eq("id",body.id).eq("household_id",householdId).select().single();
+          break;
       case "deleteRecurring":
           result = await supabase.from("recurring_rules").delete().eq("id",body.id).eq("household_id",householdId);
           break;

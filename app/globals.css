@@ -6287,3 +6287,11 @@ button:disabled {
 .cut-list small { color: var(--muted, #80808c); }
 .cut-list em { grid-column: 1 / 4; font-style: normal; font-size: 11px; color: #f4b740; }
 .cut-apply { width: 100%; margin-top: 12px; }
+
+/* План ЗП: список зарплат */
+.pp-sal { width: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.pp-sal small { display: block; color: var(--muted, #80808c); font-size: 12px; margin-top: 2px; }
+.pp-sal svg { color: var(--muted, #80808c); }
+.pp-sal-add { width: 100%; margin-top: 10px; }
+.pp-form label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.pp-freq { margin-bottom: 10px; }
