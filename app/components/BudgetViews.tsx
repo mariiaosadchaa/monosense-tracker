@@ -16,6 +16,9 @@ const budgetRows = [
 ];
 
 
+// Фіксовані зобов'язання — їх не зменшиш відсотком
+const NON_CUTTABLE = new Set(["Борги", "Відсотки / Комісія", "Переказ"]);
+
 export function BudgetView({
                         budgets,
                         transactions,
@@ -392,6 +395,7 @@ export function LiveBudgetView({
         const byCat: Record<string, { categoryId: string; name: string; spent: number }> = {};
         transactions.forEach((t) => {
             if (t.amount >= 0 || t.kind === "transfer" || t.kind === "exchange" || !t.bookedAt || !t.categoryId) return;
+            if (NON_CUTTABLE.has(t.category)) return;
             const d = new Date(t.bookedAt);
             if (d < prevStart || d >= periodStart) return;
             const row = (byCat[t.categoryId] ||= { categoryId: t.categoryId, name: t.category, spent: 0 });
@@ -565,7 +569,7 @@ export function LiveBudgetView({
                         </span>
                         <span>
                             <b>Зменшити витрати</b>
-                            <small>від витрат за {prevMonthName}: {formatMoney(cutWas)} {symbol}</small>
+                            <small>від витрат за {prevMonthName}: {formatMoney(cutWas)} {symbol} · без боргів і комісій</small>
                         </span>
                         <ChevronRight size={16} style={{ transform: cutOpen ? "rotate(90deg)" : undefined }} />
                     </button>
